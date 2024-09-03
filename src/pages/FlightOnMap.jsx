@@ -1,7 +1,7 @@
 import React from "react";
 
-function Map() {
+function FlightOnMap() {
     return (<>지도페이지</>)
 }
 
-export default Map;
+export default FlightOnMap;
