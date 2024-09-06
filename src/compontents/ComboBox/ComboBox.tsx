@@ -8,14 +8,15 @@ const ComboBoxContainer = styled('div', {
   padding: '8px',
   border: '1px solid $border',
   borderRadius: '8px',
-  backgroundColor: '$background',
+  backgroundColor: '#EFEFEF',//'$background',
 });
 
 const Select = styled('select', {
   padding: '8px',
   borderRadius: '4px',
-  border: '1px solid $border',
+  border: 'none',
   color: '$primary',
+  backgroundColor: '#EFEFEF',//'$background',
 });
 
 const Option = styled('option', {
