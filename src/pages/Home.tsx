@@ -5,9 +5,7 @@ import SkyButton from "../compontents/Button/VSKyButton";
 import backgroundImage from "../assets/sky1.jpg";
 
 const HomeLayoutSytle = styled('div', {
-  border: '1px solid red',
   margin: 'none',
-  // width: '100vw',
   height: '100vh',
   display: 'flex',
   textAlign: "center",
@@ -16,6 +14,7 @@ const HomeLayoutSytle = styled('div', {
   backgroundImage: `url(${backgroundImage})`,
   backgroundSize: 'cover',
   backgroundOrigin: 'padding-box',
+  fontFamily: 'Roboto'
 });
 
 /*
@@ -32,17 +31,50 @@ const RouteComboxBoxContainer = styled('div', {
   borderRadius: "100px",
   padding: "15px",
   margin: "auto",
-  border: "1px solid red",
   gap: "5px",
 });
 const STINGS = {
-  Departure: "출발지",
-  Arrival: "도착지"
+  Header: "ExploreTheWorld!!",
+  Greeting: "같이 튀자 ~ ✈️",
+  Departure: "Departure(출발지)",
+  Arrival: "Arrival(도착지)",
+  buttonText: "Search",
 }
+const DummyData = {
+  FlightList: [
+    { text: "항공편: KAL1839", dep: "인천국제공항", arr: "-" },
+  ],
+}
+const FlightListContainer = styled('ul', {
+  display: "flex",
+  flexDirection: "column",
+  backgroundColor: "#FAFAFA",
+  width: "90vw",
+  borderRadius: "35px",
+  padding: "15px",
+  margin: "auto",
+  gap: "5px",
+  listStyle: "none",
+});
+const HomeHeaderText = styled('h1', {
+  color: 'white',
+  fontSize: '5rem',
+  margin: "auto",
+  cursor: 'default',
+  "p": {
+    fontSize: '1rem',
+    color: 'black',
+    fontWeight: 'normal'
+  }
+});
 function Home() {
   return (<HomeLayoutSytle>
-    <h3>Explore The World!</h3>
-    <p>같이튀자!!</p>
+
+    <HomeHeaderText>
+      {STINGS.Header}
+      <p>{STINGS.Greeting}</p>
+    </HomeHeaderText>
+
     <RouteComboxBoxContainer>
       <label>{STINGS.Departure}
         <OriginComboBox />
@@ -50,17 +82,13 @@ function Home() {
       <label>{STINGS.Arrival}
         <DestinationComboBox />
       </label>
-      <SkyButton>Search</SkyButton>
+      <SkyButton>{STINGS.buttonText}</SkyButton>
     </RouteComboxBoxContainer>
-    <div>
-      <ul>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-      </ul>
-    </div>
+
+    <FlightListContainer>
+      {DummyData.FlightList.map((flight) => <li>{flight.text}&nbsp;|&nbsp;{flight.dep}&nbsp;|&nbsp;{flight.arr}</li>)}
+    </FlightListContainer>
+
   </HomeLayoutSytle>)
 }
 
