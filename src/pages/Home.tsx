@@ -14,7 +14,8 @@ const HomeLayoutSytle = styled('div', {
   backgroundImage: `url(${backgroundImage})`,
   backgroundSize: 'cover',
   backgroundOrigin: 'padding-box',
-  fontFamily: 'Roboto'
+  fontFamily: 'Roboto',
+  borderRadius: '5px',
 });
 
 /*
