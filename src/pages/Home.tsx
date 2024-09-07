@@ -3,14 +3,16 @@ import { styled } from "@stitches/react";
 import ComboBox from "../compontents/ComboBox/ComboBox";
 import SkyButton from "../compontents/Button/VSKyButton";
 import backgroundImage from "../assets/sky1.jpg";
+import { useNavigate } from "react-router-dom";
 
 const HomeLayoutSytle = styled('div', {
   margin: 'none',
   height: '100vh',
+  boxSizing: 'border-box',
   display: 'flex',
   textAlign: "center",
   flexDirection: 'column',
-  justifyItems: 'space-evenly',
+  justifyContent: 'space-evenly',
   backgroundImage: `url(${backgroundImage})`,
   backgroundSize: 'cover',
   backgroundOrigin: 'padding-box',
@@ -44,6 +46,8 @@ const STINGS = {
 const DummyData = {
   FlightList: [
     { text: "항공편: KAL1839", dep: "인천국제공항", arr: "-" },
+    { text: "항공편: KAL1839", dep: "인천국제공항", arr: "-" },
+    { text: "항공편: KAL1839", dep: "인천국제공항", arr: "-" },
   ],
 }
 const FlightListContainer = styled('ul', {
@@ -56,6 +60,13 @@ const FlightListContainer = styled('ul', {
   margin: "auto",
   gap: "5px",
   listStyle: "none",
+  "li": {
+    '&:hover': {
+      backgroundColor: 'rgba(200,200,200,0.125)',
+    },
+    width: "100%", border: "1px solid red",
+    display: "flex", flexDirection: "row", justifyContent: "space-between",
+  }
 });
 const HomeHeaderText = styled('h1', {
   color: 'white',
@@ -69,6 +80,8 @@ const HomeHeaderText = styled('h1', {
   }
 });
 function Home() {
+  const navigate = useNavigate();
+  
   return (<HomeLayoutSytle>
 
     <HomeHeaderText>
@@ -87,7 +100,8 @@ function Home() {
     </RouteComboxBoxContainer>
 
     <FlightListContainer>
-      {DummyData.FlightList.map((flight) => <li>{flight.text}&nbsp;|&nbsp;{flight.dep}&nbsp;|&nbsp;{flight.arr}</li>)}
+      {DummyData.FlightList.map((flight, index) =>
+        <li key={index} >{flight.text} &nbsp;|&nbsp; {flight.dep}&nbsp;|&nbsp; {flight.arr} | <SkyButton onClick={() => { navigate("/flight") }}>Flight</SkyButton></li>)}
     </FlightListContainer>
 
   </HomeLayoutSytle>)
