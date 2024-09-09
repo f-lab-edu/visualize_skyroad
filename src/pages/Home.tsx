@@ -64,8 +64,12 @@ const FlightListContainer = styled('ul', {
     '&:hover': {
       backgroundColor: 'rgba(200,200,200,0.125)',
     },
-    width: "100%", border: "1px solid red",
-    display: "flex", flexDirection: "row", justifyContent: "space-between",
+    width: "100%",
+    //border: "1px solid red",
+    display: "flex", 
+    flexDirection: "row",
+    justifyContent: "space-between",
+    verticalAlign: "center",
   }
 });
 const HomeHeaderText = styled('h1', {
@@ -81,7 +85,7 @@ const HomeHeaderText = styled('h1', {
 });
 function Home() {
   const navigate = useNavigate();
-  
+
   return (<HomeLayoutSytle>
 
     <HomeHeaderText>
@@ -93,6 +97,7 @@ function Home() {
       <label>{STINGS.Departure}
         <OriginComboBox />
       </label>
+      <div>...✈️...</div>
       <label>{STINGS.Arrival}
         <DestinationComboBox />
       </label>
