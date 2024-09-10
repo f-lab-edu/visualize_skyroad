@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import FlightOnMap from "./pages/FlightOnMap";
+import "./App.css"
 // import { Loading } from "./pages/Loading";
 
 function App() {
