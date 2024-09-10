@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@stitches/react": "^1.2.8",
+    "@turf/turf": "^7.1.0",
     "@types/jest": "^29.5.12",
     "@types/node": "^22.5.4",
     "maplibre-gl": "^4.7.0",
