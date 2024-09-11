@@ -6,7 +6,10 @@ import * as turf from '@turf/turf';
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY;
 
-const MapComponent: React.FC = () => {
+interface FlightOnMapProps {
+    // nothing
+}
+const FlightOnMap = ({ }: FlightOnMapProps) => {
     const mapRef = useRef<MapRef>(null);
     const counterRef = useRef<number>(0);
     const steps = 500;
@@ -76,12 +79,12 @@ const MapComponent: React.FC = () => {
             'data': route,
             'lineMetrics': true, // Enable lineMetrics for line-gradient
         });
-    
+
         map.addSource('point', {
             'type': 'geojson',
             'data': point,
         });
-    
+
         map.addLayer({
             'id': 'route',
             'source': 'route',
@@ -105,7 +108,7 @@ const MapComponent: React.FC = () => {
                 ],
             },
         });
-    
+
         map.addLayer({
             'id': 'point',
             'source': 'point',
@@ -118,28 +121,28 @@ const MapComponent: React.FC = () => {
                 'icon-ignore-placement': true,
             },
         });
-    
+
         const animate = () => {
             if (!map) return;
-    
+
             point.features[0].geometry.coordinates = route.features[0].geometry.coordinates[counterRef.current];
             point.features[0].properties.bearing = turf.bearing(
                 turf.point(route.features[0].geometry.coordinates[counterRef.current >= steps ? counterRef.current - 1 : counterRef.current]),
                 turf.point(route.features[0].geometry.coordinates[counterRef.current >= steps ? counterRef.current : counterRef.current + 1])
             );
-    
+
             (map.getSource('point') as maplibregl.GeoJSONSource).setData(point);
-    
+
             if (counterRef.current < steps) {
                 requestAnimationFrame(animate);
             }
-    
+
             counterRef.current += 1;
         };
-    
+
         animate();
     };
-    
+
 
     return (
         <>
@@ -201,4 +204,4 @@ const MapComponent: React.FC = () => {
     );
 };
 
-export default MapComponent;
+export default FlightOnMap;
