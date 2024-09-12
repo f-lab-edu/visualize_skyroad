@@ -7,8 +7,10 @@ const FlightOnMap = lazy(() => import("./pages/FlightOnMap"));
 
 import Loading from "./components/Loading/Loading";
 
+interface LoadingStates {
+  airports:boolean,
+};
 function App() {
-
   return (
     <Router>
       <Suspense fallback={<Loading />}>
