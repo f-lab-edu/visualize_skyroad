@@ -1,7 +1,7 @@
 import React from "react";
 import { styled } from "@stitches/react";
-import ComboBox from "../compontents/ComboBox/ComboBox";
-import SkyButton from "../compontents/Button/VSKyButton";
+import ComboBox from "../components/ComboBox/ComboBox";
+import SkyButton from "../components/Button/VSKyButton";
 import backgroundImage from "../assets/sky1.jpg";
 import { useNavigate } from "react-router-dom";
 
