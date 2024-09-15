@@ -6,10 +6,7 @@ import * as turf from '@turf/turf';
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY;
 
-interface FlightOnMapProps {
-    // nothing
-}
-const FlightOnMap = ({ }: FlightOnMapProps) => {
+const FlightOnMap = () => {
     const mapRef = useRef<MapRef>(null);
     const counterRef = useRef<number>(0);
     const steps = 500;
