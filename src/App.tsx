@@ -18,7 +18,7 @@ const fetchAirports = async () => {
   return response;
 };
 
-const AirportDataFetcher = ({ children }) => {
+const AirportDataFetcher = ({ children }: any) => {
   const { data: airports, isLoading, error } = useQuery({
     queryKey: ['airports'],
     queryFn: fetchAirports,
@@ -35,18 +35,18 @@ const AirportDataFetcher = ({ children }) => {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-    <Router>
-      <Suspense fallback={<Loading />}>
-      <AirportDataFetcher>
-      {(airports) => (
-        <Routes>
-          <Route path="/" element={<Home airports={airports} />} />
-          <Route path="/flight" element={<FlightOnMap />} />
-        </Routes>
-      )}
-        </AirportDataFetcher>
-      </Suspense>
-    </Router>
+      <Router>
+        <Suspense fallback={<Loading />}>
+          <AirportDataFetcher>
+            {(airports: any) => (
+              <Routes>
+                <Route path="/" element={<Home airports={airports as any} />} />
+                <Route path="/flight" element={<FlightOnMap />} />
+              </Routes>
+            )}
+          </AirportDataFetcher>
+        </Suspense>
+      </Router>
     </QueryClientProvider>
   )
 }

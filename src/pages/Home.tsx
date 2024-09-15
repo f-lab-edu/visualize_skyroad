@@ -66,7 +66,7 @@ const FlightListContainer = styled('ul', {
     },
     width: "100%",
     //border: "1px solid red",
-    display: "flex", 
+    display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
     verticalAlign: "center",
