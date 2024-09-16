@@ -10,6 +10,20 @@ interface FlightData {
     lat: number;
     lon: number;
 }
+type LineStringGeometry = {
+    type: 'LineString';
+    coordinates: number[][]; // [longitude, latitude] 쌍의 배열
+};
+
+type Feature = {
+    type: 'Feature';
+    geometry: LineStringGeometry;
+};
+
+type FeatureCollection = {
+    type: 'FeatureCollection';
+    features: Feature[];
+};
 
 const removeDuplicateCoordinates = (coordinates: FlightData[]) => {
     return coordinates.filter((coord, index, self) =>
@@ -101,9 +115,9 @@ const addSVGImageToMap = (map: any) => {
 
 const FlightOnMap: React.FC = () => {
     const mapRef = useRef<MapRef>(null);
-    const [nRoute, setnRoute] = useState(-1);
+    const [numRoute, setNumRoute] = useState(-1);
 
-    const addOrUpdateRouteLayer = (map: any, route: any) => {
+    const addOrUpdateRouteLayer = (map: any, route: FeatureCollection) => {
         console.log(route);
         if (map.getSource('route')) {
             // 이미 존재하는 경로 데이터 업데이트
@@ -112,7 +126,7 @@ const FlightOnMap: React.FC = () => {
             // 새로운 경로 데이터 추가
             map.addSource('route', {
                 type: 'geojson',
-                data: route as any,
+                data: route,
             });
 
             map.addLayer({
@@ -167,7 +181,7 @@ const FlightOnMap: React.FC = () => {
         }
 
         // 경로 데이터 입력 (routes 데이터를 사용)
-        const pathCoordinates = interpolatedRawPath(routes[nRoute].path, 500).map(([lat, lon]) => ({ lat, lon }));
+        const pathCoordinates = interpolatedRawPath(routes[numRoute].path, 500).map(([lat, lon]) => ({ lat, lon }));
 
         // 중복 좌표 제거
         const filteredPathCoordinates = removeDuplicateCoordinates(pathCoordinates);
@@ -175,14 +189,14 @@ const FlightOnMap: React.FC = () => {
         // 대권 보간을 적용하여 경로를 생성
         const interpolatedPath = interpolateGreatCirclePath(filteredPathCoordinates);
 
-        const route = {
+        const route: FeatureCollection = {
             type: 'FeatureCollection',
             features: [
                 {
                     type: 'Feature',
                     geometry: {
                         type: 'LineString',
-                        coordinates: interpolatedPath, // 보간된 경로 사용
+                        coordinates: interpolatedPath as number[][], // 보간된 경로 사용
                     },
                 },
             ],
@@ -210,7 +224,7 @@ const FlightOnMap: React.FC = () => {
             alert("Map couldn't be loaded.");
             return;
         }
-        const pointGeoJSON = createPointGeoJSON(interpolatedRawPath(routes[nRoute].path, 500).map(([lat, lon]) => ([lat, lon])));
+        const pointGeoJSON = createPointGeoJSON(interpolatedRawPath(routes[numRoute].path, 500).map(([lat, lon]) => ([lat, lon])));
 
         if (map.isStyleLoaded()) {
             if (!map.getSource('points')) {
@@ -295,12 +309,12 @@ const FlightOnMap: React.FC = () => {
         ]);
     }
     useEffect(() => {
-        if (nRoute == -1) return;
+        if (numRoute == -1) return;
         draw();
-    }, [nRoute]);
+    }, [numRoute]);
 
     const handleClickRouteNumber = (n: number) => {
-        setnRoute(n);
+        setNumRoute(n);
     }
 
     return (<>
