@@ -224,13 +224,14 @@ const FlightOnMap: React.FC = () => {
             alert("Map couldn't be loaded.");
             return;
         }
+
         const pointGeoJSON = createPointGeoJSON(interpolatedRawPath(routes[numRoute].path, 500).map(([lat, lon]) => ([lat, lon])));
 
         if (map.isStyleLoaded()) {
             if (!map.getSource('points')) {
                 map.addSource('points', {
                     type: 'geojson',
-                    data: pointGeoJSON
+                    data: pointGeoJSON as any
                 });
 
                 map.addLayer({
@@ -261,13 +262,16 @@ const FlightOnMap: React.FC = () => {
                     }
                 });
             } else {
-                map.getSource('points').setData(pointGeoJSON);
+                const source = map.getSource('points');
+                if (source && source.type === 'geojson') {
+                    (source as mapboxgl.GeoJSONSource).setData(pointGeoJSON as any);
+                }
             }
         } else {
             map.on('load', () => {
                 map.addSource('points', {
                     type: 'geojson',
-                    data: pointGeoJSON
+                    data: pointGeoJSON as any
                 });
 
                 map.addLayer({
