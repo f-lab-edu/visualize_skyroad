@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ReactElement, useEffect, useState } from "react";
 import { styled } from "@stitches/react";
 import ComboBox from "../components/ComboBox/ComboBox";
 import SkyButton from "../components/Button/VSKyButton";
@@ -24,8 +24,8 @@ const HomeLayoutSytle = styled('div', {
   출발지: Departure point (or Origin)
   도착지: Arrival point (or Destination)
 */
-const OriginComboBox = () => <ComboBox />
-const DestinationComboBox = () => <ComboBox />
+// const DepartureComboBox = () => <ComboBox />
+// const ArrivalComboBox = () => <ComboBox />
 
 const RouteComboxBoxContainer = styled('div', {
   display: "flex",
@@ -36,20 +36,6 @@ const RouteComboxBoxContainer = styled('div', {
   margin: "auto",
   gap: "5px",
 });
-const STINGS = {
-  Header: "ExploreTheWorld!!",
-  Greeting: "같이 튀자 ~ ✈️",
-  Departure: "Departure(출발지)",
-  Arrival: "Arrival(도착지)",
-  buttonText: "Search",
-}
-const DummyData = {
-  FlightList: [
-    { text: "항공편: KAL1839", dep: "인천국제공항", arr: "-" },
-    { text: "항공편: KAL1839", dep: "인천국제공항", arr: "-" },
-    { text: "항공편: KAL1839", dep: "인천국제공항", arr: "-" },
-  ],
-}
 const FlightListContainer = styled('ul', {
   display: "flex",
   flexDirection: "column",
@@ -66,7 +52,7 @@ const FlightListContainer = styled('ul', {
     },
     width: "100%",
     //border: "1px solid red",
-    display: "flex", 
+    display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
     verticalAlign: "center",
@@ -83,33 +69,58 @@ const HomeHeaderText = styled('h1', {
     fontWeight: 'normal'
   }
 });
-function Home() {
+const STINGS = {
+  Header: "ExploreTheWorld!!",
+  Greeting: "같이 튀자 ~ ✈️",
+  Departure: "Departure(출발지)",
+  Arrival: "Arrival(도착지)",
+  buttonText: "Search",
+};
+const DummyData = {
+  FlightList: [
+    { text: "항공편: KAL1839", dep: "인천국제공항", arr: "-" },
+    { text: "항공편: KAL1839", dep: "인천국제공항", arr: "-" },
+    { text: "항공편: KAL1839", dep: "인천국제공항", arr: "-" },
+  ],
+};
+
+const Home = ({ airports }: any) => {
   const navigate = useNavigate();
+  const [departureAirport, setDepartureAirport] = useState(null);
+  const [arrivalAirport, setArrivalAirport] = useState(null);
+  const [flightList, setFlightList] = useState([]);
+  // const [flight, setFlight] = useState();
+
+  const handleSearch = () => {
+    if (!(departureAirport && arrivalAirport)) {
+      alert("출발/도착 공항을 선택해주세요! :)");
+      return;
+    }
+    setFlightList(DummyData.FlightList as []);
+    //
+  };
+  const handleFlight = ({ flight }: any) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log(flight, e);
+    // navigate("/flight", { state: { departure: departureAirport, arrival: arrivalAirport } })
+  };
 
   return (<HomeLayoutSytle>
-
     <HomeHeaderText>
       {STINGS.Header}
       <p>{STINGS.Greeting}</p>
     </HomeHeaderText>
-
     <RouteComboxBoxContainer>
-      <label>{STINGS.Departure}
-        <OriginComboBox />
-      </label>
-      <div>...✈️...</div>
-      <label>{STINGS.Arrival}
-        <DestinationComboBox />
-      </label>
-      <SkyButton>{STINGS.buttonText}</SkyButton>
+      <ComboBox blacklist={arrivalAirport} airports={airports} onSelectAirport={setDepartureAirport} />
+      <ComboBox blacklist={departureAirport} airports={airports} onSelectAirport={setArrivalAirport} />
+      <SkyButton onClick={handleSearch}>{STINGS.buttonText}</SkyButton>
     </RouteComboxBoxContainer>
-
-    <FlightListContainer>
-      {DummyData.FlightList.map((flight, index) =>
-        <li key={index} >{flight.text} &nbsp;|&nbsp; {flight.dep}&nbsp;|&nbsp; {flight.arr} | <SkyButton onClick={() => { navigate("/flight") }}>Flight</SkyButton></li>)}
-    </FlightListContainer>
-
-  </HomeLayoutSytle>)
+    {flightList.length > 0 &&
+      <FlightListContainer
+        onClick={handleFlight}>
+        {flightList.map((flight: any, index: number) =>
+          <li key={index} >{flight.text} &nbsp;|&nbsp; {flight.dep}&nbsp;|&nbsp; {flight.arr} | <SkyButton>Flight</SkyButton></li>)}
+      </FlightListContainer>}
+  </HomeLayoutSytle>);
 }
 
 export default Home;
