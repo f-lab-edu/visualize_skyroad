@@ -30,7 +30,7 @@ const interpolateGreatCirclePath = (coordinates: FlightData[]) => {
         // 위도와 경도를 사용하여 대권 경로 생성
         const from = [lon1, lat1];
         const to = [lon2, lat2];
-        const greatCircle = turf.greatCircle(turf.point(from), turf.point(to), { offset: 10, npoints: 200 });
+        const greatCircle = turf.greatCircle(turf.point(from), turf.point(to), { offset: 100, npoints: 200 });
 
         interpolatedCoords.push(...greatCircle.geometry.coordinates);
     }
@@ -41,9 +41,13 @@ const interpolateGreatCirclePath = (coordinates: FlightData[]) => {
     return interpolatedCoords;
 };
 
-const linearInterpFn = (current: [number, number, number, number, number, boolean], next: [number, number, number, number, number, boolean], step: number, totalSteps: number) => {
-    const lat: number = current[1] + (current[1] - current[1]) * (step / totalSteps);
-    const lon: number = current[2] + (current[2] - current[2]) * (step / totalSteps);
+const linearInterpFn = (
+    current: [number, number, number, number, number, boolean],
+    next: [number, number, number, number, number, boolean],
+    step: number, totalSteps: number
+) => {
+    const lat: number = current[1] + (next[1] - current[1]) * (step / totalSteps);
+    const lon: number = current[2] + (next[2] - current[2]) * (step / totalSteps);
     return [lat, lon];
 };
 
@@ -59,8 +63,8 @@ const interpolatedRawPath = (path: [number, number, number, number, number, bool
             const numNewPoints = Math.ceil(timeDif / threshold);
             // return path;
             if (numNewPoints > 1) {
-                for (let j = 0; j <= numNewPoints; j++) {
-                    const newpoint: number[] = linearInterpFn(current, next, j, numNewPoints);
+                for (let step = 0; step <= numNewPoints; step++) {
+                    const newpoint: number[] = linearInterpFn(current, next, step, numNewPoints);
                     newpath.push(newpoint);
                 }
             }
@@ -97,7 +101,7 @@ const addSVGImageToMap = (map: any) => {
 
 const FlightOnMap: React.FC = () => {
     const mapRef = useRef<MapRef>(null);
-    const [nRoute, setRouteNumber] = useState(-1);
+    const [nRoute, setnRoute] = useState(-1);
 
     const addOrUpdateRouteLayer = (map: any, route: any) => {
         console.log(route);
@@ -286,8 +290,8 @@ const FlightOnMap: React.FC = () => {
 
     const draw = async () => {
         await Promise.all([
-            draw2DLine(),
             drawOrangePoints(),
+            draw2DLine(),
         ]);
     }
     useEffect(() => {
@@ -296,7 +300,7 @@ const FlightOnMap: React.FC = () => {
     }, [nRoute]);
 
     const handleClickRouteNumber = (n: number) => {
-        setRouteNumber(n);
+        setnRoute(n);
     }
 
     return (<>
