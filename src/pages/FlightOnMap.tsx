@@ -3,6 +3,8 @@ import { Map, MapRef } from 'react-map-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import maplibregl from 'maplibre-gl';
 import * as turf from '@turf/turf';
+import { useLocation } from 'react-router-dom';
+import { requestFlightTrack } from '../dataProcessingLayer';
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY;
 
@@ -113,20 +115,36 @@ const addSVGImageToMap = (map: any) => {
     };
 };
 
-const FlightOnMap: React.FC = () => {
+const FlightOnMap: React.FC = ({ }) => {
     const mapRef = useRef<MapRef>(null);
-    const [numRoute, setNumRoute] = useState(-1);
+    // const [numRoute, setNumRoute] = useState(-1);
+    const location = useLocation();
+    const { departure, arrival, flight } = location.state || {};
+    const [route, setRoute] = useState(null) as any;
 
-    const addOrUpdateRouteLayer = (map: any, route: FeatureCollection) => {
+    if (!departure || !arrival || !flight) {
+        return <p>No flight details available.</p>;
+    }
+    console.log(location.state);
+    const getTrack = async () => {
+        const track = await requestFlightTrack(flight);
+        setRoute(track);
+    };
+    useEffect(() => {
+        if (!flight) return;
+        getTrack();
+    }, [flight]);
+
+    const addOrUpdateRouteLayer = (map: any, routeOnMap: FeatureCollection) => {
         console.log(route);
         if (map.getSource('route')) {
             // 이미 존재하는 경로 데이터 업데이트
-            map.getSource('route').setData(route);
+            map.getSource('route').setData(routeOnMap);
         } else {
             // 새로운 경로 데이터 추가
             map.addSource('route', {
                 type: 'geojson',
-                data: route,
+                data: routeOnMap,
             });
 
             map.addLayer({
@@ -179,9 +197,9 @@ const FlightOnMap: React.FC = () => {
             alert("Map couldn't be loaded.");
             return;
         }
-
+        console.log(route);
         // 경로 데이터 입력 (routes 데이터를 사용)
-        const pathCoordinates = interpolatedRawPath(routes[numRoute].path, 500).map(([lat, lon]) => ({ lat, lon }));
+        const pathCoordinates = interpolatedRawPath(route.path, 500).map(([lat, lon]) => ({ lat, lon }));
 
         // 중복 좌표 제거
         const filteredPathCoordinates = removeDuplicateCoordinates(pathCoordinates);
@@ -189,7 +207,7 @@ const FlightOnMap: React.FC = () => {
         // 대권 보간을 적용하여 경로를 생성
         const interpolatedPath = interpolateGreatCirclePath(filteredPathCoordinates);
 
-        const route: FeatureCollection = {
+        const routeOnMap: FeatureCollection = {
             type: 'FeatureCollection',
             features: [
                 {
@@ -203,13 +221,13 @@ const FlightOnMap: React.FC = () => {
         };
 
         // GeoJSON 유효성 검사 및 디버깅용 출력
-        console.log('Generated GeoJSON:', route);
+        console.log('Generated GeoJSON:', routeOnMap);
 
         if (map.isStyleLoaded()) {
-            addOrUpdateRouteLayer(map, route);
+            addOrUpdateRouteLayer(map, routeOnMap);
         } else {
             map.on('load', () => {
-                addOrUpdateRouteLayer(map, route);
+                addOrUpdateRouteLayer(map, routeOnMap);
             });
         }
 
@@ -225,7 +243,7 @@ const FlightOnMap: React.FC = () => {
             return;
         }
 
-        const pointGeoJSON = createPointGeoJSON(interpolatedRawPath(routes[numRoute].path, 500).map(([lat, lon]) => ([lat, lon])));
+        const pointGeoJSON = createPointGeoJSON(interpolatedRawPath(route.path, 500).map(([lat, lon]) => ([lat, lon])));
 
         if (map.isStyleLoaded()) {
             if (!map.getSource('points')) {
@@ -308,24 +326,24 @@ const FlightOnMap: React.FC = () => {
 
     const draw = async () => {
         await Promise.all([
-            drawOrangePoints(),
+            // drawOrangePoints(),
             draw2DLine(),
         ]);
     }
     useEffect(() => {
-        if (numRoute == -1) return;
+        if (route == null) return;
         draw();
-    }, [numRoute]);
+    }, [route]);
 
-    const handleClickRouteNumber = (n: number) => {
-        setNumRoute(n);
-    }
-
+    // const handleClickRouteNumber = (n: number) => {
+    // setNumRoute(n);
+    // }
+    console.log(route);
     return (<>
-        {[...Array(routes.length).keys()]
+        {/* {[...Array(routes.length).keys()]
             .map((n, index) =>
                 <button key={index} onClick={() => handleClickRouteNumber(n)}>경로{n}</button>)
-        }
+        } */}
         <Map
             ref={mapRef}
             mapLib={maplibregl as any}
@@ -346,10 +364,10 @@ export default FlightOnMap;
 
 interface TrackDataStruct {
     icao24: string;
-    callsign: string;
-    startTime: number;
-    endTime: number;
-    path: [number, number, number, number, number, boolean][];
+    callsign?: string;
+    startTime?: number;
+    endTime?: number;
+    path?: [number, number, number, number, number, boolean][];
     // 0  time  integer  Time which the given waypoint is associated with in seconds since epoch (Unix time).  
     // 1  latitude  float  WGS-84 latitude in decimal degrees. Can be null.  
     // 2  longitude  float  WGS-84 longitude in decimal degrees. Can be null.  
