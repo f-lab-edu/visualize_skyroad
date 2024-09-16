@@ -1,204 +1,362 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Map, Source, Layer, MapRef } from 'react-map-gl';
+import { Map, MapRef } from 'react-map-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import maplibregl from 'maplibre-gl';
 import * as turf from '@turf/turf';
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY;
 
-const FlightOnMap = () => {
-    const mapRef = useRef<MapRef>(null);
-    const counterRef = useRef<number>(0);
-    const steps = 500;
+interface FlightData {
+    lat: number;
+    lon: number;
+}
+type LineStringGeometry = {
+    type: 'LineString';
+    coordinates: number[][]; // [longitude, latitude] 쌍의 배열
+};
 
-    const draw3DLine = () => {
-        const map = mapRef.current?.getMap();
+type Feature = {
+    type: 'Feature';
+    geometry: LineStringGeometry;
+};
 
-        if (!map) {
-            alert("ㅠㅡㅠ맵 못가져옴;;;");
-            return;
-        }
+type FeatureCollection = {
+    type: 'FeatureCollection';
+    features: Feature[];
+};
 
-        const origin: [number, number, number] = [-122.414, 37.776, 0]; // 고도 0
-        const destination: [number, number, number] = [-77.032, 38.913, 10000]; // 고도 10,000미터
-
-        const route = {
-            'type': 'FeatureCollection',
-            'features': [
-                {
-                    'type': 'Feature',
-                    'geometry': {
-                        'type': 'LineString',
-                        'coordinates': [origin, destination],
-                    },
-                },
-            ],
-        };
-
-        const point = {
-            'type': 'FeatureCollection',
-            'features': [
-                {
-                    'type': 'Feature',
-                    'properties': {},
-                    'geometry': {
-                        'type': 'Point',
-                        'coordinates': origin,
-                    },
-                },
-            ],
-        };
-
-        const lineDistance = turf.length(route.features[0], { units: 'kilometers' });
-        const arc: [number, number, number][] = [];
-
-        for (let i = 0; i < lineDistance; i += lineDistance / steps) {
-            const segment = turf.along(route.features[0], i, { units: 'kilometers' });
-            const altitude = i * (destination[2] / lineDistance); // 고도 계산
-            arc.push([...segment.geometry.coordinates.slice(0, 2), altitude] as [number, number, number]);
-        }
-        route.features[0].geometry.coordinates = arc;
-
-        if (map.isStyleLoaded()) {
-            console.log("Map style loaded, running animation immediately.");
-            animateRoute(map, route, point);  // 바로 실행
-        } else {
-            console.log("Waiting for map to load.");
-            map.on('load', () => {
-                animateRoute(map, route, point);
-            });
-        }
-    };
-
-    const animateRoute = (map: any, route: any, point: any) => {
-        map.addSource('route', {
-            'type': 'geojson',
-            'data': route,
-            'lineMetrics': true, // Enable lineMetrics for line-gradient
-        });
-
-        map.addSource('point', {
-            'type': 'geojson',
-            'data': point,
-        });
-
-        map.addLayer({
-            'id': 'route',
-            'source': 'route',
-            'type': 'line',
-            'paint': {
-                'line-width': 4,
-                'line-color': [
-                    'interpolate',
-                    ['linear'],
-                    ['line-progress'],
-                    0, 'yellow',
-                    1, 'red'
-                ],
-                'line-opacity': 0.8,
-                'line-gradient': [
-                    'interpolate',
-                    ['linear'],
-                    ['line-progress'],
-                    0, 'blue',
-                    1, 'green',
-                ],
-            },
-        });
-
-        map.addLayer({
-            'id': 'point',
-            'source': 'point',
-            'type': 'symbol',
-            'layout': {
-                'icon-image': 'airport-15',
-                'icon-rotate': ['get', 'bearing'],
-                'icon-rotation-alignment': 'map',
-                'icon-overlap': 'always',
-                'icon-ignore-placement': true,
-            },
-        });
-
-        const animate = () => {
-            if (!map) return;
-
-            point.features[0].geometry.coordinates = route.features[0].geometry.coordinates[counterRef.current];
-            point.features[0].properties.bearing = turf.bearing(
-                turf.point(route.features[0].geometry.coordinates[counterRef.current >= steps ? counterRef.current - 1 : counterRef.current]),
-                turf.point(route.features[0].geometry.coordinates[counterRef.current >= steps ? counterRef.current : counterRef.current + 1])
-            );
-
-            (map.getSource('point') as maplibregl.GeoJSONSource).setData(point);
-
-            if (counterRef.current < steps) {
-                requestAnimationFrame(animate);
-            }
-
-            counterRef.current += 1;
-        };
-
-        animate();
-    };
-
-
-    return (
-        <>
-            <button onClick={draw3DLine}>+</button>
-            <Map
-                ref={mapRef}
-                mapLib={maplibregl as any}
-                initialViewState={{
-                    longitude: -100,
-                    latitude: 40,
-                    zoom: 3.5,
-                    pitch: 60, // Higher pitch for more 3D effect
-                    bearing: -30,
-                }}
-                style={{ width: '100%', height: '500px' }}
-                mapStyle={`https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_KEY}`}
-                antialias={true}
-            >
-                <Source
-                    id="openmaptiles"
-                    type="vector"
-                    url={`https://api.maptiler.com/tiles/v3/tiles.json?key=${MAPTILER_KEY}`}
-                >
-                    <Layer
-                        id="3d-buildings"
-                        source="openmaptiles"
-                        source-layer="building"
-                        type="fill-extrusion"
-                        minzoom={15}
-                        paint={{
-                            'fill-extrusion-color': [
-                                'interpolate',
-                                ['linear'],
-                                ['get', 'render_height'],
-                                0, 'lightgray',
-                                200, 'royalblue',
-                                400, 'lightblue',
-                            ],
-                            'fill-extrusion-height': [
-                                'interpolate',
-                                ['linear'],
-                                ['zoom'],
-                                15,
-                                0,
-                                16,
-                                ['get', 'render_height'],
-                            ],
-                            'fill-extrusion-base': [
-                                'case',
-                                ['>=', ['get', 'zoom'], 16],
-                                ['get', 'render_min_height'],
-                                0,
-                            ],
-                        }}
-                    />
-                </Source>
-            </Map>
-        </>
+const removeDuplicateCoordinates = (coordinates: FlightData[]) => {
+    return coordinates.filter((coord, index, self) =>
+        index === 0 || coord.lat !== self[index - 1].lat || coord.lon !== self[index - 1].lon
     );
 };
 
+const interpolateGreatCirclePath = (coordinates: FlightData[]) => {
+    const interpolatedCoords = [];
+
+    for (let i = 0; i < coordinates.length - 1; i++) {
+        const { lat: lat1, lon: lon1 } = coordinates[i];
+        const { lat: lat2, lon: lon2 } = coordinates[i + 1];
+
+        // 좌표 확인을 위한 로그 출력
+        console.log(`From: [${lon1}, ${lat1}] ---- To: [${lon2}, ${lat2}]`);
+
+        // 위도와 경도를 사용하여 대권 경로 생성
+        const from = [lon1, lat1];
+        const to = [lon2, lat2];
+        const greatCircle = turf.greatCircle(turf.point(from), turf.point(to), { offset: 100, npoints: 200 });
+
+        interpolatedCoords.push(...greatCircle.geometry.coordinates);
+    }
+
+    const { lat: finalLat, lon: finalLon } = coordinates[coordinates.length - 1];
+    interpolatedCoords.push([finalLon, finalLat]);
+
+    return interpolatedCoords;
+};
+
+const linearInterpFn = (
+    current: [number, number, number, number, number, boolean],
+    next: [number, number, number, number, number, boolean],
+    step: number, totalSteps: number
+) => {
+    const lat: number = current[1] + (next[1] - current[1]) * (step / totalSteps);
+    const lon: number = current[2] + (next[2] - current[2]) * (step / totalSteps);
+    return [lat, lon];
+};
+
+const interpolatedRawPath = (path: [number, number, number, number, number, boolean][], threshold: number) => {
+    const newpath: number[][] = [];
+    for (let i = 0; i < path.length - 1; i++) {
+        const current = path[i];
+        const next = path[i + 1];
+
+        newpath.push([current[1], current[2]]);
+        const timeDif = Math.abs(current[0] - next[0]);
+        if (timeDif > threshold) {
+            const numNewPoints = Math.ceil(timeDif / threshold);
+            // return path;
+            if (numNewPoints > 1) {
+                for (let step = 0; step <= numNewPoints; step++) {
+                    const newpoint: number[] = linearInterpFn(current, next, step, numNewPoints);
+                    newpath.push(newpoint);
+                }
+            }
+        }
+    }
+
+    const [_, finalLat, finalLon] = path[path.length - 1];
+    newpath.push([finalLat, finalLon]);
+    return newpath;
+};
+
+const createPointGeoJSON = (path: [number, number][]) => {
+    return {
+        type: 'FeatureCollection',
+        features: path.map(([lat, lon]) => ({
+            type: 'Feature',
+            geometry: {
+                type: 'Point',
+                coordinates: [lon, lat]
+            }
+        }))
+    };
+};
+
+const addSVGImageToMap = (map: any) => {
+    const svgUrl = '/vite.svg'; // SVG 이미지 경로
+    const img = new Image();
+    img.src = svgUrl;
+
+    img.onload = () => {
+        map.addImage('custom-airport-icon', img, { sdf: true });
+    };
+};
+
+const FlightOnMap: React.FC = () => {
+    const mapRef = useRef<MapRef>(null);
+    const [numRoute, setNumRoute] = useState(-1);
+
+    const addOrUpdateRouteLayer = (map: any, route: FeatureCollection) => {
+        console.log(route);
+        if (map.getSource('route')) {
+            // 이미 존재하는 경로 데이터 업데이트
+            map.getSource('route').setData(route);
+        } else {
+            // 새로운 경로 데이터 추가
+            map.addSource('route', {
+                type: 'geojson',
+                data: route,
+            });
+
+            map.addLayer({
+                id: 'route',
+                source: 'route',
+                type: 'line',
+                paint: {
+                    'line-width': 4,
+                    'line-color': 'blue',
+                    'line-opacity': 0.8,
+                },
+            });
+            addSVGImageToMap(map);
+
+            map.addSource('point', {
+                'type': 'geojson',
+                'data': {
+                    'type': 'FeatureCollection',
+                    'features': [
+                        {
+                            'type': 'Feature',
+                            'geometry': {
+                                'type': 'Point',
+                                'coordinates': [126.39670000000001, 37.4895], // 좌표 설정
+                            },
+                        },
+                    ],
+                },
+            });
+
+            map.addLayer({
+                'id': 'point',
+                'source': 'point',
+                'type': 'symbol',
+                'layout': {
+                    'icon-image': 'custom-airport-icon', // 커스텀 아이콘 사용
+                    'icon-rotate': ['get', 'bearing'],
+                    'icon-rotation-alignment': 'map',
+                    'icon-overlap': 'always',
+                    'icon-ignore-placement': true,
+                },
+            });
+        };
+    };
+
+    const draw2DLine = () => {
+        const map = mapRef.current?.getMap();
+
+        if (!map) {
+            alert("Map couldn't be loaded.");
+            return;
+        }
+
+        // 경로 데이터 입력 (routes 데이터를 사용)
+        const pathCoordinates = interpolatedRawPath(routes[numRoute].path, 500).map(([lat, lon]) => ({ lat, lon }));
+
+        // 중복 좌표 제거
+        const filteredPathCoordinates = removeDuplicateCoordinates(pathCoordinates);
+
+        // 대권 보간을 적용하여 경로를 생성
+        const interpolatedPath = interpolateGreatCirclePath(filteredPathCoordinates);
+
+        const route: FeatureCollection = {
+            type: 'FeatureCollection',
+            features: [
+                {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: interpolatedPath as number[][], // 보간된 경로 사용
+                    },
+                },
+            ],
+        };
+
+        // GeoJSON 유효성 검사 및 디버깅용 출력
+        console.log('Generated GeoJSON:', route);
+
+        if (map.isStyleLoaded()) {
+            addOrUpdateRouteLayer(map, route);
+        } else {
+            map.on('load', () => {
+                addOrUpdateRouteLayer(map, route);
+            });
+        }
+
+        console.log("draw2dline");
+    };
+
+
+    const drawOrangePoints = () => {
+        const map = mapRef.current?.getMap();
+
+        if (!map) {
+            alert("Map couldn't be loaded.");
+            return;
+        }
+        const pointGeoJSON = createPointGeoJSON(interpolatedRawPath(routes[numRoute].path, 500).map(([lat, lon]) => ([lat, lon])));
+
+        if (map.isStyleLoaded()) {
+            if (!map.getSource('points')) {
+                map.addSource('points', {
+                    type: 'geojson',
+                    data: pointGeoJSON
+                });
+
+                map.addLayer({
+                    id: 'points',
+                    type: 'circle',
+                    source: 'points',
+                    paint: {
+                        'circle-radius': 6,
+                        'circle-color': '#FFA500',  // 주황색
+                        'circle-stroke-width': 1,
+                        'circle-stroke-color': '#fff',
+                    }
+                });
+
+                // 숫자를 표시하는 `symbol` 레이어 추가
+                map.addLayer({
+                    id: 'point-labels',
+                    type: 'symbol',
+                    source: 'points',
+                    layout: {
+                        'text-field': ['get', 'label'],
+                        'text-size': 12,
+                        'text-offset': [0, 1.5],  // 점 위에 숫자가 나타나도록 위치 조정
+                        'text-anchor': 'top'
+                    },
+                    paint: {
+                        'text-color': '#000',  // 숫자 색깔
+                    }
+                });
+            } else {
+                map.getSource('points').setData(pointGeoJSON);
+            }
+        } else {
+            map.on('load', () => {
+                map.addSource('points', {
+                    type: 'geojson',
+                    data: pointGeoJSON
+                });
+
+                map.addLayer({
+                    id: 'points',
+                    type: 'circle',
+                    source: 'points',
+                    paint: {
+                        'circle-radius': 6,
+                        'circle-color': '#FFA500',  // 주황색
+                        'circle-stroke-width': 1,
+                        'circle-stroke-color': '#fff',
+                    }
+                });
+
+                // 숫자를 표시하는 `symbol` 레이어 추가
+                map.addLayer({
+                    id: 'point-labels',
+                    type: 'symbol',
+                    source: 'points',
+                    layout: {
+                        'text-field': ['get', 'label'],
+                        'text-size': 12,
+                        'text-offset': [0, 1.5],  // 점 위에 숫자가 나타나도록 위치 조정
+                        'text-anchor': 'top'
+                    },
+                    paint: {
+                        'text-color': '#000',  // 숫자 색깔
+                    }
+                });
+            });
+        }
+        console.log("draw orange point");
+    };
+
+    const draw = async () => {
+        await Promise.all([
+            drawOrangePoints(),
+            draw2DLine(),
+        ]);
+    }
+    useEffect(() => {
+        if (numRoute == -1) return;
+        draw();
+    }, [numRoute]);
+
+    const handleClickRouteNumber = (n: number) => {
+        setNumRoute(n);
+    }
+
+    return (<>
+        {[...Array(routes.length).keys()]
+            .map((n, index) =>
+                <button key={index} onClick={() => handleClickRouteNumber(n)}>경로{n}</button>)
+        }
+        <Map
+            ref={mapRef}
+            mapLib={maplibregl as any}
+            initialViewState={{
+                longitude: 126.3967,
+                latitude: 37.4895,
+                zoom: 5,
+            }}
+            style={{ width: '100%', height: '600px' }}
+            mapStyle={`https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_KEY}`}
+        />
+    </>);
+};
+
+
 export default FlightOnMap;
+
+
+interface TrackDataStruct {
+    icao24: string;
+    callsign: string;
+    startTime: number;
+    endTime: number;
+    path: [number, number, number, number, number, boolean][];
+    // 0  time  integer  Time which the given waypoint is associated with in seconds since epoch (Unix time).  
+    // 1  latitude  float  WGS-84 latitude in decimal degrees. Can be null.  
+    // 2  longitude  float  WGS-84 longitude in decimal degrees. Can be null.  
+    // 3  baro_altitude  float  Barometric altitude in meters. Can be null.  
+    // 4  true_track  float  True track in decimal degrees clockwise from north (north=0°). Can be null.  
+    // 5  on_ground  boolean  Boolean value which indicates if the position was retrieved from a surface position report.
+};
+const routes: TrackDataStruct[] = [
+    { "icao24": "89905b", "callsign": "TTW603  ", "startTime": 1.72511886E9, "endTime": 1.725125767E9, "path": [[1725118860, 37.5219, 126.4042, 609, 326, false], [1725118864, 37.5241, 126.4024, 914, 326, false], [1725118894, 37.5482, 126.3819, 1219, 325, false], [1725118912, 37.564, 126.3683, 1219, 325, false], [1725118939, 37.5803, 126.3342, 1524, 310, false], [1725118942, 37.5803, 126.3297, 1524, 310, false], [1725118945, 37.5801, 126.325, 1524, 267, false], [1725118948, 37.5799, 126.3203, 1828, 266, false], [1725118952, 37.5796, 126.3138, 1828, 266, false], [1725118969, 37.5788, 126.2875, 1828, 268, false], [1725118987, 37.5788, 126.2572, 2438, 270, false], [1725118991, 37.5788, 126.2515, 2438, 269, false], [1725118993, 37.5786, 126.2475, 2438, 267, false], [1725118996, 37.5782, 126.2427, 2438, 264, false], [1725118998, 37.578, 126.2413, 2438, 260, false], [1725118999, 37.5776, 126.2386, 2438, 256, false], [1725119001, 37.5769, 126.2352, 2438, 255, false], [1725119002, 37.5764, 126.2334, 2438, 251, false], [1725119003, 37.576, 126.2321, 2438, 251, false], [1725119004, 37.5755, 126.2305, 2438, 247, false], [1725119005, 37.575, 126.2289, 2438, 247, false], [1725119006, 37.5744, 126.2275, 2438, 243, false], [1725119007, 37.5741, 126.2266, 2743, 243, false], [1725119008, 37.5731, 126.2244, 2743, 240, false], [1725119010, 37.5719, 126.2219, 2743, 238, false], [1725119011, 37.5711, 126.2205, 2743, 236, false], [1725119012, 37.5708, 126.2199, 2743, 234, false], [1725119013, 37.5695, 126.2178, 2743, 233, false], [1725119014, 37.5692, 126.2172, 2743, 229, false], [1725119016, 37.5673, 126.2145, 2743, 227, false], [1725119017, 37.5659, 126.2128, 2743, 224, false], [1725119018, 37.5649, 126.2116, 2743, 222, false], [1725119019, 37.5639, 126.2105, 2743, 220, false], [1725119020, 37.5628, 126.2094, 2743, 218, false], [1725119022, 37.5606, 126.2073, 2743, 217, false], [1725119023, 37.5601, 126.2068, 2743, 215, false], [1725119024, 37.5585, 126.2056, 2743, 213, false], [1725119025, 37.5575, 126.2048, 2743, 210, false], [1725119027, 37.5552, 126.2033, 2743, 208, false], [1725119028, 37.5539, 126.2025, 2743, 204, false], [1725119029, 37.5522, 126.2016, 3048, 202, false], [1725119030, 37.5515, 126.2012, 3048, 201, false], [1725119032, 37.5487, 126.2, 3048, 199, false], [1725119033, 37.5474, 126.1995, 3048, 195, false], [1725119034, 37.5461, 126.1991, 3048, 195, false], [1725119035, 37.5448, 126.1986, 3048, 192, false], [1725119037, 37.5422, 126.198, 3048, 190, false], [1725119038, 37.5403, 126.1977, 3048, 189, false], [1725119039, 37.5396, 126.1976, 3048, 186, false], [1725119040, 37.5376, 126.1973, 3048, 184, false], [1725119041, 37.5362, 126.1972, 3048, 183, false], [1725119042, 37.5355, 126.1971, 3048, 181, false], [1725119044, 37.5324, 126.1971, 3048, 180, false], [1725119045, 37.531, 126.1971, 3048, 178, false], [1725119046, 37.5296, 126.1973, 3048, 175, false], [1725119048, 37.5268, 126.1977, 3048, 173, false], [1725119049, 37.5248, 126.1981, 3048, 170, false], [1725119050, 37.5235, 126.1984, 3048, 168, false], [1725119052, 37.5206, 126.1993, 3048, 166, false], [1725119053, 37.5199, 126.1996, 3048, 164, false], [1725119054, 37.5177, 126.2005, 3048, 163, false], [1725119055, 37.516, 126.2012, 3048, 160, false], [1725119057, 37.514, 126.2021, 3048, 160, false], [1725119062, 37.5068, 126.2057, 3352, 157, false], [1725119107, 37.4386, 126.2437, 3657, 156, false], [1725119130, 37.4022, 126.2635, 3962, 156, false], [1725119158, 37.3564, 126.2881, 3962, 156, false], [1725119185, 37.3122, 126.3116, 4572, 156, false], [1725119219, 37.2556, 126.3417, 4876, 157, false], [1725119248, 37.2054, 126.3683, 5181, 157, false], [1725119279, 37.15, 126.3976, 5486, 157, false], [1725119283, 37.1426, 126.4014, 5486, 158, false], [1725119286, 37.1373, 126.4038, 5486, 160, false], [1725119289, 37.1312, 126.4062, 5486, 162, false], [1725119290, 37.1295, 126.4068, 5486, 164, false], [1725119292, 37.1257, 126.408, 5486, 166, false], [1725119293, 37.1239, 126.4085, 5486, 167, false], [1725119295, 37.1204, 126.4094, 5486, 169, false], [1725119297, 37.1166, 126.4102, 5486, 171, false], [1725119299, 37.1125, 126.4109, 5486, 172, false], [1725119301, 37.1094, 126.4113, 5486, 173, false], [1725119302, 37.1065, 126.4117, 5486, 175, false], [1725119304, 37.1028, 126.4119, 5486, 176, false], [1725119306, 37.0991, 126.412, 5486, 178, false], [1725119307, 37.0973, 126.4121, 5486, 180, false], [1725119308, 37.0952, 126.412, 5486, 181, false], [1725119311, 37.0893, 126.4117, 5486, 182, false], [1725119312, 37.0872, 126.4115, 5486, 184, false], [1725119314, 37.0834, 126.411, 5791, 186, false], [1725119316, 37.0804, 126.4105, 5791, 187, false], [1725119317, 37.0777, 126.41, 5791, 189, false], [1725119345, 37.0254, 126.3976, 6096, 190, false], [1725119379, 36.9603, 126.3828, 6400, 190, false], [1725119825, 36.0214, 126.1754, 9144, 190, false], [1725119830, 36.01, 126.1729, 9448, 190, false], [1725119875, 35.9106, 126.1512, 9753, 190, false], [1725119927, 35.7975, 126.1267, 10058, 189, false], [1725120122, 35.3791, 126.0362, 10972, 189, false], [1725121021, 33.4137, 125.625, 10668, 189, false], [1725121022, 33.4114, 125.6245, 10972, 189, false], [1725121044, 33.3631, 125.6148, 10668, 189, false], [1725121045, 33.3612, 125.6143, 10972, 189, false], [1725121046, 33.3591, 125.6139, 10668, 189, false], [1725121077, 33.2903, 125.5998, 10972, 189, false], [1725121078, 33.2882, 125.5993, 10668, 189, false], [1725121079, 33.2861, 125.5989, 10972, 189, false], [1725121083, 33.2776, 125.5972, 10668, 189, false], [1725121084, 33.2753, 125.5967, 10972, 189, false], [1725121326, 32.7431, 125.4889, 10668, 189, false], [1725121327, 32.7409, 125.4884, 10972, 189, false], [1725121334, 32.7258, 125.4854, 10668, 189, false], [1725121335, 32.7236, 125.485, 10972, 189, false], [1725121338, 32.7174, 125.4837, 10668, 189, false], [1725121339, 32.7141, 125.483, 10972, 189, false], [1725121359, 32.6712, 125.4745, 10668, 189, false], [1725121361, 32.6662, 125.4735, 10972, 189, false], [1725121362, 32.665, 125.4733, 10668, 189, false], [1725121364, 32.6605, 125.4724, 10972, 189, false], [1725121366, 32.6558, 125.4714, 10668, 189, false], [1725121367, 32.6535, 125.471, 10972, 189, false], [1725121445, 32.483, 125.4367, 10668, 189, false], [1725121470, 32.4273, 125.4256, 10972, 189, false], [1725121472, 32.4229, 125.4248, 10668, 189, false], [1725121474, 32.4185, 125.4238, 10972, 189, false], [1725121477, 32.4124, 125.4226, 10668, 189, false], [1725121478, 32.4103, 125.4222, 10972, 189, false], [1725121481, 32.4034, 125.4209, 10668, 189, false], [1725121482, 32.4011, 125.4204, 10972, 189, false], [1725121483, 32.3989, 125.4199, 10668, 189, false], [1725121526, 32.3052, 125.4014, 10972, 189, false], [1725121550, 32.2524, 125.3909, 10972, 189, false], [1725124180, 27.0064, 122.9433, 10972, 215, false], [1725124207, 26.9583, 122.905, 10668, 215, false], [1725124303, 26.786, 122.7685, 10363, 215, false], [1725124339, 26.7202, 122.7165, 10058, 215, false], [1725124371, 26.6631, 122.6714, 9753, 215, false], [1725124401, 26.6081, 122.6279, 9448, 215, false], [1725124431, 26.5535, 122.5849, 9144, 215, false], [1725124459, 26.5023, 122.5447, 8839, 215, false], [1725124491, 26.4443, 122.4989, 8229, 215, false], [1725124519, 26.3953, 122.4603, 8229, 215, false], [1725124540, 26.3579, 122.4311, 7924, 215, false], [1725124569, 26.3071, 122.3914, 7620, 215, false], [1725124599, 26.2562, 122.3515, 7315, 215, false], [1725124628, 26.2076, 122.3133, 7010, 215, false], [1725124657, 26.16, 122.2761, 6705, 215, false], [1725124681, 26.1224, 122.2467, 6400, 215, false], [1725124708, 26.0772, 122.2121, 6096, 214, false], [1725124747, 26.0163, 122.1655, 5791, 214, false], [1725124775, 25.9735, 122.1328, 5486, 214, false], [1725124804, 25.9296, 122.0993, 5181, 214, false], [1725124834, 25.8849, 122.0653, 4876, 214, false], [1725124866, 25.8384, 122.0297, 4572, 214, false], [1725124895, 25.7959, 121.9974, 3962, 214, false], [1725124936, 25.7382, 121.9535, 3962, 214, false], [1725124973, 25.686, 121.9139, 3962, 214, false], [1725124995, 25.6557, 121.8903, 3962, 217, false], [1725124997, 25.653, 121.8879, 3962, 219, false], [1725124999, 25.6505, 121.8855, 3962, 221, false], [1725125001, 25.6481, 121.883, 3962, 223, false], [1725125004, 25.6446, 121.879, 3962, 225, false], [1725125005, 25.6435, 121.8778, 3962, 227, false], [1725125007, 25.6412, 121.8748, 3962, 230, false], [1725125008, 25.6403, 121.8735, 3962, 232, false], [1725125010, 25.6382, 121.8705, 3962, 233, false], [1725125011, 25.6372, 121.8689, 3962, 235, false], [1725125012, 25.6363, 121.8674, 3962, 236, false], [1725125014, 25.6344, 121.8641, 3962, 238, false], [1725125025, 25.6253, 121.8464, 3657, 241, false], [1725125061, 25.596, 121.7881, 3352, 240, false], [1725125119, 25.5525, 121.7038, 3352, 241, false], [1725125123, 25.5498, 121.698, 3352, 244, false], [1725125126, 25.548, 121.6936, 3352, 246, false], [1725125129, 25.5464, 121.6896, 3352, 247, false], [1725125133, 25.5445, 121.6841, 3352, 249, false], [1725125155, 25.5353, 121.6534, 3048, 252, false], [1725125192, 25.5209, 121.6025, 2743, 252, false], [1725125218, 25.5111, 121.5675, 2743, 252, false], [1725125231, 25.5048, 121.5485, 2743, 244, false], [1725125234, 25.5026, 121.544, 2438, 242, false], [1725125235, 25.5019, 121.5427, 2438, 240, false], [1725125236, 25.5012, 121.5415, 2438, 238, false], [1725125239, 25.4994, 121.5382, 2438, 236, false], [1725125268, 25.476, 121.5014, 1828, 234, false], [1725125279, 25.4679, 121.489, 1828, 234, false], [1725125340, 25.4174, 121.4177, 1524, 211, false], [1725125341, 25.4156, 121.4167, 1524, 207, false], [1725125344, 25.4131, 121.4154, 1524, 205, false], [1725125345, 25.4118, 121.4148, 1524, 202, false], [1725125347, 25.4086, 121.4136, 1524, 198, false], [1725125350, 25.4054, 121.4126, 1524, 193, false], [1725125351, 25.4035, 121.4122, 1524, 192, false], [1725125352, 25.4028, 121.4121, 1524, 190, false], [1725125354, 25.4001, 121.4117, 1524, 188, false], [1725125357, 25.3954, 121.4114, 1524, 185, false], [1725125360, 25.3917, 121.4116, 1524, 174, false], [1725125371, 25.3779, 121.4144, 1219, 171, false], [1725125375, 25.3725, 121.4158, 1219, 166, false], [1725125433, 25.3059, 121.4346, 1219, 167, false], [1725125434, 25.3042, 121.4349, 1219, 169, false], [1725125436, 25.3021, 121.4353, 1219, 171, false], [1725125438, 25.3003, 121.4355, 1219, 174, false], [1725125440, 25.2982, 121.4356, 1219, 178, false], [1725125441, 25.2971, 121.4356, 1219, 180, false], [1725125442, 25.2955, 121.4355, 1219, 182, false], [1725125443, 25.295, 121.4355, 1219, 184, false], [1725125445, 25.292, 121.435, 1219, 187, false], [1725125448, 25.2887, 121.4343, 1219, 187, false], [1725125451, 25.2859, 121.4336, 1219, 193, false], [1725125454, 25.2832, 121.4329, 914, 194, false], [1725125495, 25.2418, 121.4202, 914, 196, false], [1725125501, 25.2356, 121.4176, 914, 198, false], [1725125502, 25.2349, 121.4172, 914, 206, false], [1725125503, 25.2341, 121.4167, 914, 210, false], [1725125504, 25.2333, 121.4162, 914, 210, false], [1725125506, 25.2316, 121.4149, 914, 214, false], [1725125509, 25.2292, 121.413, 914, 216, false], [1725125510, 25.2285, 121.4123, 914, 220, false], [1725125512, 25.2271, 121.4109, 914, 222, false], [1725125514, 25.2258, 121.4095, 914, 224, false], [1725125517, 25.2238, 121.4074, 914, 226, false], [1725125521, 25.2214, 121.4045, 914, 227, false], [1725125567, 25.1945, 121.3707, 609, 229, false], [1725125639, 25.1572, 121.3232, 304, 229, false], [1725125731, 25.1192, 121.2748, 0, 229, false], [1725125767, 25.105, 121.2568, 0, 229, false]] }
+    , { "icao24": "71c077", "callsign": "KAL321  ", "startTime": 1.725119683E9, "endTime": 1.725148924E9, "path": [[1725119683, 37.5264, 126.3999, 914, 325, false], [1725119687, 37.5288, 126.3978, 1219, 325, false], [1725119720, 37.5587, 126.3726, 1524, 326, false], [1725119723, 37.5623, 126.3694, 1524, 326, false], [1725119760, 37.5795, 126.3186, 1828, 271, false], [1725119775, 37.5799, 126.2934, 2438, 270, false], [1725119785, 37.5797, 126.2781, 2438, 268, false], [1725119787, 37.5796, 126.2747, 2438, 266, false], [1725119789, 37.5793, 126.2716, 2438, 263, false], [1725119791, 37.5788, 126.268, 2438, 262, false], [1725119792, 37.5786, 126.2666, 2438, 259, false], [1725119793, 37.5783, 126.265, 2743, 259, false], [1725119794, 37.578, 126.2632, 2743, 256, false], [1725119796, 37.577, 126.2594, 2743, 256, false], [1725119797, 37.5768, 126.2586, 2743, 253, false], [1725119798, 37.576, 126.2562, 2743, 250, false], [1725119799, 37.5758, 126.2555, 2743, 248, false], [1725119800, 37.5753, 126.254, 2743, 246, false], [1725119801, 37.5747, 126.2524, 2743, 245, false], [1725119802, 37.5741, 126.2509, 2743, 243, false], [1725119803, 37.5734, 126.2493, 2743, 242, false], [1725119805, 37.5721, 126.2466, 2743, 240, false], [1725119806, 37.5718, 126.2461, 2743, 237, false], [1725119807, 37.5702, 126.2433, 2743, 237, false], [1725119809, 37.569, 126.2411, 2743, 234, false], [1725119810, 37.5681, 126.2398, 2743, 231, false], [1725119811, 37.5668, 126.2379, 3048, 231, false], [1725119812, 37.5664, 126.2374, 3048, 228, false], [1725119813, 37.5653, 126.2359, 3048, 228, false], [1725119814, 37.5644, 126.2348, 3048, 225, false], [1725119816, 37.5625, 126.2327, 3048, 224, false], [1725119817, 37.5613, 126.2314, 3048, 222, false], [1725119818, 37.5604, 126.2305, 3048, 221, false], [1725119819, 37.5598, 126.23, 3048, 219, false], [1725119821, 37.5576, 126.2279, 3048, 216, false], [1725119822, 37.5558, 126.2264, 3048, 215, false], [1725119823, 37.5544, 126.2254, 3048, 213, false], [1725119824, 37.5535, 126.2247, 3048, 212, false], [1725119825, 37.5518, 126.2236, 3048, 209, false], [1725119826, 37.5512, 126.2232, 3048, 207, false], [1725119828, 37.5492, 126.222, 3048, 206, false], [1725119829, 37.5476, 126.2212, 3048, 204, false], [1725119830, 37.5461, 126.2205, 3048, 202, false], [1725119831, 37.5447, 126.2199, 3048, 201, false], [1725119832, 37.5424, 126.2191, 3048, 199, false], [1725119833, 37.5413, 126.2188, 3048, 197, false], [1725119834, 37.5405, 126.2185, 3048, 195, false], [1725119835, 37.5384, 126.2181, 3048, 191, false], [1725119836, 37.5372, 126.2178, 3352, 191, false], [1725119837, 37.5358, 126.2176, 3352, 189, false], [1725119838, 37.5345, 126.2174, 3352, 187, false], [1725119839, 37.533, 126.2174, 3352, 186, false], [1725119840, 37.5313, 126.2173, 3352, 182, false], [1725119842, 37.5277, 126.2175, 3352, 180, false], [1725119843, 37.5264, 126.2176, 3352, 177, false], [1725119844, 37.5247, 126.2179, 3352, 175, false], [1725119846, 37.5217, 126.2184, 3352, 173, false], [1725119847, 37.5201, 126.2188, 3352, 172, false], [1725119848, 37.5186, 126.2192, 3352, 170, false], [1725119849, 37.5171, 126.2197, 3352, 167, false], [1725119851, 37.5143, 126.2206, 3352, 165, false], [1725119852, 37.5126, 126.2212, 3352, 164, false], [1725119854, 37.5097, 126.2224, 3352, 163, false], [1725119857, 37.5042, 126.2247, 3352, 161, false], [1725119863, 37.4955, 126.2288, 3352, 158, false], [1725119871, 37.4827, 126.2355, 3657, 157, false], [1725119890, 37.4512, 126.253, 3962, 155, false], [1725119906, 37.4246, 126.2679, 3962, 156, false], [1725119924, 37.3943, 126.2842, 4572, 157, false], [1725119941, 37.3652, 126.2995, 4876, 157, false], [1725119960, 37.3316, 126.3169, 5181, 157, false], [1725119981, 37.2931, 126.3364, 5486, 158, false], [1725119996, 37.2656, 126.3502, 5486, 158, false], [1725120004, 37.2503, 126.3572, 5791, 160, false], [1725120009, 37.2406, 126.3608, 5791, 163, false], [1725120012, 37.2349, 126.3626, 5791, 165, false], [1725120015, 37.2286, 126.3643, 5791, 167, false], [1725120018, 37.2226, 126.3657, 5791, 169, false], [1725120021, 37.2166, 126.3668, 5791, 171, false], [1725120023, 37.2131, 126.3673, 5791, 173, false], [1725120025, 37.208, 126.3679, 6096, 174, false], [1725120029, 37.2003, 126.3686, 6096, 176, false], [1725120032, 37.1941, 126.3687, 6096, 178, false], [1725120035, 37.1878, 126.3687, 6096, 180, false], [1725120037, 37.1833, 126.3684, 6096, 182, false], [1725120041, 37.1758, 126.3677, 6096, 184, false], [1725120044, 37.1697, 126.3668, 6400, 186, false], [1725120046, 37.1657, 126.366, 6400, 187, false], [1725120049, 37.1601, 126.3648, 6400, 189, false], [1725120064, 37.1298, 126.3569, 6705, 191, false], [1725120085, 37.0879, 126.3455, 7010, 192, false], [1725120106, 37.0449, 126.3332, 7315, 192, false], [1725120131, 36.9931, 126.3186, 7620, 192, false], [1725120153, 36.9461, 126.3055, 7924, 192, false], [1725120176, 36.8964, 126.2918, 8229, 192, false], [1725120202, 36.8393, 126.2763, 8229, 192, false], [1725120226, 36.7857, 126.262, 8839, 192, false], [1725120260, 36.7092, 126.2414, 9144, 192, false], [1725120494, 36.1849, 126.1006, 11582, 192, false], [1725122145, 32.5264, 125.1685, 11582, 191, false], [1725129125, 23.3978, 113.4187, 2438, 188, false], [1725129167, 23.3506, 113.4107, 2438, 189, false], [1725146810, 33.9114, 126.7356, 9144, 4, false], [1725146865, 34.0249, 126.7476, 8839, 5, false], [1725146930, 34.1559, 126.7613, 8229, 5, false], [1725146944, 34.1837, 126.7642, 8839, 5, false], [1725147274, 34.8425, 126.8344, 8229, 5, false], [1725147326, 34.9456, 126.8456, 8229, 5, false], [1725147378, 35.0463, 126.8564, 7924, 5, false], [1725147394, 35.0775, 126.8598, 8229, 5, false], [1725147585, 35.4484, 126.9002, 8229, 5, false], [1725148329, 36.8264, 126.8793, 5486, 314, false], [1725148366, 36.8688, 126.8255, 5181, 314, false], [1725148400, 36.9088, 126.7751, 4876, 314, false], [1725148469, 36.9852, 126.6784, 4876, 314, false], [1725148604, 37.0757, 126.4824, 3962, 323, false], [1725148635, 37.1106, 126.4505, 3657, 324, false], [1725148920, 37.4028, 126.1651, 1828, 322, false], [1725148924, 37.4065, 126.1614, 1828, 322, false]] }
+    , { "icao24": "886288", "callsign": "TAX703  ", "startTime": 1.725121959E9, "endTime": 1.725139458E9, "path": [[1725121959, 37.5443, 126.3849, 914, 326, false], [1725121976, 37.5576, 126.3737, 914, 326, false], [1725122051, 37.5776, 126.2774, 1524, 260, false], [1725122057, 37.5756, 126.2694, 1524, 258, false], [1725122065, 37.5706, 126.2585, 1524, 243, false], [1725122066, 37.5698, 126.2572, 1524, 235, false], [1725122069, 37.5673, 126.2535, 1828, 228, false], [1725122070, 37.5664, 126.2524, 1828, 227, false], [1725122071, 37.5655, 126.2512, 1828, 225, false], [1725122074, 37.5636, 126.249, 1828, 220, false], [1725122075, 37.5626, 126.248, 1828, 220, false], [1725122076, 37.5603, 126.2459, 1828, 217, false], [1725122077, 37.5598, 126.2455, 1828, 216, false], [1725122078, 37.5587, 126.2446, 1828, 214, false], [1725122080, 37.5571, 126.2433, 1828, 212, false], [1725122081, 37.5558, 126.2425, 1828, 209, false], [1725122082, 37.5541, 126.2413, 1828, 209, false], [1725122083, 37.553, 126.2407, 1828, 206, false], [1725122084, 37.5523, 126.2404, 1828, 204, false], [1725122085, 37.5512, 126.2398, 1828, 202, false], [1725122086, 37.5499, 126.2392, 1828, 201, false], [1725122087, 37.5481, 126.2384, 1828, 199, false], [1725122088, 37.5468, 126.2379, 1828, 197, false], [1725122089, 37.5458, 126.2376, 1828, 195, false], [1725122090, 37.5445, 126.2372, 1828, 194, false], [1725122091, 37.5427, 126.2369, 1828, 192, false], [1725122092, 37.5416, 126.2366, 1828, 190, false], [1725122094, 37.5396, 126.2364, 1828, 188, false], [1725122095, 37.5378, 126.2361, 1828, 185, false], [1725122096, 37.5371, 126.2361, 1828, 183, false], [1725122097, 37.5356, 126.2361, 1828, 181, false], [1725122098, 37.5349, 126.2361, 1828, 180, false], [1725122099, 37.5323, 126.2362, 1828, 178, false], [1725122101, 37.531, 126.2364, 1828, 175, false], [1725122103, 37.5284, 126.2369, 1828, 171, false], [1725122104, 37.5266, 126.2374, 1828, 169, false], [1725122105, 37.5254, 126.2377, 1828, 167, false], [1725122106, 37.5234, 126.2383, 1828, 166, false], [1725122107, 37.5227, 126.2386, 1828, 164, false], [1725122109, 37.52, 126.2397, 1828, 162, false], [1725122124, 37.501, 126.2482, 2438, 160, false], [1725122151, 37.4656, 126.2631, 2743, 161, false], [1725122179, 37.4278, 126.2788, 3048, 160, false], [1725122216, 37.3779, 126.3037, 3352, 157, false], [1725122313, 37.2256, 126.3788, 3962, 158, false], [1725122340, 37.1816, 126.4003, 3962, 158, false], [1725122371, 37.1289, 126.4259, 4572, 158, false], [1725122404, 37.0729, 126.453, 4876, 158, false], [1725122444, 37.0057, 126.4855, 5181, 158, false], [1725122568, 36.7805, 126.5942, 5791, 158, false], [1725122578, 36.7625, 126.6023, 6096, 161, false], [1725122580, 36.7584, 126.6038, 6096, 163, false], [1725122582, 36.7542, 126.6051, 6096, 165, false], [1725122585, 36.7484, 126.6066, 6096, 167, false], [1725122586, 36.7462, 126.6071, 6096, 169, false], [1725122588, 36.7441, 126.6075, 6096, 170, false], [1725122590, 36.7388, 126.6084, 6096, 172, false], [1725122591, 36.7368, 126.6086, 6096, 173, false], [1725122593, 36.7327, 126.609, 6096, 175, false], [1725122595, 36.7285, 126.6092, 6096, 177, false], [1725122597, 36.7245, 126.6092, 6096, 179, false], [1725122598, 36.7225, 126.6091, 6096, 180, false], [1725122601, 36.7175, 126.6088, 6096, 182, false], [1725122603, 36.7129, 126.6084, 6096, 184, false], [1725122606, 36.7073, 126.6076, 6096, 186, false], [1725122609, 36.7017, 126.6065, 6096, 189, false], [1725122612, 36.6955, 126.605, 6096, 191, false], [1725122617, 36.6855, 126.602, 6400, 193, false], [1725122664, 36.5956, 126.577, 6705, 192, false], [1725122712, 36.504, 126.5523, 7010, 192, false], [1725123046, 35.8081, 126.3682, 8229, 192, false], [1725123083, 35.7277, 126.3473, 8839, 191, false], [1725123270, 35.3059, 126.238, 9753, 191, false], [1725123296, 35.2501, 126.2236, 10058, 191, false], [1725123516, 34.7545, 126.0969, 11277, 191, false], [1725123753, 34.2259, 125.9635, 11582, 0, false], [1725123766, 34.1974, 125.9563, 11582, 191, false], [1725124582, 32.3856, 125.5115, 11582, 191, false], [1725127085, 27.1501, 123.3868, 11582, 204, false], [1725127971, 25.3508, 122.5053, 11887, 203, false], [1725128056, 25.1783, 122.4224, 12192, 203, false], [1725128864, 23.5484, 121.6222, 12192, 204, false], [1725137833, 14.8954, 103.1531, 12192, 252, false], [1725137896, 14.8515, 103.0114, 11887, 252, false], [1725137957, 14.8093, 102.8752, 11582, 252, false], [1725137968, 14.8011, 102.8487, 11277, 252, false], [1725137996, 14.7821, 102.7876, 10972, 252, false], [1725138021, 14.7653, 102.7334, 10668, 252, false], [1725138056, 14.7403, 102.6534, 10363, 252, false], [1725138084, 14.7214, 102.5924, 10058, 252, false], [1725138118, 14.6981, 102.5179, 9753, 252, false], [1725138154, 14.6743, 102.4414, 9448, 252, false], [1725138192, 14.6501, 102.3644, 9144, 252, false], [1725138251, 14.6114, 102.2405, 8839, 252, false], [1725138271, 14.5984, 102.1992, 8229, 252, false], [1725138297, 14.5816, 102.1458, 8229, 252, false], [1725138335, 14.5581, 102.0711, 7924, 252, false], [1725138373, 14.5345, 101.9959, 7620, 252, false], [1725138410, 14.5114, 101.9229, 7315, 252, false], [1725138445, 14.4901, 101.8552, 7010, 251, false], [1725138476, 14.4712, 101.7963, 7010, 250, false], [1725138480, 14.4683, 101.7888, 6705, 247, false], [1725138483, 14.4659, 101.7833, 6705, 246, false], [1725138487, 14.4625, 101.776, 6705, 243, false], [1725138491, 14.4588, 101.7688, 6705, 241, false], [1725138517, 14.4332, 101.7248, 6400, 239, false], [1725138542, 14.4086, 101.6817, 6096, 239, false], [1725138568, 14.3825, 101.6361, 5791, 239, false], [1725138610, 14.342, 101.5653, 5486, 239, false], [1725138644, 14.3099, 101.5095, 5181, 239, false], [1725138681, 14.2761, 101.4506, 4876, 239, false], [1725138701, 14.2581, 101.4192, 4572, 240, false], [1725138720, 14.2417, 101.3889, 3962, 241, false], [1725138738, 14.2269, 101.361, 3962, 241, false], [1725138756, 14.2122, 101.3336, 3657, 241, false], [1725138775, 14.1969, 101.3053, 3352, 240, false], [1725138795, 14.181, 101.2759, 3048, 240, false], [1725138837, 14.1503, 101.2196, 2743, 240, false], [1725138867, 14.1303, 101.1829, 2438, 241, false], [1725138892, 14.1136, 101.152, 1828, 240, false], [1725138922, 14.0938, 101.1157, 1828, 240, false], [1725138961, 14.069, 101.0704, 1828, 240, false], [1725138964, 14.0672, 101.0676, 1828, 237, false], [1725138968, 14.0643, 101.0631, 1828, 235, false], [1725138971, 14.0623, 101.0603, 1524, 233, false], [1725138972, 14.0613, 101.059, 1524, 232, false], [1725139026, 14.017, 101.0052, 1219, 230, false], [1725139099, 13.9595, 100.9341, 914, 230, false], [1725139248, 13.8645, 100.8168, 609, 230, false], [1725139260, 13.8582, 100.8092, 609, 229, false], [1725139261, 13.8579, 100.8089, 609, 226, false], [1725139262, 13.8573, 100.8082, 609, 225, false], [1725139264, 13.8561, 100.8072, 609, 222, false], [1725139265, 13.8552, 100.8065, 609, 220, false], [1725139266, 13.8548, 100.8062, 609, 217, false], [1725139267, 13.8538, 100.8056, 609, 214, false], [1725139268, 13.853, 100.8052, 609, 211, false], [1725139269, 13.8523, 100.8048, 609, 209, false], [1725139270, 13.8514, 100.8044, 609, 207, false], [1725139271, 13.851, 100.8042, 609, 205, false], [1725139272, 13.8502, 100.8038, 609, 203, false], [1725139273, 13.8493, 100.8035, 609, 201, false], [1725139276, 13.8474, 100.8027, 609, 199, false], [1725139280, 13.844, 100.8017, 609, 196, false], [1725139357, 13.7856, 100.7858, 304, 194, false], [1725139439, 13.7326, 100.7719, 0, 194, false], [1725139458, 13.7208, 100.7687, 0, 194, false]] }
+    , { "icao24": "71be29", "callsign": "KAL213  ", "startTime": 1.725126925E9, "endTime": 1.725166042E9, "path": [[1725126925, 37.4973, 126.2928, 1524, 143, false], [1725126949, 37.4697, 126.3191, 1828, 141, false], [1725126978, 37.4355, 126.3524, 1828, 142, false], [1725127010, 37.3968, 126.3899, 2438, 142, false], [1725127040, 37.3598, 126.4255, 2743, 142, false], [1725127046, 37.3526, 126.4323, 2743, 142, false], [1725127051, 37.3463, 126.4387, 2743, 139, false], [1725127054, 37.3423, 126.4433, 2743, 137, false], [1725127057, 37.3399, 126.4463, 2743, 136, false], [1725127059, 37.3378, 126.4494, 2743, 130, false], [1725127060, 37.3364, 126.4517, 2743, 128, false], [1725127061, 37.3358, 126.4526, 2743, 127, false], [1725127064, 37.3332, 126.4576, 2743, 122, false], [1725127066, 37.3316, 126.4612, 2743, 118, false], [1725127110, 37.3234, 126.5521, 3048, 90, false], [1725127131, 37.323, 126.5997, 3352, 90, false], [1725127204, 37.3212, 126.7745, 3657, 90, false], [1725127242, 37.32, 126.8718, 3962, 90, false], [1725127276, 37.3191, 126.959, 3962, 88, false], [1725127279, 37.3193, 126.9671, 3962, 86, false], [1725127282, 37.3198, 126.9749, 3962, 84, false], [1725127284, 37.3203, 126.9798, 3962, 82, false], [1725127287, 37.3212, 126.9873, 3962, 80, false], [1725127289, 37.322, 126.9926, 3962, 78, false], [1725127291, 37.323, 126.9985, 3962, 77, false], [1725127294, 37.3243, 127.0054, 3962, 75, false], [1725127297, 37.326, 127.0129, 3962, 73, false], [1725127300, 37.328, 127.0206, 3962, 71, false], [1725127303, 37.3302, 127.0288, 3962, 69, false], [1725127306, 37.3323, 127.0353, 3962, 68, false], [1725127309, 37.3347, 127.0426, 3962, 66, false], [1725127312, 37.3375, 127.0499, 3962, 64, false], [1725127315, 37.3396, 127.0552, 3962, 62, false], [1725127319, 37.3443, 127.0658, 4572, 60, false], [1725127359, 37.3861, 127.1575, 4876, 60, false], [1725127394, 37.4228, 127.2382, 4876, 60, false], [1725127398, 37.4258, 127.2453, 4876, 62, false], [1725127403, 37.4305, 127.2576, 5181, 65, false], [1725129775, 37.7619, 134.4191, 9448, 85, false], [1725129804, 37.7673, 134.507, 9448, 85, false], [1725131361, 37.9626, 139.1491, 9448, 88, false], [1725131364, 37.9633, 139.1583, 9448, 83, false], [1725131858, 38.109, 140.6042, 9448, 83, false], [1725132093, 38.0958, 141.2994, 9448, 98, false], [1725132112, 38.0897, 141.3559, 9448, 98, false], [1725161673, 38.0439, -125.8671, 10363, 121, false], [1725162485, 37.0142, -123.8475, 10058, 123, false], [1725162545, 36.9363, -123.6994, 9753, 123, false], [1725162577, 36.8947, -123.6207, 10058, 123, false], [1725163218, 36.0418, -122.0461, 10058, 124, false], [1725163629, 35.4798, -121.0475, 10058, 126, false], [1725163638, 35.4667, -121.0271, 10058, 128, false], [1725163648, 35.4511, -121.0048, 10058, 131, false], [1725163660, 35.4324, -120.9797, 10058, 132, false], [1725163672, 35.4113, -120.9534, 10058, 135, false], [1725163686, 35.3866, -120.925, 10058, 137, false], [1725163983, 34.8418, -120.3701, 9753, 140, false], [1725164037, 34.7422, -120.27, 9448, 140, false], [1725164097, 34.6323, -120.1597, 9144, 140, false], [1725164159, 34.5237, -120.051, 8839, 140, false], [1725164209, 34.4391, -119.9668, 8229, 140, false], [1725164257, 34.3601, -119.8883, 8229, 140, false], [1725164307, 34.2779, -119.8068, 7924, 140, false], [1725164356, 34.1998, -119.7296, 7620, 140, false], [1725164406, 34.1215, -119.6524, 7315, 140, false], [1725164457, 34.0434, -119.5756, 7010, 140, false], [1725164506, 33.9693, -119.5028, 6705, 140, false], [1725164536, 33.9248, -119.4592, 6705, 139, false], [1725164541, 33.918, -119.4518, 6705, 137, false], [1725164545, 33.9125, -119.4454, 6705, 135, false], [1725164550, 33.9055, -119.4365, 6400, 132, false], [1725164551, 33.9043, -119.435, 6400, 132, false], [1725164556, 33.8984, -119.4267, 6400, 129, false], [1725164561, 33.8922, -119.4174, 6400, 127, false], [1725164566, 33.8869, -119.4087, 6400, 125, false], [1725164571, 33.8811, -119.3983, 6400, 123, false], [1725164599, 33.8541, -119.3441, 6096, 120, false], [1725164697, 33.7619, -119.1568, 5791, 120, false], [1725164891, 33.5819, -118.7961, 5791, 122, false], [1725164902, 33.5707, -118.7763, 5486, 125, false], [1725164914, 33.5576, -118.7553, 5486, 127, false], [1725164970, 33.493, -118.6625, 5181, 130, false], [1725165037, 33.4171, -118.5548, 4876, 129, false], [1725165085, 33.3632, -118.478, 4876, 128, false], [1725165088, 33.3601, -118.4729, 4876, 125, false], [1725165090, 33.3582, -118.4697, 4876, 124, false], [1725165092, 33.3564, -118.4662, 4876, 122, false], [1725165094, 33.3548, -118.4631, 4876, 120, false], [1725165096, 33.353, -118.4591, 4876, 118, false], [1725165098, 33.3513, -118.4551, 4876, 116, false], [1725165100, 33.3503, -118.4524, 4876, 114, false], [1725165102, 33.3486, -118.4478, 4876, 113, false], [1725165104, 33.3477, -118.4449, 4572, 111, false], [1725165107, 33.3459, -118.439, 4572, 108, false], [1725165110, 33.3444, -118.4332, 4572, 106, false], [1725165113, 33.3431, -118.4276, 4572, 104, false], [1725165116, 33.3419, -118.4214, 4572, 101, false], [1725165118, 33.3414, -118.4174, 4572, 100, false], [1725165120, 33.3409, -118.4134, 4572, 98, false], [1725165123, 33.3403, -118.4075, 4572, 95, false], [1725165154, 33.3368, -118.3458, 3962, 93, false], [1725165204, 33.3317, -118.2504, 3962, 93, false], [1725165257, 33.3261, -118.1522, 3657, 93, false], [1725165269, 33.325, -118.1298, 3657, 91, false], [1725165271, 33.325, -118.1268, 3657, 89, false], [1725165273, 33.3252, -118.1226, 3657, 87, false], [1725165274, 33.3253, -118.1204, 3657, 85, false], [1725165275, 33.3254, -118.1187, 3657, 84, false], [1725165276, 33.3256, -118.117, 3657, 83, false], [1725165277, 33.3259, -118.115, 3657, 81, false], [1725165278, 33.3261, -118.1135, 3657, 80, false], [1725165279, 33.3264, -118.1113, 3657, 78, false], [1725165280, 33.3267, -118.1096, 3657, 77, false], [1725165281, 33.3272, -118.1076, 3657, 75, false], [1725165282, 33.3276, -118.106, 3657, 74, false], [1725165283, 33.3282, -118.1036, 3657, 73, false], [1725165284, 33.3287, -118.1019, 3657, 71, false], [1725165285, 33.329, -118.1008, 3657, 70, false], [1725165286, 33.3296, -118.099, 3657, 69, false], [1725165287, 33.3302, -118.0971, 3657, 67, false], [1725165288, 33.331, -118.0951, 3657, 66, false], [1725165289, 33.3316, -118.0934, 3657, 65, false], [1725165291, 33.3332, -118.0898, 3657, 62, false], [1725165293, 33.3344, -118.0872, 3657, 60, false], [1725165294, 33.3356, -118.0848, 3657, 59, false], [1725165296, 33.3371, -118.0821, 3657, 56, false], [1725165297, 33.3381, -118.0804, 3657, 55, false], [1725165299, 33.3403, -118.0769, 3657, 52, false], [1725165300, 33.3412, -118.0756, 3657, 51, false], [1725165301, 33.3421, -118.0744, 3657, 50, false], [1725165303, 33.3444, -118.0713, 3657, 48, false], [1725165315, 33.3571, -118.0556, 3352, 45, false], [1725165339, 33.3833, -118.0231, 3352, 45, false], [1725165345, 33.3897, -118.0155, 3352, 43, false], [1725165347, 33.3922, -118.013, 3352, 41, false], [1725165349, 33.3945, -118.0106, 3352, 38, false], [1725165350, 33.3959, -118.0095, 3352, 37, false], [1725165351, 33.397, -118.0085, 3352, 35, false], [1725165352, 33.3984, -118.0074, 3352, 33, false], [1725165355, 33.4023, -118.0048, 3352, 32, false], [1725165356, 33.4038, -118.0039, 3352, 26, false], [1725165357, 33.4052, -118.0031, 3352, 25, false], [1725165358, 33.4064, -118.0025, 3352, 23, false], [1725165359, 33.4079, -118.0018, 3352, 21, false], [1725165360, 33.4093, -118.0012, 3352, 19, false], [1725165361, 33.4109, -118.0006, 3352, 18, false], [1725165362, 33.4122, -118.0002, 3352, 16, false], [1725165363, 33.4137, -117.9997, 3352, 15, false], [1725165364, 33.415, -117.9994, 3352, 13, false], [1725165365, 33.4169, -117.9989, 3352, 11, false], [1725165366, 33.4177, -117.9988, 3352, 10, false], [1725165367, 33.4193, -117.9984, 3048, 9, false], [1725165368, 33.421, -117.9982, 3048, 7, false], [1725165369, 33.4223, -117.998, 3048, 6, false], [1725165370, 33.4238, -117.9979, 3048, 4, false], [1725165371, 33.4258, -117.9977, 3048, 3, false], [1725165372, 33.4273, -117.9977, 3048, 1, false], [1725165374, 33.43, -117.9977, 3048, 359, false], [1725165421, 33.4979, -118.0012, 2743, 357, false], [1725165483, 33.5849, -118.0054, 2438, 357, false], [1725165517, 33.6324, -118.0075, 2438, 357, false], [1725165522, 33.6389, -118.0081, 2438, 354, false], [1725165526, 33.6448, -118.009, 2438, 352, false], [1725165530, 33.6503, -118.01, 1828, 350, false], [1725165534, 33.6553, -118.0112, 1828, 348, false], [1725165539, 33.6627, -118.0132, 1828, 346, false], [1725165598, 33.7392, -118.0394, 1828, 343, false], [1725165698, 33.8601, -118.0776, 1524, 346, false], [1725165704, 33.8665, -118.0795, 1524, 346, false], [1725165709, 33.8718, -118.0812, 1524, 343, false], [1725165711, 33.8737, -118.082, 1524, 341, false], [1725165712, 33.8749, -118.0825, 1524, 340, false], [1725165713, 33.8759, -118.083, 1524, 338, false], [1725165714, 33.8769, -118.0835, 1524, 336, false], [1725165715, 33.8778, -118.084, 1524, 334, false], [1725165716, 33.8791, -118.0848, 1524, 332, false], [1725165717, 33.8795, -118.0852, 1524, 331, false], [1725165718, 33.8806, -118.0859, 1524, 328, false], [1725165719, 33.8815, -118.0867, 1524, 327, false], [1725165720, 33.8825, -118.0875, 1524, 325, false], [1725165721, 33.8828, -118.0878, 1524, 323, false], [1725165722, 33.8841, -118.089, 1524, 321, false], [1725165723, 33.8849, -118.0898, 1524, 320, false], [1725165725, 33.8864, -118.0915, 1524, 317, false], [1725165727, 33.8882, -118.0934, 1524, 316, false], [1725165730, 33.8904, -118.0961, 1524, 314, false], [1725165739, 33.8966, -118.1043, 1219, 312, false], [1725165769, 33.9176, -118.1325, 914, 311, false], [1725165824, 33.9535, -118.1808, 609, 309, false], [1725165825, 33.9541, -118.1817, 609, 308, false], [1725165826, 33.9547, -118.1828, 609, 306, false], [1725165827, 33.955, -118.1834, 609, 304, false], [1725165828, 33.9555, -118.1842, 609, 301, false], [1725165829, 33.9558, -118.1848, 609, 299, false], [1725165830, 33.9565, -118.1864, 609, 296, false], [1725165831, 33.9568, -118.1874, 609, 293, false], [1725165832, 33.9571, -118.1883, 609, 290, false], [1725165833, 33.9573, -118.1894, 609, 288, false], [1725165834, 33.9576, -118.1906, 914, 285, false], [1725165835, 33.9578, -118.1916, 914, 282, false], [1725165836, 33.958, -118.1927, 914, 279, false], [1725165837, 33.9581, -118.1938, 914, 277, false], [1725165838, 33.9581, -118.1944, 914, 274, false], [1725165839, 33.9581, -118.196, 609, 271, false], [1725165840, 33.9581, -118.1971, 609, 268, false], [1725165841, 33.958, -118.1977, 609, 265, false], [1725165842, 33.9579, -118.1988, 609, 263, false], [1725165843, 33.9577, -118.2001, 609, 260, false], [1725165844, 33.9575, -118.2013, 609, 258, false], [1725165845, 33.9573, -118.2021, 609, 256, false], [1725165846, 33.9571, -118.2032, 609, 254, false], [1725165852, 33.9554, -118.2095, 609, 252, false], [1725165855, 33.9547, -118.2125, 609, 255, false], [1725165857, 33.9543, -118.2149, 609, 257, false], [1725165859, 33.954, -118.2167, 609, 259, false], [1725165861, 33.9537, -118.219, 609, 261, false], [1725165904, 33.9493, -118.2652, 304, 263, false], [1725165971, 33.9429, -118.3293, 0, 263, false], [1725166042, 33.9363, -118.3931, 0, 262, false]] }
+    , { "icao24": "71c308", "callsign": "AAR224  ", "startTime": 1.725108796E9, "endTime": 1.725156194E9, "path": [[1725108796, 37.4895, 126.3967, 304, 310, false], [1725108955, 37.5035, 126.1938, 1524, 244, false], [1725108957, 37.5024, 126.191, 1524, 243, false], [1725108958, 37.5017, 126.1895, 1524, 239, false], [1725108961, 37.4996, 126.1855, 1524, 239, false], [1725108968, 37.4931, 126.177, 1524, 218, false], [1725108974, 37.4871, 126.1721, 1524, 207, false], [1725108986, 37.4735, 126.1658, 1828, 198, false], [1725108990, 37.4683, 126.1644, 1828, 198, false], [1725108992, 37.4647, 126.164, 1828, 184, false], [1725108993, 37.464, 126.1639, 1828, 183, false], [1725108994, 37.4633, 126.1638, 1828, 181, false], [1725108995, 37.4618, 126.1638, 1828, 180, false], [1725109012, 37.4402, 126.171, 1828, 148, false], [1725109013, 37.439, 126.1719, 1828, 145, false], [1725109014, 37.4379, 126.1729, 1828, 145, false], [1725109015, 37.4362, 126.1745, 1828, 141, false], [1725109022, 37.43, 126.1821, 1828, 130, false], [1725109023, 37.4287, 126.1841, 1828, 126, false], [1725109024, 37.428, 126.1854, 1828, 124, false], [1725109029, 37.4243, 126.1934, 1828, 115, false], [1725109034, 37.4221, 126.1997, 1828, 113, false], [1725109043, 37.4175, 126.2138, 1828, 112, false], [1725109055, 37.4104, 126.2341, 2438, 114, false], [1725109092, 37.3883, 126.2908, 2743, 115, false], [1725109131, 37.3639, 126.3547, 3048, 115, false], [1725109181, 37.3318, 126.4395, 3048, 115, false], [1725109233, 37.3232, 126.5455, 3352, 89, false], [1725109270, 37.3226, 126.6288, 3657, 90, false], [1725109319, 37.3212, 126.7423, 3962, 90, false], [1725109323, 37.3213, 126.7513, 3962, 88, false], [1725109325, 37.3215, 126.7573, 3962, 86, false], [1725109328, 37.3219, 126.7633, 3962, 84, false], [1725109329, 37.3221, 126.7656, 3962, 83, false], [1725109330, 37.3225, 126.7687, 3962, 81, false], [1725109332, 37.3231, 126.7733, 3962, 79, false], [1725109334, 37.3238, 126.7777, 3962, 77, false], [1725109336, 37.3246, 126.7819, 3962, 75, false], [1725109339, 37.3264, 126.7896, 3962, 72, false], [1725109370, 37.346, 126.8569, 3962, 70, false], [1725109415, 37.3736, 126.959, 4572, 71, false], [1725109465, 37.4048, 127.0745, 4572, 72, false], [1725109470, 37.4077, 127.0865, 4876, 74, false], [1725109471, 37.4081, 127.0886, 4876, 75, false], [1725109474, 37.4095, 127.0955, 4876, 77, false], [1725109477, 37.4104, 127.1015, 4876, 79, false], [1725109480, 37.4117, 127.1109, 4876, 81, false], [1725109483, 37.4124, 127.1184, 4876, 84, false], [1725109507, 37.4155, 127.1783, 4876, 86, false], [1725112023, 37.7603, 134.3959, 10058, 85, false], [1725112090, 37.7721, 134.59, 10058, 85, false], [1725113499, 37.9483, 138.7148, 10058, 88, false], [1725113645, 37.9634, 139.1673, 10058, 82, false], [1725114159, 38.1254, 140.7802, 10058, 83, false], [1725114339, 38.0912, 141.3383, 10058, 98, false], [1725114345, 38.0892, 141.3559, 10058, 98, false], [1725129432, 57.4975, -173.2945, 11277, 67, false], [1725129695, 57.7214, -172.2818, 11277, 68, false], [1725130405, 58.2872, -169.4716, 11277, 70, false], [1725131675, 59.1746, -164.2173, 11277, 72, false], [1725133430, 60.3033, -156.9959, 11277, 75, false], [1725133763, 60.4776, -155.5678, 11277, 76, false], [1725134445, 60.785, -152.612, 11277, 79, false], [1725135065, 61.0106, -149.8285, 10972, 81, false], [1725135066, 61.0109, -149.8242, 11277, 81, false], [1725135512, 61.1361, -147.8204, 11277, 83, false], [1725136196, 61.2705, -144.7051, 11277, 86, false], [1725144664, 55.2864, -104.5348, 11277, 134, false], [1725145514, 53.5842, -101.6611, 11277, 136, false], [1725146763, 51.2935, -97.4572, 11277, 0, false], [1725148756, 47.917, -90.9892, 11277, 128, false], [1725148771, 47.8896, -90.9395, 11277, 131, false], [1725148774, 47.8852, -90.9323, 11277, 132, false], [1725148788, 47.8585, -90.8935, 11277, 139, false], [1725148793, 47.847, -90.8793, 11277, 141, false], [1725148797, 47.8386, -90.8697, 11277, 142, false], [1725148810, 47.8108, -90.84, 10972, 144, false], [1725148812, 47.8068, -90.8359, 11277, 144, false], [1725148931, 47.5561, -90.5721, 10972, 144, false], [1725148932, 47.5552, -90.5712, 11277, 144, false], [1725148935, 47.5487, -90.5644, 10972, 144, false], [1725148938, 47.5425, -90.5578, 11277, 144, false], [1725148993, 47.4268, -90.4361, 11277, 142, false], [1725148997, 47.419, -90.427, 11277, 140, false], [1725149001, 47.4101, -90.4159, 11277, 138, false], [1725149005, 47.4025, -90.4054, 11277, 135, false], [1725149008, 47.3972, -90.3976, 11277, 133, false], [1725149012, 47.3905, -90.3869, 11277, 131, false], [1725149016, 47.3833, -90.3745, 11277, 129, false], [1725149019, 47.3788, -90.3662, 11277, 127, false], [1725149023, 47.3728, -90.3542, 11277, 125, false], [1725149028, 47.3645, -90.3358, 11277, 122, false], [1725149030, 47.3619, -90.3297, 11277, 121, false], [1725149034, 47.3567, -90.3165, 11277, 119, false], [1725149050, 47.3376, -90.2631, 11277, 117, false], [1725149491, 46.7677, -88.789, 11277, 120, false], [1725150582, 45.3532, -85.4388, 11277, 122, false], [1725151825, 43.722, -82.0125, 11277, 124, false], [1725152999, 42.1446, -79.0552, 11277, 127, false], [1725153088, 42.0239, -78.8392, 11277, 124, false], [1725153093, 42.0179, -78.8273, 11277, 122, false], [1725153096, 42.0141, -78.8189, 11277, 120, false], [1725153099, 42.0109, -78.8114, 11277, 118, false], [1725153102, 42.0074, -78.8022, 11277, 116, false], [1725153104, 42.0058, -78.7977, 11277, 114, false], [1725153107, 42.0028, -78.7889, 11277, 112, false], [1725153109, 42.0009, -78.7826, 11277, 111, false], [1725153112, 41.9986, -78.7742, 11277, 109, false], [1725153116, 41.9957, -78.7624, 11277, 106, false], [1725153119, 41.9937, -78.7534, 11277, 104, false], [1725153121, 41.9925, -78.747, 11277, 103, false], [1725153123, 41.9914, -78.7406, 11277, 102, false], [1725153156, 41.9782, -78.6368, 11277, 100, false], [1725153399, 41.8696, -77.8864, 11277, 102, false], [1725153410, 41.8634, -77.8529, 11277, 105, false], [1725153421, 41.8564, -77.8202, 11277, 107, false], [1725153575, 41.7362, -77.3659, 10972, 109, false], [1725153636, 41.688, -77.1866, 10668, 109, false], [1725153698, 41.6389, -77.0045, 10363, 109, false], [1725153759, 41.5901, -76.8254, 10058, 109, false], [1725153818, 41.5427, -76.6522, 9753, 110, false], [1725153879, 41.4954, -76.4808, 9448, 110, false], [1725153939, 41.4498, -76.3168, 9144, 110, false], [1725153999, 41.4057, -76.1591, 8839, 110, false], [1725154059, 41.363, -76.0071, 8229, 110, false], [1725154118, 41.3212, -75.8599, 8229, 110, false], [1725154180, 41.2782, -75.7084, 7924, 110, false], [1725154187, 41.2734, -75.6918, 7924, 111, false], [1725154233, 41.2376, -75.5841, 7620, 113, false], [1725154271, 41.2085, -75.4972, 7315, 113, false], [1725154319, 41.1725, -75.3898, 7010, 113, false], [1725154453, 41.0751, -75.1016, 6705, 114, false], [1725154491, 41.0473, -75.0201, 6400, 114, false], [1725154552, 41.0036, -74.8919, 6400, 114, false], [1725154558, 40.9993, -74.8787, 6400, 111, false], [1725154561, 40.9975, -74.8724, 6400, 109, false], [1725154563, 40.9965, -74.868, 6400, 107, false], [1725154565, 40.9954, -74.8635, 6400, 105, false], [1725154567, 40.9946, -74.8593, 6400, 103, false], [1725154569, 40.9938, -74.8546, 6400, 101, false], [1725154571, 40.9931, -74.8501, 6400, 100, false], [1725154617, 40.983, -74.7467, 6096, 98, false], [1725154755, 40.9488, -74.4386, 5791, 98, false], [1725154857, 40.9233, -74.2112, 5791, 100, false], [1725154860, 40.9224, -74.2052, 5791, 102, false], [1725154862, 40.9216, -74.2009, 5791, 104, false], [1725154864, 40.9205, -74.1957, 5791, 106, false], [1725154865, 40.9201, -74.1936, 5791, 108, false], [1725154867, 40.9191, -74.1901, 5791, 110, false], [1725154868, 40.9185, -74.1881, 5791, 111, false], [1725154869, 40.9177, -74.1855, 5791, 113, false], [1725154871, 40.9163, -74.1816, 5791, 115, false], [1725154872, 40.9156, -74.1796, 5791, 117, false], [1725154873, 40.9147, -74.1775, 5791, 118, false], [1725154874, 40.914, -74.1758, 5791, 120, false], [1725154875, 40.913, -74.1737, 5791, 121, false], [1725154876, 40.9122, -74.1719, 5486, 123, false], [1725154877, 40.9113, -74.1702, 5486, 124, false], [1725154878, 40.9102, -74.1682, 5486, 125, false], [1725154879, 40.9091, -74.1663, 5486, 127, false], [1725154880, 40.9082, -74.1648, 5486, 128, false], [1725154881, 40.9072, -74.1631, 5486, 129, false], [1725154882, 40.9061, -74.1615, 5486, 131, false], [1725154883, 40.9052, -74.16, 5486, 132, false], [1725154884, 40.9039, -74.1583, 5486, 134, false], [1725154885, 40.9026, -74.1566, 5486, 135, false], [1725154886, 40.9019, -74.1558, 5486, 137, false], [1725154888, 40.8996, -74.153, 5486, 139, false], [1725154889, 40.8977, -74.1509, 5486, 141, false], [1725154890, 40.8966, -74.1497, 5486, 142, false], [1725154891, 40.8953, -74.1485, 5486, 144, false], [1725154893, 40.8927, -74.1462, 5486, 146, false], [1725154894, 40.8913, -74.145, 5486, 148, false], [1725154896, 40.8883, -74.1427, 5486, 150, false], [1725154898, 40.8857, -74.1409, 5486, 152, false], [1725154900, 40.8825, -74.1389, 5486, 155, false], [1725154902, 40.8797, -74.1373, 5486, 157, false], [1725154904, 40.8767, -74.1357, 5486, 159, false], [1725154907, 40.8727, -74.1337, 5486, 160, false], [1725154916, 40.8592, -74.1281, 5181, 163, false], [1725154941, 40.8208, -74.1128, 4876, 163, false], [1725154973, 40.7738, -74.094, 4876, 160, false], [1725154975, 40.7712, -74.0928, 4572, 159, false], [1725154976, 40.7696, -74.092, 4572, 157, false], [1725154978, 40.7672, -74.0906, 4572, 155, false], [1725154979, 40.7657, -74.0897, 4572, 154, false], [1725154980, 40.7645, -74.0889, 4572, 152, false], [1725154981, 40.763, -74.0878, 4572, 151, false], [1725154982, 40.7616, -74.0868, 4572, 149, false], [1725154983, 40.7603, -74.0858, 4572, 148, false], [1725154984, 40.7592, -74.0849, 4572, 147, false], [1725154985, 40.758, -74.0839, 4572, 145, false], [1725154987, 40.7552, -74.0814, 4572, 143, false], [1725154989, 40.7529, -74.079, 4572, 141, false], [1725154991, 40.7504, -74.0762, 4572, 139, false], [1725154994, 40.747, -74.0724, 4572, 137, false], [1725155074, 40.6602, -73.9586, 3962, 135, false], [1725155098, 40.6348, -73.9257, 3962, 135, false], [1725155130, 40.6011, -73.8817, 3657, 135, false], [1725155132, 40.599, -73.879, 3657, 136, false], [1725155135, 40.5957, -73.8751, 3657, 138, false], [1725155137, 40.5934, -73.8724, 3657, 140, false], [1725155139, 40.5914, -73.8703, 3657, 142, false], [1725155141, 40.5887, -73.8676, 3657, 144, false], [1725155143, 40.5864, -73.8655, 3657, 146, false], [1725155145, 40.5839, -73.8635, 3657, 147, false], [1725155148, 40.5803, -73.8606, 3657, 150, false], [1725155152, 40.5747, -73.8566, 3657, 152, false], [1725155182, 40.536, -73.8322, 3352, 154, false], [1725155208, 40.5027, -73.8116, 3048, 154, false], [1725155239, 40.4632, -73.7871, 2743, 154, false], [1725155258, 40.4399, -73.7728, 2743, 153, false], [1725155261, 40.4363, -73.7704, 2743, 151, false], [1725155262, 40.4351, -73.7694, 2743, 149, false], [1725155264, 40.4328, -73.7676, 2743, 147, false], [1725155265, 40.4312, -73.7663, 2743, 146, false], [1725155267, 40.4294, -73.7646, 2743, 143, false], [1725155268, 40.4282, -73.7635, 2743, 142, false], [1725155270, 40.4261, -73.7612, 2743, 140, false], [1725155271, 40.4249, -73.7599, 2438, 137, false], [1725155272, 40.424, -73.7587, 2438, 136, false], [1725155273, 40.423, -73.7575, 2438, 134, false], [1725155274, 40.422, -73.7562, 2438, 132, false], [1725155275, 40.4211, -73.7548, 2438, 131, false], [1725155276, 40.4202, -73.7534, 2438, 129, false], [1725155277, 40.4193, -73.7518, 2438, 127, false], [1725155278, 40.4185, -73.7504, 2438, 125, false], [1725155280, 40.4176, -73.7487, 2438, 124, false], [1725155280, 40.4169, -73.7474, 2438, 122, false], [1725155281, 40.4163, -73.746, 2438, 120, false], [1725155282, 40.4157, -73.7447, 2438, 118, false], [1725155283, 40.4151, -73.7432, 2438, 117, false], [1725155284, 40.4142, -73.7408, 2438, 115, false], [1725155285, 40.4137, -73.7394, 2438, 113, false], [1725155286, 40.4132, -73.7376, 2438, 111, false], [1725155287, 40.4127, -73.7361, 2438, 109, false], [1725155288, 40.4125, -73.7351, 2438, 108, false], [1725155289, 40.412, -73.7331, 2438, 107, false], [1725155290, 40.4116, -73.7312, 2438, 105, false], [1725155291, 40.4112, -73.7296, 2438, 103, false], [1725155292, 40.4109, -73.7277, 2438, 100, false], [1725155293, 40.4106, -73.7258, 2438, 100, false], [1725155294, 40.4104, -73.7238, 2438, 97, false], [1725155295, 40.4102, -73.7219, 2438, 96, false], [1725155296, 40.4102, -73.7208, 2438, 94, false], [1725155297, 40.41, -73.7184, 2438, 92, false], [1725155298, 40.41, -73.717, 2438, 90, false], [1725155299, 40.41, -73.715, 2438, 89, false], [1725155300, 40.41, -73.7133, 2438, 87, false], [1725155301, 40.4101, -73.7114, 2438, 86, false], [1725155302, 40.4102, -73.71, 2438, 84, false], [1725155303, 40.4104, -73.7073, 2438, 83, false], [1725155304, 40.4105, -73.7063, 2438, 81, false], [1725155305, 40.4107, -73.7045, 2438, 78, false], [1725155306, 40.411, -73.7027, 2438, 77, false], [1725155307, 40.4113, -73.701, 2438, 75, false], [1725155308, 40.4117, -73.699, 2438, 74, false], [1725155309, 40.4122, -73.6968, 2438, 72, false], [1725155311, 40.4132, -73.6934, 2438, 69, false], [1725155312, 40.4136, -73.6918, 2438, 68, false], [1725155313, 40.4142, -73.69, 1828, 66, false], [1725155315, 40.4153, -73.6868, 1828, 64, false], [1725155316, 40.416, -73.6851, 1828, 63, false], [1725155319, 40.4178, -73.6807, 1828, 60, false], [1725155396, 40.4729, -73.5628, 1828, 58, false], [1725155400, 40.4759, -73.5565, 1828, 56, false], [1725155402, 40.4772, -73.5542, 1828, 53, false], [1725155403, 40.4781, -73.5527, 1828, 52, false], [1725155404, 40.4789, -73.5512, 1828, 50, false], [1725155405, 40.4797, -73.5499, 1828, 49, false], [1725155406, 40.4807, -73.5485, 1828, 47, false], [1725155407, 40.4815, -73.5473, 1828, 46, false], [1725155409, 40.4837, -73.5445, 1828, 44, false], [1725155410, 40.4847, -73.5432, 1828, 42, false], [1725155411, 40.4856, -73.5422, 1828, 41, false], [1725155412, 40.4866, -73.5411, 1828, 39, false], [1725155413, 40.4877, -73.5399, 1828, 38, false], [1725155415, 40.4898, -73.5378, 1828, 36, false], [1725155417, 40.492, -73.5358, 1828, 34, false], [1725155420, 40.4956, -73.5327, 1828, 32, false], [1725155459, 40.5402, -73.4983, 1828, 30, false], [1725155519, 40.6078, -73.4464, 1524, 30, false], [1725155575, 40.671, -73.3967, 1219, 31, false], [1725155590, 40.6877, -73.3835, 1219, 30, false], [1725155625, 40.727, -73.3538, 1219, 28, false], [1725155628, 40.7306, -73.3513, 1219, 25, false], [1725155630, 40.7329, -73.35, 1219, 23, false], [1725155631, 40.734, -73.3493, 1219, 22, false], [1725155632, 40.7352, -73.3487, 1219, 20, false], [1725155634, 40.7376, -73.3476, 1219, 18, false], [1725155635, 40.739, -73.347, 1219, 16, false], [1725155636, 40.7395, -73.3469, 1219, 14, false], [1725155637, 40.7413, -73.3463, 1219, 12, false], [1725155638, 40.7425, -73.3459, 1219, 11, false], [1725155639, 40.7437, -73.3457, 1219, 8, false], [1725155640, 40.7453, -73.3454, 1219, 6, false], [1725155641, 40.7466, -73.3452, 1219, 5, false], [1725155642, 40.7478, -73.3451, 1219, 2, false], [1725155643, 40.7489, -73.345, 1219, 1, false], [1725155644, 40.7502, -73.345, 1219, 359, false], [1725155645, 40.7514, -73.3451, 1219, 357, false], [1725155646, 40.7526, -73.3452, 1219, 355, false], [1725155647, 40.7533, -73.3452, 1219, 354, false], [1725155648, 40.7552, -73.3455, 914, 351, false], [1725155649, 40.7564, -73.3458, 914, 351, false], [1725155650, 40.7575, -73.346, 914, 348, false], [1725155651, 40.7586, -73.3463, 914, 347, false], [1725155652, 40.7597, -73.3467, 914, 345, false], [1725155653, 40.7609, -73.3472, 914, 342, false], [1725155654, 40.7624, -73.3478, 914, 340, false], [1725155655, 40.7634, -73.3483, 914, 338, false], [1725155656, 40.7644, -73.3488, 914, 336, false], [1725155657, 40.7654, -73.3494, 914, 334, false], [1725155658, 40.7665, -73.3502, 914, 332, false], [1725155659, 40.7676, -73.351, 914, 330, false], [1725155660, 40.7685, -73.3516, 914, 328, false], [1725155661, 40.7695, -73.3524, 914, 326, false], [1725155662, 40.7706, -73.3534, 914, 325, false], [1725155663, 40.7717, -73.3544, 914, 323, false], [1725155664, 40.7728, -73.3555, 914, 320, false], [1725155665, 40.7736, -73.3565, 914, 319, false], [1725155666, 40.7742, -73.3571, 914, 316, false], [1725155667, 40.7754, -73.3587, 914, 315, false], [1725155668, 40.7761, -73.3597, 914, 312, false], [1725155669, 40.7769, -73.3608, 914, 311, false], [1725155670, 40.7777, -73.362, 914, 309, false], [1725155671, 40.7783, -73.3631, 914, 308, false], [1725155672, 40.779, -73.3642, 914, 307, false], [1725155673, 40.7797, -73.3656, 914, 306, false], [1725155675, 40.7808, -73.3677, 914, 303, false], [1725155677, 40.7822, -73.3704, 914, 302, false], [1725155735, 40.812, -73.4402, 609, 299, false], [1725155825, 40.8548, -73.5374, 609, 298, false], [1725155827, 40.8557, -73.5399, 609, 296, false], [1725155828, 40.8559, -73.5403, 609, 293, false], [1725155829, 40.8563, -73.5417, 609, 292, false], [1725155830, 40.8566, -73.5428, 304, 290, false], [1725155831, 40.8569, -73.5438, 304, 286, false], [1725155832, 40.8571, -73.5449, 304, 285, false], [1725155833, 40.8572, -73.5453, 304, 281, false], [1725155834, 40.8575, -73.547, 304, 278, false], [1725155835, 40.8575, -73.548, 304, 276, false], [1725155836, 40.8576, -73.5491, 304, 273, false], [1725155837, 40.8577, -73.55, 304, 270, false], [1725155838, 40.8576, -73.5511, 304, 268, false], [1725155839, 40.8576, -73.552, 304, 265, false], [1725155840, 40.8575, -73.553, 304, 262, false], [1725155841, 40.8574, -73.5541, 304, 259, false], [1725155842, 40.8572, -73.5552, 304, 257, false], [1725155843, 40.8569, -73.5566, 304, 255, false], [1725155844, 40.8567, -73.5576, 304, 253, false], [1725155845, 40.8565, -73.5586, 304, 251, false], [1725155846, 40.8562, -73.5596, 304, 248, false], [1725155847, 40.8559, -73.5605, 304, 247, false], [1725155848, 40.8556, -73.5615, 304, 245, false], [1725155850, 40.8548, -73.5638, 304, 243, false], [1725155852, 40.854, -73.5656, 304, 241, false], [1725155855, 40.8527, -73.5686, 304, 239, false], [1725155883, 40.8401, -73.5951, 304, 237, false], [1725155886, 40.8387, -73.5978, 304, 235, false], [1725155888, 40.8377, -73.5995, 304, 233, false], [1725155890, 40.8365, -73.6015, 304, 230, false], [1725155892, 40.8356, -73.603, 304, 228, false], [1725155893, 40.8349, -73.604, 304, 226, false], [1725155894, 40.8344, -73.6046, 304, 225, false], [1725155896, 40.8333, -73.6061, 304, 222, false], [1725155897, 40.8326, -73.607, 304, 221, false], [1725155899, 40.8313, -73.6084, 304, 219, false], [1725155901, 40.8299, -73.6099, 304, 217, false], [1725155904, 40.8278, -73.6119, 304, 214, false], [1725155907, 40.8257, -73.6138, 304, 212, false], [1725156114, 40.6915, -73.7187, 0, 210, false], [1725156194, 40.6484, -73.7524, 0, 210, false]] }
+];
