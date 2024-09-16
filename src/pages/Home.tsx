@@ -5,6 +5,8 @@ import SkyButton from "../components/Button/VSKyButton";
 import backgroundImage from "../assets/sky1.jpg";
 import { useNavigate } from "react-router-dom";
 
+import { requestFlightList } from "../dataProcessingLayer";
+
 const HomeLayoutSytle = styled('div', {
   margin: 'none',
   height: '100vh',
@@ -76,13 +78,7 @@ const STINGS = {
   Arrival: "Arrival(도착지)",
   buttonText: "Search",
 };
-const DummyData = {
-  FlightList: [
-    { text: "항공편: KAL1839", dep: "인천국제공항", arr: "-" },
-    { text: "항공편: KAL1839", dep: "인천국제공항", arr: "-" },
-    { text: "항공편: KAL1839", dep: "인천국제공항", arr: "-" },
-  ],
-};
+
 
 const Home = ({ airports }: any) => {
   const navigate = useNavigate();
@@ -91,18 +87,20 @@ const Home = ({ airports }: any) => {
   const [flightList, setFlightList] = useState([]);
   // const [flight, setFlight] = useState();
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!(departureAirport && arrivalAirport)) {
       alert("출발/도착 공항을 선택해주세요! :)");
       return;
     }
-    setFlightList(DummyData.FlightList as []);
+
+    const flightList = await requestFlightList(departureAirport, arrivalAirport) as [];
+    setFlightList(flightList);
     //
   };
-  const handleFlight = ({ flight }: any) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log(flight, e);
-    // navigate("/flight", { state: { departure: departureAirport, arrival: arrivalAirport } })
+  const handleFlight = (index: number) => {
+    navigate("/flight", { state: { departure: departureAirport, arrival: arrivalAirport, flight: flightList[index] } });
   };
+
 
   return (<HomeLayoutSytle>
     <HomeHeaderText>
@@ -115,11 +113,15 @@ const Home = ({ airports }: any) => {
       <SkyButton onClick={handleSearch}>{STINGS.buttonText}</SkyButton>
     </RouteComboxBoxContainer>
     {flightList.length > 0 &&
-      <FlightListContainer
-        onClick={handleFlight}>
-        {flightList.map((flight: any, index: number) =>
-          <li key={index} >{flight.text} &nbsp;|&nbsp; {flight.dep}&nbsp;|&nbsp; {flight.arr} | <SkyButton>Flight</SkyButton></li>)}
-      </FlightListContainer>}
+      <FlightListContainer>
+        {flightList.map((flight: any, index: number) => (
+          <li key={index}>
+            {flight.text} &nbsp;|&nbsp; {flight.dep}&nbsp;|&nbsp; {flight.arr} |
+            <SkyButton onClick={() => handleFlight(index)}>Flight</SkyButton>
+          </li>
+        ))}
+      </FlightListContainer>
+    }
   </HomeLayoutSytle>);
 }
 
