@@ -6,7 +6,7 @@ import backgroundImage from '../assets/sky1.jpg'
 import { useNavigate } from 'react-router-dom'
 
 import { Airport, useAirports } from '../api/airports'
-import { fetchFlight, FlightList } from '../api/flight'
+import { fetchFlight, Flight, FlightList } from '../api/flight'
 
 const STINGS = {
   Header: 'ExploreTheWorld!!',
@@ -71,8 +71,8 @@ const Home = () => {
 
       {flightList.length > 0 && (
         <FlightListContainer>
-          {flightList.map((flight: any, index: number) => (
-            <li key={flight.icao24}>
+          {flightList.map((flight: Flight, index: number) => (
+            <li key={flight.icao24 + flight.firstSeen}>
               {flight.text} &nbsp;|&nbsp; {flight.dep}&nbsp;|&nbsp; {flight.arr}{' '}
               |<SkyButton onClick={() => handleFlight(index)}>Flight</SkyButton>
             </li>
