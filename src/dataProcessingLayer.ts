@@ -14,7 +14,13 @@ const requestFlightList = async (departureAirport: any, arrivalAirport: any) => 
         .filter(flight => flight.estDepartureAirport === departureAirport.icao &&
             flight.estArrivalAirport === arrivalAirport.icao)
         .map(flight => (
-            { ...flight, text: `항공편:${flight.callsign}`, dep: `출발공항이름`, arr: "도착공항이름" }));
+            {
+                ...flight,
+                text: `항공편:${flight.callsign}`,
+                dep: `출발:[공항이름](${flight.estDepartureAirport})`,
+                arr: `도착:[공항이름](${flight.estArrivalAirport})`
+            }));
+
     // console.log("---", FlightList);
     /*
         "icao24": "4d00f3",
