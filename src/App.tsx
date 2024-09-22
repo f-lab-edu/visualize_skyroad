@@ -40,17 +40,17 @@ function App() {
 export default App
 
 
-const ErrorBoundaryWithFallback: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const ErrorFallback = ({ error }: { error: Error }) => {
+  return (
+    <div>
+      <h2>에러가 발생했어요!</h2>
+      <p>자세히:{error.message}</p>
+      <VSkyButton onClick={() => window.location.reload()}>다시시도</VSkyButton>
+    </div>
+  )
+}
 
-  const ErrorFallback = ({ error }: { error: Error }) => {
-    return (
-      <div>
-        <h2>에러가 발생했어요!</h2>
-        <p>자세히:{error.message}</p>
-        <VSkyButton onClick={() => window.location.reload()}>다시시도</VSkyButton>
-      </div>
-    )
-  }
+const ErrorBoundaryWithFallback: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
