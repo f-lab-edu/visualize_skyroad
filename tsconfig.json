@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "esnext",                           // 컴파일된 코드가 사용할 ECMAScript 버전
+    "module": "esnext",                      // 모듈 시스템
+    "jsx": "react",                            // JSX 처리를 위한 설정
+    "strict": true,                            // 엄격한 타입 체크 모드
+    "esModuleInterop": true,                   // CommonJS와 ES 모듈 호환성 설정
+    "skipLibCheck": true,                      // 라이브러리 체크 생략
+    "forceConsistentCasingInFileNames": true,  // 파일 이름의 대소문자 일관성 강제
+    "moduleResolution": "node",                // 모듈 해석 전략 설정
+    "resolveJsonModule": true,                 // JSON 모듈 지원
+    "isolatedModules": true                    // 각 파일을 별도의 모듈로 취급
+  },
+  "include": ["src", "vite-env.d.ts"],         // 포함할 디렉토리
+  "exclude": ["node_modules", "build"]         // 제외할 디렉토리
+}
