@@ -72,7 +72,7 @@ const Home = () => {
       {flightList.length > 0 && (
         <FlightListContainer>
           {flightList.map((flight: any, index: number) => (
-            <li key={index}>
+            <li key={flight.icao24}>
               {flight.text} &nbsp;|&nbsp; {flight.dep}&nbsp;|&nbsp; {flight.arr}{' '}
               |<SkyButton onClick={() => handleFlight(index)}>Flight</SkyButton>
             </li>
