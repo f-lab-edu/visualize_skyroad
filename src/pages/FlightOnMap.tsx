@@ -1,11 +1,11 @@
+import * as turf from '@turf/turf'
+import maplibregl from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import React, { useEffect, useRef, useState } from 'react'
 import { Map, MapRef } from 'react-map-gl'
-import 'maplibre-gl/dist/maplibre-gl.css'
-import maplibregl from 'maplibre-gl'
-import * as turf from '@turf/turf'
 import { useLocation } from 'react-router-dom'
-import { requestFlightTrack } from '../dataProcessingLayer'
 import { FlightPathElement } from "../api/flight"
+import { requestFlightTrack } from '../dataProcessingLayer'
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
 
@@ -113,6 +113,7 @@ const FlightOnMap: React.FC = ({ }) => {
             alert("맵을 불러오는데 실패하였습니다.")
             return
         }
+
         const leftSplit: FlightPathElement[] = route.path.filter((coord: number[]) => coord[2] < 0).map((coord: number[]) => ({
             time: coord[0],
             latitude: coord[1],
@@ -121,6 +122,7 @@ const FlightOnMap: React.FC = ({ }) => {
             true_track: coord[4],
             on_ground: coord[5]
         }))
+
         const rightSplit: FlightPathElement[] = route.path.filter((coord: number[]) => coord[2] >= 0).map((coord: number[]) => ({
             time: coord[0],
             latitude: coord[1],
@@ -136,10 +138,12 @@ const FlightOnMap: React.FC = ({ }) => {
         const leftFilteredPathCoordinates = await removeDuplicateCoordinates(leftCoordinates)
         const rightFilteredPathCoordinates = await removeDuplicateCoordinates(rightCoordinates)
 
-        const leftInterpolatedPath = await interpolateGreatCirclePath([...leftFilteredPathCoordinates, { lon: -180, lat: leftFilteredPathCoordinates[leftFilteredPathCoordinates.length - 1].lat }])
-        const rightInterpolatedPath = await interpolateGreatCirclePath([{ lon: 180, lat: rightFilteredPathCoordinates[0].lat }, ...rightFilteredPathCoordinates])
-        // const leftInterpolatedPath = await interpolateGreatCirclePath([...leftFilteredPathCoordinates])
-        // const rightInterpolatedPath = await interpolateGreatCirclePath([...rightFilteredPathCoordinates])
+        // const middleLatitude = (rightFilteredPathCoordinates[0].lat + leftFilteredPathCoordinates[leftFilteredPathCoordinates.length - 1].lat) / 2
+        // const leftInterpolatedPath = await interpolateGreatCirclePath([...leftFilteredPathCoordinates, { lon: -180, lat: middleLatitude }])
+        // const rightInterpolatedPath = await interpolateGreatCirclePath([{ lon: 180, lat: middleLatitude }, ...rightFilteredPathCoordinates])
+
+        const leftInterpolatedPath = await interpolateGreatCirclePath([...leftFilteredPathCoordinates])
+        const rightInterpolatedPath = await interpolateGreatCirclePath([...rightFilteredPathCoordinates])
 
         const leftRouteOnMap: FeatureCollection = {
             type: 'FeatureCollection',
@@ -153,6 +157,7 @@ const FlightOnMap: React.FC = ({ }) => {
                 },
             ],
         }
+
         const rightRouteOnMap: FeatureCollection = {
             type: 'FeatureCollection',
             features: [
@@ -165,7 +170,9 @@ const FlightOnMap: React.FC = ({ }) => {
                 },
             ],
         }
+
         console.log(leftRouteOnMap, rightRouteOnMap)
+
         if (map.isStyleLoaded()) {
             addOrUpdateRouteLayer(map, rightRouteOnMap, { name: "right-route", color: "red" })
             addOrUpdateRouteLayer(map, leftRouteOnMap, { name: "left-route", color: "blue" })
