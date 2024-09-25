@@ -13,3 +13,18 @@ export const fetchFlight = ({
 }) => {
     return requestFlightList(departureAirport, arrivalAirport)
 }
+export type FlightStatus = {
+    icao24: string
+    callsign: string
+    origin_country: string
+    time_position: number
+    last_contact: number
+    longitude: number | null
+    latitude: number | null
+    baro_altitude: number | null
+    on_ground: boolean
+    velocity: number | null
+    true_track: number | null
+    vertical_rate: number | null
+    geo_altitude: number | null
+} | false
