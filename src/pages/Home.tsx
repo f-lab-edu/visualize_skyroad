@@ -26,9 +26,9 @@ const Home = () => {
   const [flightList, setFlightList] = useState<FlightList>([])
   // const [flight, setFlight] = useState();
 
-  useEffect(() => {
-    findFlightFromICNtoJFK().then(console.log)
-  }, [])
+  // useEffect(() => {
+  //   findFlightFromICNtoJFK().then(console.log)
+  // }, [])
 
   const handleSearch = async () => {
     if (!(departureAirport && arrivalAirport)) {
