@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
 import * as turf from '@turf/turf'
 import { useLocation } from 'react-router-dom'
-import { requestFlightTrack } from '../dataProcessingLayer'
+import { requestFlightTrack } from '../data/dataProcessingLayer'
 import { Z_ASCII } from 'zlib'
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
