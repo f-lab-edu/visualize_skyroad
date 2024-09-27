@@ -1,0 +1,14 @@
+,0,1,2,3,4,5,6,7,8,9,10,11,12,13
+336,340,Frankfurt am Main Airport,Frankfurt,Germany,FRA,EDDF,50.033333,8.570556,364,1,E,Europe/Berlin,airport,OurAirports
+502,507,London Heathrow Airport,London,United Kingdom,LHR,EGLL,51.4706,-0.461941,83,0,E,Europe/London,airport,OurAirports
+1350,1382,Charles de Gaulle International Airport,Paris,France,CDG,LFPG,49.012798,2.55,392,1,E,Europe/Paris,airport,OurAirports
+2106,2188,Dubai International Airport,Dubai,United Arab Emirates,DXB,OMDB,25.2527999878,55.3643989563,62,4,U,Asia/Dubai,airport,OurAirports
+2187,2279,Narita International Airport,Tokyo,Japan,NRT,RJAA,35.7647018433,140.386001587,141,9,U,Asia/Tokyo,airport,OurAirports
+2264,2359,Tokyo Haneda International Airport,Tokyo,Japan,HND,RJTT,35.552299,139.779999,35,9,U,Asia/Tokyo,airport,OurAirports
+3135,3316,Singapore Changi Airport,Singapore,Singapore,SIN,WSSS,1.35019,103.994003,22,8,N,Asia/Singapore,airport,OurAirports
+3181,3364,Beijing Capital International Airport,Beijing,China,PEK,ZBAA,40.0801010131836,116.58499908447266,116,8,U,Asia/Shanghai,airport,OurAirports
+3218,3406,Shanghai Pudong International Airport,Shanghai,China,PVG,ZSPD,31.143400192260746,121.80500030517578,13,8,U,Asia/Shanghai,airport,OurAirports
+3296,3484,Los Angeles International Airport,Los Angeles,United States,LAX,KLAX,33.94250107,-118.4079971,125,-8,A,America/Los_Angeles,airport,OurAirports
+3609,3797,John F Kennedy International Airport,New York,United States,JFK,KJFK,40.63980103,-73.77890015,13,-5,A,America/New_York,airport,OurAirports
+3642,3830,Chicago O'Hare International Airport,Chicago,United States,ORD,KORD,41.9786,-87.9048,672,-6,A,America/Chicago,airport,OurAirports
+3737,3930,Incheon International Airport,Seoul,South Korea,ICN,RKSI,37.46910095214844,126.45099639892578,23,9,U,Asia/Seoul,airport,OurAirports
