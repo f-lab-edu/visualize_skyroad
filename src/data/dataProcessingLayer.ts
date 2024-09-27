@@ -1,5 +1,7 @@
 // import { getDepatureAirport } from "./apis";
-import { flightsLAX2RKSI, flightsDepartureAirport } from "./dummyData";
+import { flightsLAX2RKSI, flightsDepartureAirport } from "../dummyData";
+import { Aircraft, AircraftStatus } from "../api/flight";
+import { getAllActiveFlights } from "../api/flight";
 
 const requestFlightTrack = async (flight: any) => {
     // return await getAircraftTracks(flight.icao24);
@@ -33,4 +35,15 @@ const requestFlightList = async (departureAirport: any, arrivalAirport: any) => 
     return FlightList;
 }
 
-export { requestFlightList, requestFlightTrack };
+const findFlightFromICNtoJFK = async (): Promise<AircraftStatus> => {
+    const flights = await getAllActiveFlights()
+    console.log(flights)
+    for (const flight of flights) {
+        if (true) {
+            return flight
+        }
+    }
+    return false
+}
+
+export { requestFlightList, requestFlightTrack, findFlightFromICNtoJFK };

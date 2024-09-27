@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { styled } from '@stitches/react'
 import ComboBox from '../components/ComboBox/ComboBox'
 import SkyButton from '../components/Button/VSKyButton'
@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { Airport, useAirports } from '../api/airports'
 import { fetchFlight, Flight, FlightList } from '../api/flight'
+import { findFlightFromICNtoJFK } from "../data/dataProcessingLayer"
 
 const STINGS = {
   Header: 'ExploreTheWorld!!',
@@ -24,6 +25,10 @@ const Home = () => {
   const [arrivalAirport, setArrivalAirport] = useState<Airport | null>(null)
   const [flightList, setFlightList] = useState<FlightList>([])
   // const [flight, setFlight] = useState();
+
+  // useEffect(() => {
+  //   findFlightFromICNtoJFK().then(console.log)
+  // }, [])
 
   const handleSearch = async () => {
     if (!(departureAirport && arrivalAirport)) {

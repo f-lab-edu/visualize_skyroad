@@ -4,8 +4,8 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import React, { useEffect, useRef, useState } from 'react'
 import { Map, MapRef } from 'react-map-gl'
 import { useLocation } from 'react-router-dom'
+import { requestFlightTrack } from '../data/dataProcessingLayer'
 import { FlightPathElement } from "../api/flight"
-import { requestFlightTrack } from '../dataProcessingLayer'
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
 
