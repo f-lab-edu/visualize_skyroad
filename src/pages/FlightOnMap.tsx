@@ -48,29 +48,38 @@ const FlightOnMap: React.FC = ({ }) => {
         getTrack()
     }, [flight])
 
-    const addOrUpdateRouteLayer = (map: any, routeOnMap: FeatureCollection, option = { name: "route", color: "blue" }) => {
-        if (map.getSource(option.name)) {
-            // 이미 존재하는 경로 데이터 업데이트
-            map.getSource(option.name).setData(routeOnMap)
+    const addOrUpdateRouteLayer = (map: any, routeOnMap: FeatureCollection, option = { name: "route", color: "blue", isDash: false }) => {
+
+        const { name = "route", color = "blue", isDash = false } = option;
+
+        if (map.getSource(name)) {
+
+            map.getSource(name).setData(routeOnMap)
+
         } else {
-            // 새로운 경로 데이터 추가
-            map.addSource(option.name, {
+
+            map.addSource(name, {
                 type: 'geojson',
                 data: routeOnMap,
             })
 
+            const paintOptions: any = {
+                'line-color': color,
+                'line-width': 4,
+                'line-opacity': 0.8
+            }
+
+            if (isDash) {
+                paintOptions['line-dasharray'] = [4, 2];
+            }
+
             map.addLayer({
-                id: option.name,
-                source: option.name,
+                id: name,
                 type: 'line',
-                paint: {
-                    'line-width': 4,
-                    'line-color': option.color,
-                    'line-opacity': 0.8,
-                },
+                source: name,
+                layout: {},
+                paint: paintOptions,
             })
-
-
 
 
             // addSVGImageToMap(map)
@@ -105,6 +114,60 @@ const FlightOnMap: React.FC = ({ }) => {
             // })
         }
     }
+
+    const drawStraightLine = async () => {
+        const map = mapRef.current?.getMap()
+
+        if (!map) {
+            alert("맵을 불러오는데 실패하였습니다.")
+            return
+        }
+
+        const start: FlightPathElement = {
+            time: route.path[0][0],
+            latitude: route.path[0][1],
+            longitude: route.path[0][2],
+            baro_altitude: route.path[0][3],
+            true_track: route.path[0][4],
+            on_ground: route.path[0][5]
+        }
+        const end: FlightPathElement = {
+            time: route.path[route.path.length - 1][0],
+            latitude: route.path[route.path.length - 1][1],
+            longitude: route.path[route.path.length - 1][2],
+            baro_altitude: route.path[route.path.length - 1][3],
+            true_track: route.path[route.path.length - 1][4],
+            on_ground: route.path[route.path.length - 1][5]
+        }
+        console.log(start, end);
+
+        const coordinates = await interpolatedRawPath([start, end], 500)
+        const filteredCoordenates = await removeDuplicateCoordinates(coordinates)
+        const interpolatedPath = await interpolateGreatCirclePath(filteredCoordenates)
+        const line: FeatureCollection = {
+            type: 'FeatureCollection',
+            features: [
+                {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: interpolatedPath as number[][],
+                    },
+                },
+            ],
+        }
+        const op = { name: "straight-line", color: "yellow", isDash: true }
+
+        if (map.isStyleLoaded()) {
+            addOrUpdateRouteLayer(map, line, op)
+        } else {
+            map.on('load', () => {
+                addOrUpdateRouteLayer(map, line, op)
+            })
+        }
+
+    }
+
 
     const draw2DLine = async () => {
         const map = mapRef.current?.getMap()
@@ -212,7 +275,11 @@ const FlightOnMap: React.FC = ({ }) => {
     }
 
     useEffect(() => {
-        drawFeaturesOnMap()
+        if (route == null)
+            return
+
+        // drawFeaturesOnMap()
+        drawStraightLine()
     }, [route])
 
     return (<>
@@ -251,8 +318,8 @@ const linearInterpFn = (
     const lat: number = current.latitude + (next.latitude - current.latitude) * (step / totalSteps);
 
     if (current.longitude < 0 && next.longitude > 0) {
-        const lon: number = current.longitude + (next.longitude - 360 - current.longitude) * (step / totalSteps);
-        return { lat: lat, lon: lon };
+        // const lon: number = current.longitude + (next.longitude - 360 - current.longitude) * (step / totalSteps);
+        // return { lat: lat, lon: lon };
     }
 
     const lon: number = current.longitude + (next.longitude - current.longitude) * (step / totalSteps);

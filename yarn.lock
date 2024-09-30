@@ -1425,6 +1425,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@turf/flatten@npm:^7.1.0":
+  version: 7.1.0
+  resolution: "@turf/flatten@npm:7.1.0"
+  dependencies:
+    "@turf/helpers": "npm:^7.1.0"
+    "@turf/meta": "npm:^7.1.0"
+    "@types/geojson": "npm:^7946.0.10"
+    tslib: "npm:^2.6.2"
+  checksum: 10c0/d95d001b03b415923972d8cd3248a2c4846dceb2bb544609dfd19796a4cb97e8828b1a6f07d3ef7b590751ca1f337d66529c294e37e3626e6413f01e9045283c
+  languageName: node
+  linkType: hard
+
 "@turf/flip@npm:^6.5.0":
   version: 6.5.0
   resolution: "@turf/flip@npm:6.5.0"
@@ -6999,6 +7011,7 @@ __metadata:
     "@eslint/js": "npm:^9.9.0"
     "@stitches/react": "npm:^1.2.8"
     "@tanstack/react-query": "npm:^5.56.2"
+    "@turf/flatten": "npm:^7.1.0"
     "@turf/turf": "npm:^6.5.0"
     "@types/jest": "npm:^29.5.13"
     "@types/node": "npm:^22.5.4"

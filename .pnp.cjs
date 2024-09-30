@@ -30,6 +30,7 @@ const RAW_RUNTIME_STATE =
           ["@eslint/js", "npm:9.10.0"],\
           ["@stitches/react", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:1.2.8"],\
           ["@tanstack/react-query", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:5.56.2"],\
+          ["@turf/flatten", "npm:7.1.0"],\
           ["@turf/turf", "npm:6.5.0"],\
           ["@types/jest", "npm:29.5.13"],\
           ["@types/node", "npm:22.5.4"],\
@@ -1781,6 +1782,17 @@ const RAW_RUNTIME_STATE =
           ["@turf/flatten", "npm:6.5.0"],\
           ["@turf/helpers", "npm:6.5.0"],\
           ["@turf/meta", "npm:6.5.0"]\
+        ],\
+        "linkType": "HARD"\
+      }],\
+      ["npm:7.1.0", {\
+        "packageLocation": "./.yarn/cache/@turf-flatten-npm-7.1.0-dbec64237d-d95d001b03.zip/node_modules/@turf/flatten/",\
+        "packageDependencies": [\
+          ["@turf/flatten", "npm:7.1.0"],\
+          ["@turf/helpers", "npm:7.1.0"],\
+          ["@turf/meta", "npm:7.1.0"],\
+          ["@types/geojson", "npm:7946.0.14"],\
+          ["tslib", "npm:2.7.0"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -8282,6 +8294,7 @@ const RAW_RUNTIME_STATE =
           ["@eslint/js", "npm:9.10.0"],\
           ["@stitches/react", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:1.2.8"],\
           ["@tanstack/react-query", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:5.56.2"],\
+          ["@turf/flatten", "npm:7.1.0"],\
           ["@turf/turf", "npm:6.5.0"],\
           ["@types/jest", "npm:29.5.13"],\
           ["@types/node", "npm:22.5.4"],\
