@@ -1,18 +1,21 @@
+import React, { useEffect, useRef, useState } from 'react'
 import * as turf from '@turf/turf'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import React, { useEffect, useRef, useState } from 'react'
 import { Map, MapRef } from 'react-map-gl'
 import { useLocation } from 'react-router-dom'
 import { requestFlightTrack } from '../data/dataProcessingLayer'
 import { FlightPathElement } from "../api/flight"
 
+
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
+const ERRORMESSAGE = { NOFLIGHTDETAIL: "항공상세정보를 가져오지 못하였습니다." }
 
 type FlightPosition = {
     lat: number
     lon: number
 }
+
 type LineStringGeometry = {
     type: 'LineString'
     coordinates: number[][] // [longitude, latitude] 쌍의 배열
@@ -28,6 +31,7 @@ type FeatureCollection = {
     features: Feature[]
 }
 
+
 const FlightOnMap: React.FC = ({ }) => {
     const mapRef = useRef<MapRef>(null)
     const location = useLocation()
@@ -35,22 +39,17 @@ const FlightOnMap: React.FC = ({ }) => {
     const [route, setRoute] = useState(null) as any
 
     if (!departure || !arrival || !flight) {
-        return <p>No flight details available.</p>
+        return <p>{ERRORMESSAGE.NOFLIGHTDETAIL}</p>
     }
 
-    const getTrack = async () => {
-        const track = await requestFlightTrack(flight)
-        setRoute(track)
+    const getRoute = async () => {
+        const flightRoute = await requestFlightTrack(flight)
+        setRoute(flightRoute)
     }
-
-    useEffect(() => {
-        if (!flight) return
-        getTrack()
-    }, [flight])
 
     const addOrUpdateRouteLayer = (map: any, routeOnMap: FeatureCollection, option = { name: "route", color: "blue", isDash: false }) => {
 
-        const { name = "route", color = "blue", isDash = false } = option;
+        const { name = "route", color = "blue", isDash = false } = option
 
         if (map.getSource(name)) {
 
@@ -70,7 +69,7 @@ const FlightOnMap: React.FC = ({ }) => {
             }
 
             if (isDash) {
-                paintOptions['line-dasharray'] = [4, 2];
+                paintOptions['line-dasharray'] = [4, 2]
             }
 
             map.addLayer({
@@ -139,7 +138,7 @@ const FlightOnMap: React.FC = ({ }) => {
             true_track: route.path[route.path.length - 1][4],
             on_ground: route.path[route.path.length - 1][5]
         }
-        console.log(start, end);
+        console.log(start, end)
 
         const coordinates = await interpolatedRawPath([start, end], 500)
         const filteredCoordenates = await removeDuplicateCoordinates(coordinates)
@@ -168,85 +167,6 @@ const FlightOnMap: React.FC = ({ }) => {
 
     }
 
-
-    const draw2DLine = async () => {
-        const map = mapRef.current?.getMap()
-
-        if (!map) {
-            alert("맵을 불러오는데 실패하였습니다.")
-            return
-        }
-
-        const leftSplit: FlightPathElement[] = route.path.filter((coord: number[]) => coord[2] < 0).map((coord: number[]) => ({
-            time: coord[0],
-            latitude: coord[1],
-            longitude: coord[2],
-            baro_altitude: coord[3],
-            true_track: coord[4],
-            on_ground: coord[5]
-        }))
-
-        const rightSplit: FlightPathElement[] = route.path.filter((coord: number[]) => coord[2] >= 0).map((coord: number[]) => ({
-            time: coord[0],
-            latitude: coord[1],
-            longitude: coord[2],
-            baro_altitude: coord[3],
-            true_track: coord[4],
-            on_ground: coord[5]
-        }))
-
-        const leftCoordinates = await interpolatedRawPath(leftSplit, 500)//.map(([lat, lon]) => ({ lat, lon }))
-        const rightCoordinates = await interpolatedRawPath(rightSplit, 500)//.map(([lat, lon]) => ({ lat, lon }))
-
-        const leftFilteredPathCoordinates = await removeDuplicateCoordinates(leftCoordinates)
-        const rightFilteredPathCoordinates = await removeDuplicateCoordinates(rightCoordinates)
-
-        // const middleLatitude = (rightFilteredPathCoordinates[0].lat + leftFilteredPathCoordinates[leftFilteredPathCoordinates.length - 1].lat) / 2
-        // const leftInterpolatedPath = await interpolateGreatCirclePath([...leftFilteredPathCoordinates, { lon: -180, lat: middleLatitude }])
-        // const rightInterpolatedPath = await interpolateGreatCirclePath([{ lon: 180, lat: middleLatitude }, ...rightFilteredPathCoordinates])
-
-        const leftInterpolatedPath = await interpolateGreatCirclePath([...leftFilteredPathCoordinates])
-        const rightInterpolatedPath = await interpolateGreatCirclePath([...rightFilteredPathCoordinates])
-
-        const leftRouteOnMap: FeatureCollection = {
-            type: 'FeatureCollection',
-            features: [
-                {
-                    type: 'Feature',
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: leftInterpolatedPath as number[][],
-                    },
-                },
-            ],
-        }
-
-        const rightRouteOnMap: FeatureCollection = {
-            type: 'FeatureCollection',
-            features: [
-                {
-                    type: 'Feature',
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: rightInterpolatedPath as number[][],
-                    },
-                },
-            ],
-        }
-
-        console.log(leftRouteOnMap, rightRouteOnMap)
-
-        if (map.isStyleLoaded()) {
-            addOrUpdateRouteLayer(map, rightRouteOnMap, { name: "right-route", color: "red" })
-            addOrUpdateRouteLayer(map, leftRouteOnMap, { name: "left-route", color: "blue" })
-        } else {
-            map.on('load', () => {
-                addOrUpdateRouteLayer(map, rightRouteOnMap, { name: "right-route", color: "red" })
-                addOrUpdateRouteLayer(map, leftRouteOnMap, { name: "left-route", color: "blue" })
-            })
-        }
-    }
-
     const fitMapBound = () => {
         const map = mapRef.current?.getMap()
 
@@ -265,22 +185,24 @@ const FlightOnMap: React.FC = ({ }) => {
         return () => map?.remove()
     }
 
-    const drawFeaturesOnMap = async () => {
-        if (route == null)
+    useEffect(() => {
+
+        if (!flight)
+            return
+
+        getRoute()
+
+    }, [flight])
+
+    useEffect(() => {
+        if (!route)
             return
 
         fitMapBound()
-
-        draw2DLine()
-    }
-
-    useEffect(() => {
-        if (route == null)
-            return
-
-        // drawFeaturesOnMap()
         drawStraightLine()
+
     }, [route])
+
 
     return (<>
         <Map
@@ -300,14 +222,6 @@ const FlightOnMap: React.FC = ({ }) => {
 
 export default FlightOnMap
 
-const normalizeLongitude = (lon: number) => {
-    if (lon > 180) {
-        return lon - 360;
-    } else if (lon < -180) {
-        return lon + 360;
-    }
-    return lon;
-};
 
 const linearInterpFn = (
     current: FlightPathElement,
@@ -315,17 +229,17 @@ const linearInterpFn = (
     step: number, totalSteps: number
 ): FlightPosition => {
 
-    const lat: number = current.latitude + (next.latitude - current.latitude) * (step / totalSteps);
+    const lat: number = current.latitude + (next.latitude - current.latitude) * (step / totalSteps)
 
     if (current.longitude < 0 && next.longitude > 0) {
-        // const lon: number = current.longitude + (next.longitude - 360 - current.longitude) * (step / totalSteps);
-        // return { lat: lat, lon: lon };
+        // const lon: number = current.longitude + (next.longitude - 360 - current.longitude) * (step / totalSteps)
+        // return { lat: lat, lon: lon }
     }
 
-    const lon: number = current.longitude + (next.longitude - current.longitude) * (step / totalSteps);
+    const lon: number = current.longitude + (next.longitude - current.longitude) * (step / totalSteps)
     return { lat: lat, lon: lon }
 
-    // console.log(lon, normalizeLongitude(lon));
+    // console.log(lon, normalizeLongitude(lon))
     // const lat: number = current[1] + (next[1] - current[1]) * (step / totalSteps)
     // const lon: number = current[2] + (next[2] - current[2]) * (step / totalSteps)
     // return [lat, lon]
@@ -391,14 +305,4 @@ const interpolateGreatCirclePath = (coordinates: FlightPosition[]) => {
     interpolatedCoords.push([finalLon, finalLat])
 
     return interpolatedCoords
-}
-
-const addSVGImageToMap = (map: any) => {
-    const svgUrl = '/vite.svg' // SVG 이미지 경로
-    const img = new Image()
-    img.src = svgUrl
-
-    img.onload = () => {
-        map.addImage('custom-airport-icon', img, { sdf: true })
-    }
 }
