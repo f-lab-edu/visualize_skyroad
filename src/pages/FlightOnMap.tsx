@@ -34,7 +34,7 @@ type FeatureCollection = {
     features: Feature[]
 }
 
-const THRESHOLD = 500
+const INTERPOLE_THRESHOLD = 500
 const FRAME_OFFSET = 5
 
 const FlightOnMap: React.FC = ({ }) => {
@@ -88,46 +88,7 @@ const FlightOnMap: React.FC = ({ }) => {
 
     }
 
-    const animateAtoB = async (map: any) => {
-
-        const { departure, arrival, }: { departure: Airport, arrival: Airport } = location.state || null
-
-        const timestampStarted = route.path[0][0]
-        const timestampTerminated = route.path[route.path.length - 1][0]
-        const unitTime = (timestampTerminated - timestampStarted) / THRESHOLD
-
-        const departureAirport: FlightPathElement = {
-            time: timestampStarted - unitTime,
-            latitude: departure.latitude,
-            longitude: departure.longitude,
-            baro_altitude: 0,
-            true_track: 0,
-            on_ground: true
-        }
-        const arrivalAirport: FlightPathElement = {
-            time: timestampTerminated + unitTime,
-            latitude: arrival.latitude,
-            longitude: arrival.longitude,
-            baro_altitude: 0,
-            true_track: 0,
-            on_ground: true
-        }
-        const coordinates = await interpolatedRawPath([departureAirport, arrivalAirport], THRESHOLD)
-        const filteredCoordenates = await removeDuplicateCoordinates(coordinates)
-        const interpolatedPath = await interpolateGreatCirclePath(filteredCoordenates)
-        const line: FeatureCollection = {
-            type: 'FeatureCollection',
-            features: [
-                {
-                    type: 'Feature',
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: interpolatedPath as number[][],
-                    },
-                },
-            ],
-        }
-
+    const animateAtoB = async (map: any, line: FeatureCollection) => {
 
         let frame = 0
         const totalFrames = line.features[0].geometry.coordinates.length
@@ -187,64 +148,7 @@ const FlightOnMap: React.FC = ({ }) => {
 
     }
 
-    const drawStraightLine = async (map: any) => {
-
-        const { departure, arrival, }: { departure: Airport, arrival: Airport } = location.state || null
-
-        const timestampStarted = route.path[0][0]
-        const timestampTerminated = route.path[route.path.length - 1][0]
-        const unitTime = (timestampTerminated - timestampStarted) / THRESHOLD
-
-        const departureAirport: FlightPathElement = {
-            time: timestampStarted - unitTime,
-            latitude: departure.latitude,
-            longitude: departure.longitude,
-            baro_altitude: 0,
-            true_track: 0,
-            on_ground: true
-        }
-        const arrivalAirport: FlightPathElement = {
-            time: timestampTerminated + unitTime,
-            latitude: arrival.latitude,
-            longitude: arrival.longitude,
-            baro_altitude: 0,
-            true_track: 0,
-            on_ground: true
-        }
-        const coordinates = await interpolatedRawPath([departureAirport, arrivalAirport], THRESHOLD)
-
-        // const start: FlightPathElement = {
-        //     time: route.path[0][0],
-        //     latitude: route.path[0][1],
-        //     longitude: route.path[0][2],
-        //     baro_altitude: route.path[0][3],
-        //     true_track: route.path[0][4],
-        //     on_ground: route.path[0][5]
-        // }
-        // const end: FlightPathElement = {
-        //     time: route.path[route.path.length - 1][0],
-        //     latitude: route.path[route.path.length - 1][1],
-        //     longitude: route.path[route.path.length - 1][2],
-        //     baro_altitude: route.path[route.path.length - 1][3],
-        //     true_track: route.path[route.path.length - 1][4],
-        //     on_ground: route.path[route.path.length - 1][5]
-        // }
-
-        // const coordinates = await interpolatedRawPath([start, end], THRESHOLD)
-        const filteredCoordenates = await removeDuplicateCoordinates(coordinates)
-        const interpolatedPath = await interpolateGreatCirclePath(filteredCoordenates)
-        const line: FeatureCollection = {
-            type: 'FeatureCollection',
-            features: [
-                {
-                    type: 'Feature',
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: interpolatedPath as number[][],
-                    },
-                },
-            ],
-        }
+    const drawStraightLine = async (map: any, line: FeatureCollection) => {
 
         const option = { name: "straight-line", color: "yellow", isDash: true }
 
@@ -262,9 +166,8 @@ const FlightOnMap: React.FC = ({ }) => {
 
     const fitMapBound = (map: any) => {
 
-        const lengthFlight = route.path.length
         const from = route.path[0]
-        const to = route.path[lengthFlight - 1]
+        const to = route.path[route.path.length - 1]
 
         const fromPosition: [number, number] = [from[2], from[1]]
         const toPosition: [number, number] = [to[2], to[1]]
@@ -277,6 +180,53 @@ const FlightOnMap: React.FC = ({ }) => {
         return () => map?.remove()
     }
 
+    const getLineFromRoute = async (): Promise<FeatureCollection> => {
+        return new Promise(async (resolve) => {
+
+            const { departure, arrival, }: { departure: Airport, arrival: Airport } = location.state || null
+
+            const timestampStarted = route.path[0][0]
+            const timestampTerminated = route.path[route.path.length - 1][0]
+            const unitTime = (timestampTerminated - timestampStarted) / INTERPOLE_THRESHOLD
+
+            const departureAirport: FlightPathElement = {
+                time: timestampStarted - unitTime,
+                latitude: departure.latitude,
+                longitude: departure.longitude,
+                baro_altitude: 0,
+                true_track: 0,
+                on_ground: true
+            }
+            const arrivalAirport: FlightPathElement = {
+                time: timestampTerminated + unitTime,
+                latitude: arrival.latitude,
+                longitude: arrival.longitude,
+                baro_altitude: 0,
+                true_track: 0,
+                on_ground: true
+            }
+
+            const coordinates = await interpolatedRawPath([departureAirport, arrivalAirport], INTERPOLE_THRESHOLD)
+            const filteredCoordenates = await removeDuplicateCoordinates(coordinates)
+            const interpolatedPath = await interpolateGreatCirclePath(filteredCoordenates)
+
+            const line: FeatureCollection = {
+                type: 'FeatureCollection',
+                features: [
+                    {
+                        type: 'Feature',
+                        geometry: {
+                            type: 'LineString',
+                            coordinates: interpolatedPath as number[][],
+                        },
+                    },
+                ],
+            }
+
+            resolve(line)
+
+        })
+    }
 
     useEffect(() => {
 
@@ -299,8 +249,11 @@ const FlightOnMap: React.FC = ({ }) => {
         }
 
         fitMapBound(map)
-        drawStraightLine(map)
-        animateAtoB(map)
+
+        getLineFromRoute().then(line => {
+            drawStraightLine(map, line)
+            animateAtoB(map, line)
+        })
 
     }, [route])
 
@@ -347,62 +300,72 @@ const linearInterpFn = (
     // return [lat, lon]
 }
 
-const interpolatedRawPath = (path: FlightPathElement[], threshold: number) => {
-    const newpath: FlightPosition[] = []
+const interpolatedRawPath = (path: FlightPathElement[], threshold: number): Promise<FlightPosition[]> => {
+    return new Promise((resolve) => {
 
-    for (let i = 0; i < path.length - 1; i++) {
-        const current: FlightPathElement = path[i]
-        const next: FlightPathElement = path[i + 1]
+        const newpath: FlightPosition[] = []
 
-        newpath.push({ lat: current.latitude, lon: current.longitude })
+        for (let i = 0; i < path.length - 1; i++) {
+            const current: FlightPathElement = path[i]
+            const next: FlightPathElement = path[i + 1]
 
-        const timeDif = Math.abs(current.time - next.time)
+            newpath.push({ lat: current.latitude, lon: current.longitude })
 
-        if (timeDif > threshold) {
-            const numNewPoints = Math.ceil(timeDif / threshold)
+            const timeDif = Math.abs(current.time - next.time)
 
-            if (numNewPoints > 1) {
-                for (let step = 0; step <= numNewPoints; step++) {
-                    const newpoint: FlightPosition = linearInterpFn(current, next, step, numNewPoints)
-                    newpath.push(newpoint)
+            if (timeDif > threshold) {
+                const numNewPoints = Math.ceil(timeDif / threshold)
+
+                if (numNewPoints > 1) {
+                    for (let step = 0; step <= numNewPoints; step++) {
+                        const newpoint: FlightPosition = linearInterpFn(current, next, step, numNewPoints)
+                        newpath.push(newpoint)
+                    }
                 }
             }
+
         }
 
-    }
+        const { latitude: finalLat, longitude: finalLon } = path[path.length - 1]
 
-    const { latitude: finalLat, longitude: finalLon } = path[path.length - 1]
+        newpath.push({ lat: finalLat, lon: finalLon })
 
-    newpath.push({ lat: finalLat, lon: finalLon })
-
-    return newpath
+        resolve(newpath)
+    })
 }
 
-const removeDuplicateCoordinates = (coordinates: FlightPosition[]) => {
-    return coordinates.filter((coord, index, self) =>
-        index === 0 || coord.lat !== self[index - 1].lat || coord.lon !== self[index - 1].lon
-    )
+const removeDuplicateCoordinates = (coordinates: FlightPosition[]): Promise<FlightPosition[]> => {
+    return new Promise((resolve) => {
+
+        const removedCoordinates = coordinates.filter((coord, index, self) =>
+            index === 0 ||
+            coord.lat !== self[index - 1].lat ||
+            coord.lon !== self[index - 1].lon
+        )
+
+        resolve(removedCoordinates)
+    })
 }
 
-const interpolateGreatCirclePath = (coordinates: FlightPosition[]) => {
-    const interpolatedCoords = []
+const interpolateGreatCirclePath = (coordinates: FlightPosition[]): Promise<any[]> => {
+    return new Promise((resolve) => {
+        const interpolatedCoords: any = []
 
-    for (let i = 0; i < coordinates.length - 1; i++) {
+        for (let i = 0; i < coordinates.length - 1; i++) {
 
-        const { lat: lat1, lon: lon1 } = coordinates[i]
-        const { lat: lat2, lon: lon2 } = coordinates[i + 1]
+            const { lat: lat1, lon: lon1 } = coordinates[i]
+            const { lat: lat2, lon: lon2 } = coordinates[i + 1]
 
-        // console.log(`From: [${lon1}, ${lat1}] ---- To: [${lon2}, ${lat2}]`)
+            const from = [lon1, lat1]
+            const to = [lon2, lat2]
+            const greatCircle = turf.greatCircle(turf.point(from), turf.point(to), { offset: 100, npoints: 200 })
 
-        const from = [lon1, lat1]
-        const to = [lon2, lat2]
-        const greatCircle = turf.greatCircle(turf.point(from), turf.point(to), { offset: 100, npoints: 200 })
+            interpolatedCoords.push(...greatCircle.geometry.coordinates)
+        }
 
-        interpolatedCoords.push(...greatCircle.geometry.coordinates)
-    }
+        const { lat: finalLat, lon: finalLon } = coordinates[coordinates.length - 1]
+        interpolatedCoords.push([finalLon, finalLat])
 
-    const { lat: finalLat, lon: finalLon } = coordinates[coordinates.length - 1]
-    interpolatedCoords.push([finalLon, finalLat])
-
-    return interpolatedCoords
+        resolve(interpolatedCoords)
+    })
 }
