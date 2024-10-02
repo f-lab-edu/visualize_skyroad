@@ -35,6 +35,7 @@ type FeatureCollection = {
 }
 
 const THRESHOLD = 500
+const FRAME_OFFSET = 5
 
 const FlightOnMap: React.FC = ({ }) => {
     const mapRef = useRef<MapRef>(null)
@@ -51,79 +52,142 @@ const FlightOnMap: React.FC = ({ }) => {
         setRoute(flightRoute)
     }
 
-    const addOrUpdateRouteLayer = (map: any, routeOnMap: FeatureCollection, option = { name: "route", color: "blue", isDash: false }) => {
+    const drawLineOnRouteLayer = (map: any, routeOnMap: FeatureCollection, option = { name: "route", color: "blue", isDash: false }) => {
 
         const { name = "route", color = "blue", isDash = false } = option
 
         if (map.getSource(name)) {
 
             map.getSource(name).setData(routeOnMap)
+            return
 
-        } else {
-
-            map.addSource(name, {
-                type: 'geojson',
-                data: routeOnMap,
-            })
-
-            const paintOptions: any = {
-                'line-color': color,
-                'line-width': 4,
-                'line-opacity': 0.8
-            }
-
-            if (isDash) {
-                paintOptions['line-dasharray'] = [4, 2]
-            }
-
-            map.addLayer({
-                id: name,
-                type: 'line',
-                source: name,
-                layout: {},
-                paint: paintOptions,
-            })
-
-            // addSVGImageToMap(map)
-
-            // map.addSource('point', {
-            //     'type': 'geojson',
-            //     'data': {
-            //         'type': 'FeatureCollection',
-            //         'features': [
-            //             {
-            //                 'type': 'Feature',
-            //                 'geometry': {
-            //                     'type': 'Point',
-            //                     'coordinates': [126.39670000000001, 37.4895], // 좌표 설정
-            //                 },
-            //             },
-            //         ],
-            //     },
-            // })
-
-            // map.addLayer({
-            //     'id': 'point',
-            //     'source': 'point',
-            //     'type': 'symbol',
-            //     'layout': {
-            //         'icon-image': 'custom-airport-icon', // 커스텀 아이콘 사용
-            //         'icon-rotate': ['get', 'bearing'],
-            //         'icon-rotation-alignment': 'map',
-            //         'icon-overlap': 'always',
-            //         'icon-ignore-placement': true,
-            //     },
-            // })
         }
+
+        map.addSource(name, {
+            type: 'geojson',
+            data: routeOnMap,
+        })
+
+        const paintOptions: any = {
+            'line-color': color,
+            'line-width': 4,
+            'line-opacity': 0.8
+        }
+
+        if (isDash) {
+            paintOptions['line-dasharray'] = [4, 2]
+        }
+
+        map.addLayer({
+            id: name,
+            type: 'line',
+            source: name,
+            layout: {},
+            paint: paintOptions,
+        })
+
     }
 
-    const drawStraightLine = async () => {
-        const map = mapRef.current?.getMap()
+    const animateAtoB = async (map: any) => {
 
-        if (!map) {
-            alert("맵을 불러오는데 실패하였습니다.")
-            return
+        const { departure, arrival, }: { departure: Airport, arrival: Airport } = location.state || null
+
+        const timestampStarted = route.path[0][0]
+        const timestampTerminated = route.path[route.path.length - 1][0]
+        const unitTime = (timestampTerminated - timestampStarted) / THRESHOLD
+
+        const departureAirport: FlightPathElement = {
+            time: timestampStarted - unitTime,
+            latitude: departure.latitude,
+            longitude: departure.longitude,
+            baro_altitude: 0,
+            true_track: 0,
+            on_ground: true
         }
+        const arrivalAirport: FlightPathElement = {
+            time: timestampTerminated + unitTime,
+            latitude: arrival.latitude,
+            longitude: arrival.longitude,
+            baro_altitude: 0,
+            true_track: 0,
+            on_ground: true
+        }
+        const coordinates = await interpolatedRawPath([departureAirport, arrivalAirport], THRESHOLD)
+        const filteredCoordenates = await removeDuplicateCoordinates(coordinates)
+        const interpolatedPath = await interpolateGreatCirclePath(filteredCoordenates)
+        const line: FeatureCollection = {
+            type: 'FeatureCollection',
+            features: [
+                {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: interpolatedPath as number[][],
+                    },
+                },
+            ],
+        }
+
+
+        let frame = 0
+        const totalFrames = line.features[0].geometry.coordinates.length
+
+        const origin = line.features[0].geometry.coordinates[0]
+        const point = {
+            'type': 'FeatureCollection',
+            'features': [
+                {
+                    'type': 'Feature',
+                    'properties': {},
+                    'geometry': {
+                        'type': 'Point',
+                        'coordinates': origin
+                    }
+                }
+            ]
+        };
+
+        map.loadImage("public/airplane.png", (error: Error, image: HTMLIFrameElement) => {
+            if (error) {
+                throw error
+            }
+
+            map.addImage("airplane-icon", image)
+
+            map.addSource("point", {
+                type: "geojson",
+                data: point
+            })
+
+            map.addLayer({
+                id: "points",
+                type: "symbol",
+                source: "point",
+                layout: {
+                    "icon-image": "airplane-icon",
+                    "icon-size": 0.25,
+                },
+            })
+        })
+
+        const animate = () => {
+            point.features[0].geometry.coordinates =
+                line.features[0].geometry.coordinates[frame];
+
+            map.getSource('point')?.setData(point)
+
+            frame += FRAME_OFFSET
+            if (frame < totalFrames) {
+                requestAnimationFrame(animate)
+            }
+
+        }
+
+        animate()
+
+    }
+
+    const drawStraightLine = async (map: any) => {
 
         const { departure, arrival, }: { departure: Airport, arrival: Airport } = location.state || null
 
@@ -185,19 +249,18 @@ const FlightOnMap: React.FC = ({ }) => {
         const option = { name: "straight-line", color: "yellow", isDash: true }
 
         if (map.isStyleLoaded()) {
-            addOrUpdateRouteLayer(map, line, option)
+            drawLineOnRouteLayer(map, line, option)
 
         } else {
             map.on('load', () => {
-                addOrUpdateRouteLayer(map, line, option)
+                drawLineOnRouteLayer(map, line, option)
             })
 
         }
 
     }
 
-    const fitMapBound = () => {
-        const map = mapRef.current?.getMap()
+    const fitMapBound = (map: any) => {
 
         const lengthFlight = route.path.length
         const from = route.path[0]
@@ -229,8 +292,15 @@ const FlightOnMap: React.FC = ({ }) => {
         if (!route)
             return
 
-        fitMapBound()
-        drawStraightLine()
+        const map = mapRef.current?.getMap()
+        if (!map) {
+            alert("맵 없음.")
+            return
+        }
+
+        fitMapBound(map)
+        drawStraightLine(map)
+        animateAtoB(map)
 
     }, [route])
 
@@ -322,7 +392,7 @@ const interpolateGreatCirclePath = (coordinates: FlightPosition[]) => {
         const { lat: lat1, lon: lon1 } = coordinates[i]
         const { lat: lat2, lon: lon2 } = coordinates[i + 1]
 
-        console.log(`From: [${lon1}, ${lat1}] ---- To: [${lon2}, ${lat2}]`)
+        // console.log(`From: [${lon1}, ${lat1}] ---- To: [${lon2}, ${lat2}]`)
 
         const from = [lon1, lat1]
         const to = [lon2, lat2]
