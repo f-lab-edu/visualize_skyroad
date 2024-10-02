@@ -108,7 +108,7 @@ const FlightOnMap: React.FC = ({ }) => {
             ]
         };
 
-        map.loadImage("public/airplane.png", (error: Error, image: HTMLIFrameElement) => {
+        map.loadImage("airplane.png", (error: Error, image: HTMLIFrameElement) => {
             if (error) {
                 throw error
             }
@@ -227,6 +227,7 @@ const FlightOnMap: React.FC = ({ }) => {
 
         })
     }
+
 
     useEffect(() => {
 
