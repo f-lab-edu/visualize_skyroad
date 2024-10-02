@@ -1,18 +1,24 @@
+import React, { useEffect, useRef, useState } from 'react'
 import * as turf from '@turf/turf'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import React, { useEffect, useRef, useState } from 'react'
 import { Map, MapRef } from 'react-map-gl'
 import { useLocation } from 'react-router-dom'
 import { requestFlightTrack } from '../data/dataProcessingLayer'
 import { FlightPathElement } from "../api/flight"
+import { Airport } from '../api/airports'
+
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
+const ERRORMESSAGE = {
+    NOFLIGHTDETAIL: "항공상세정보를 가져오지 못하였습니다."
+}
 
 type FlightPosition = {
     lat: number
     lon: number
 }
+
 type LineStringGeometry = {
     type: 'LineString'
     coordinates: number[][] // [longitude, latitude] 쌍의 배열
@@ -28,6 +34,9 @@ type FeatureCollection = {
     features: Feature[]
 }
 
+const INTERPOLE_THRESHOLD = 500
+const FRAME_OFFSET = 5
+
 const FlightOnMap: React.FC = ({ }) => {
     const mapRef = useRef<MapRef>(null)
     const location = useLocation()
@@ -35,224 +44,130 @@ const FlightOnMap: React.FC = ({ }) => {
     const [route, setRoute] = useState(null) as any
 
     if (!departure || !arrival || !flight) {
-        return <p>No flight details available.</p>
+        return <p>{ERRORMESSAGE.NOFLIGHTDETAIL}</p>
     }
 
-    const getTrack = async () => {
-        const track = await requestFlightTrack(flight)
-        setRoute(track)
+    const getRoute = async () => {
+        const flightRoute = await requestFlightTrack(flight)
+        setRoute(flightRoute)
     }
 
-    useEffect(() => {
-        if (!flight) return
-        getTrack()
-    }, [flight])
+    const drawLineOnRouteLayer = (map: any, routeOnMap: FeatureCollection, option = { name: "route", color: "blue", isDash: false }) => {
 
-    const addOrUpdateRouteLayer = (map: any, routeOnMap: FeatureCollection, option = { name: "route", color: "blue", isDash: false }) => {
-
-        const { name = "route", color = "blue", isDash = false } = option;
+        const { name = "route", color = "blue", isDash = false } = option
 
         if (map.getSource(name)) {
 
             map.getSource(name).setData(routeOnMap)
+            return
 
-        } else {
+        }
 
-            map.addSource(name, {
-                type: 'geojson',
-                data: routeOnMap,
+        map.addSource(name, {
+            type: 'geojson',
+            data: routeOnMap,
+        })
+
+        const paintOptions: any = {
+            'line-color': color,
+            'line-width': 4,
+            'line-opacity': 0.8
+        }
+
+        if (isDash) {
+            paintOptions['line-dasharray'] = [4, 2]
+        }
+
+        map.addLayer({
+            id: name,
+            type: 'line',
+            source: name,
+            layout: {},
+            paint: paintOptions,
+        })
+
+    }
+
+    const animateAtoB = async (map: any, line: FeatureCollection) => {
+
+        let frame = 0
+        const totalFrames = line.features[0].geometry.coordinates.length
+
+        const origin = line.features[0].geometry.coordinates[0]
+        const point = {
+            'type': 'FeatureCollection',
+            'features': [
+                {
+                    'type': 'Feature',
+                    'properties': {},
+                    'geometry': {
+                        'type': 'Point',
+                        'coordinates': origin
+                    }
+                }
+            ]
+        };
+
+        map.loadImage("public/airplane.png", (error: Error, image: HTMLIFrameElement) => {
+            if (error) {
+                throw error
+            }
+
+            map.addImage("airplane-icon", image)
+
+            map.addSource("point", {
+                type: "geojson",
+                data: point
             })
-
-            const paintOptions: any = {
-                'line-color': color,
-                'line-width': 4,
-                'line-opacity': 0.8
-            }
-
-            if (isDash) {
-                paintOptions['line-dasharray'] = [4, 2];
-            }
 
             map.addLayer({
-                id: name,
-                type: 'line',
-                source: name,
-                layout: {},
-                paint: paintOptions,
+                id: "points",
+                type: "symbol",
+                source: "point",
+                layout: {
+                    "icon-image": "airplane-icon",
+                    "icon-size": 0.25,
+                },
             })
+        })
 
+        const animate = () => {
+            point.features[0].geometry.coordinates =
+                line.features[0].geometry.coordinates[frame];
 
-            // addSVGImageToMap(map)
+            map.getSource('point')?.setData(point)
 
-            // map.addSource('point', {
-            //     'type': 'geojson',
-            //     'data': {
-            //         'type': 'FeatureCollection',
-            //         'features': [
-            //             {
-            //                 'type': 'Feature',
-            //                 'geometry': {
-            //                     'type': 'Point',
-            //                     'coordinates': [126.39670000000001, 37.4895], // 좌표 설정
-            //                 },
-            //             },
-            //         ],
-            //     },
-            // })
+            frame += FRAME_OFFSET
+            if (frame < totalFrames) {
+                requestAnimationFrame(animate)
+            }
 
-            // map.addLayer({
-            //     'id': 'point',
-            //     'source': 'point',
-            //     'type': 'symbol',
-            //     'layout': {
-            //         'icon-image': 'custom-airport-icon', // 커스텀 아이콘 사용
-            //         'icon-rotate': ['get', 'bearing'],
-            //         'icon-rotation-alignment': 'map',
-            //         'icon-overlap': 'always',
-            //         'icon-ignore-placement': true,
-            //     },
-            // })
         }
+
+        animate()
+
     }
 
-    const drawStraightLine = async () => {
-        const map = mapRef.current?.getMap()
+    const drawStraightLine = async (map: any, line: FeatureCollection) => {
 
-        if (!map) {
-            alert("맵을 불러오는데 실패하였습니다.")
-            return
-        }
-
-        const start: FlightPathElement = {
-            time: route.path[0][0],
-            latitude: route.path[0][1],
-            longitude: route.path[0][2],
-            baro_altitude: route.path[0][3],
-            true_track: route.path[0][4],
-            on_ground: route.path[0][5]
-        }
-        const end: FlightPathElement = {
-            time: route.path[route.path.length - 1][0],
-            latitude: route.path[route.path.length - 1][1],
-            longitude: route.path[route.path.length - 1][2],
-            baro_altitude: route.path[route.path.length - 1][3],
-            true_track: route.path[route.path.length - 1][4],
-            on_ground: route.path[route.path.length - 1][5]
-        }
-        console.log(start, end);
-
-        const coordinates = await interpolatedRawPath([start, end], 500)
-        const filteredCoordenates = await removeDuplicateCoordinates(coordinates)
-        const interpolatedPath = await interpolateGreatCirclePath(filteredCoordenates)
-        const line: FeatureCollection = {
-            type: 'FeatureCollection',
-            features: [
-                {
-                    type: 'Feature',
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: interpolatedPath as number[][],
-                    },
-                },
-            ],
-        }
-        const op = { name: "straight-line", color: "yellow", isDash: true }
+        const option = { name: "straight-line", color: "yellow", isDash: true }
 
         if (map.isStyleLoaded()) {
-            addOrUpdateRouteLayer(map, line, op)
+            drawLineOnRouteLayer(map, line, option)
+
         } else {
             map.on('load', () => {
-                addOrUpdateRouteLayer(map, line, op)
+                drawLineOnRouteLayer(map, line, option)
             })
+
         }
 
     }
 
+    const fitMapBound = (map: any) => {
 
-    const draw2DLine = async () => {
-        const map = mapRef.current?.getMap()
-
-        if (!map) {
-            alert("맵을 불러오는데 실패하였습니다.")
-            return
-        }
-
-        const leftSplit: FlightPathElement[] = route.path.filter((coord: number[]) => coord[2] < 0).map((coord: number[]) => ({
-            time: coord[0],
-            latitude: coord[1],
-            longitude: coord[2],
-            baro_altitude: coord[3],
-            true_track: coord[4],
-            on_ground: coord[5]
-        }))
-
-        const rightSplit: FlightPathElement[] = route.path.filter((coord: number[]) => coord[2] >= 0).map((coord: number[]) => ({
-            time: coord[0],
-            latitude: coord[1],
-            longitude: coord[2],
-            baro_altitude: coord[3],
-            true_track: coord[4],
-            on_ground: coord[5]
-        }))
-
-        const leftCoordinates = await interpolatedRawPath(leftSplit, 500)//.map(([lat, lon]) => ({ lat, lon }))
-        const rightCoordinates = await interpolatedRawPath(rightSplit, 500)//.map(([lat, lon]) => ({ lat, lon }))
-
-        const leftFilteredPathCoordinates = await removeDuplicateCoordinates(leftCoordinates)
-        const rightFilteredPathCoordinates = await removeDuplicateCoordinates(rightCoordinates)
-
-        // const middleLatitude = (rightFilteredPathCoordinates[0].lat + leftFilteredPathCoordinates[leftFilteredPathCoordinates.length - 1].lat) / 2
-        // const leftInterpolatedPath = await interpolateGreatCirclePath([...leftFilteredPathCoordinates, { lon: -180, lat: middleLatitude }])
-        // const rightInterpolatedPath = await interpolateGreatCirclePath([{ lon: 180, lat: middleLatitude }, ...rightFilteredPathCoordinates])
-
-        const leftInterpolatedPath = await interpolateGreatCirclePath([...leftFilteredPathCoordinates])
-        const rightInterpolatedPath = await interpolateGreatCirclePath([...rightFilteredPathCoordinates])
-
-        const leftRouteOnMap: FeatureCollection = {
-            type: 'FeatureCollection',
-            features: [
-                {
-                    type: 'Feature',
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: leftInterpolatedPath as number[][],
-                    },
-                },
-            ],
-        }
-
-        const rightRouteOnMap: FeatureCollection = {
-            type: 'FeatureCollection',
-            features: [
-                {
-                    type: 'Feature',
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: rightInterpolatedPath as number[][],
-                    },
-                },
-            ],
-        }
-
-        console.log(leftRouteOnMap, rightRouteOnMap)
-
-        if (map.isStyleLoaded()) {
-            addOrUpdateRouteLayer(map, rightRouteOnMap, { name: "right-route", color: "red" })
-            addOrUpdateRouteLayer(map, leftRouteOnMap, { name: "left-route", color: "blue" })
-        } else {
-            map.on('load', () => {
-                addOrUpdateRouteLayer(map, rightRouteOnMap, { name: "right-route", color: "red" })
-                addOrUpdateRouteLayer(map, leftRouteOnMap, { name: "left-route", color: "blue" })
-            })
-        }
-    }
-
-    const fitMapBound = () => {
-        const map = mapRef.current?.getMap()
-
-        const lengthFlight = route.path.length
         const from = route.path[0]
-        const to = route.path[lengthFlight - 1]
+        const to = route.path[route.path.length - 1]
 
         const fromPosition: [number, number] = [from[2], from[1]]
         const toPosition: [number, number] = [to[2], to[1]]
@@ -265,22 +180,83 @@ const FlightOnMap: React.FC = ({ }) => {
         return () => map?.remove()
     }
 
-    const drawFeaturesOnMap = async () => {
-        if (route == null)
-            return
+    const getLineFromRoute = async (): Promise<FeatureCollection> => {
+        return new Promise(async (resolve) => {
 
-        fitMapBound()
+            const { departure, arrival, }: { departure: Airport, arrival: Airport } = location.state || null
 
-        draw2DLine()
+            const timestampStarted = route.path[0][0]
+            const timestampTerminated = route.path[route.path.length - 1][0]
+            const unitTime = (timestampTerminated - timestampStarted) / INTERPOLE_THRESHOLD
+
+            const departureAirport: FlightPathElement = {
+                time: timestampStarted - unitTime,
+                latitude: departure.latitude,
+                longitude: departure.longitude,
+                baro_altitude: 0,
+                true_track: 0,
+                on_ground: true
+            }
+            const arrivalAirport: FlightPathElement = {
+                time: timestampTerminated + unitTime,
+                latitude: arrival.latitude,
+                longitude: arrival.longitude,
+                baro_altitude: 0,
+                true_track: 0,
+                on_ground: true
+            }
+
+            const coordinates = await interpolatedRawPath([departureAirport, arrivalAirport], INTERPOLE_THRESHOLD)
+            const filteredCoordenates = await removeDuplicateCoordinates(coordinates)
+            const interpolatedPath = await interpolateGreatCirclePath(filteredCoordenates)
+
+            const line: FeatureCollection = {
+                type: 'FeatureCollection',
+                features: [
+                    {
+                        type: 'Feature',
+                        geometry: {
+                            type: 'LineString',
+                            coordinates: interpolatedPath as number[][],
+                        },
+                    },
+                ],
+            }
+
+            resolve(line)
+
+        })
     }
 
     useEffect(() => {
-        if (route == null)
+
+        if (!flight)
             return
 
-        // drawFeaturesOnMap()
-        drawStraightLine()
+        getRoute()
+
+    }, [flight])
+
+    useEffect(() => {
+
+        if (!route)
+            return
+
+        const map = mapRef.current?.getMap()
+        if (!map) {
+            alert("맵 없음.")
+            return
+        }
+
+        fitMapBound(map)
+
+        getLineFromRoute().then(line => {
+            drawStraightLine(map, line)
+            animateAtoB(map, line)
+        })
+
     }, [route])
+
 
     return (<>
         <Map
@@ -298,16 +274,9 @@ const FlightOnMap: React.FC = ({ }) => {
     </>)
 }
 
+
 export default FlightOnMap
 
-const normalizeLongitude = (lon: number) => {
-    if (lon > 180) {
-        return lon - 360;
-    } else if (lon < -180) {
-        return lon + 360;
-    }
-    return lon;
-};
 
 const linearInterpFn = (
     current: FlightPathElement,
@@ -315,90 +284,88 @@ const linearInterpFn = (
     step: number, totalSteps: number
 ): FlightPosition => {
 
-    const lat: number = current.latitude + (next.latitude - current.latitude) * (step / totalSteps);
+    const lat: number = current.latitude + (next.latitude - current.latitude) * (step / totalSteps)
 
     if (current.longitude < 0 && next.longitude > 0) {
-        // const lon: number = current.longitude + (next.longitude - 360 - current.longitude) * (step / totalSteps);
-        // return { lat: lat, lon: lon };
+        // const lon: number = current.longitude + (next.longitude - 360 - current.longitude) * (step / totalSteps)
+        // return { lat: lat, lon: lon }
     }
 
-    const lon: number = current.longitude + (next.longitude - current.longitude) * (step / totalSteps);
+    const lon: number = current.longitude + (next.longitude - current.longitude) * (step / totalSteps)
     return { lat: lat, lon: lon }
 
-    // console.log(lon, normalizeLongitude(lon));
+    // console.log(lon, normalizeLongitude(lon))
     // const lat: number = current[1] + (next[1] - current[1]) * (step / totalSteps)
     // const lon: number = current[2] + (next[2] - current[2]) * (step / totalSteps)
     // return [lat, lon]
 }
 
-const interpolatedRawPath = (path: FlightPathElement[], threshold: number) => {
-    const newpath: FlightPosition[] = []
+const interpolatedRawPath = (path: FlightPathElement[], threshold: number): Promise<FlightPosition[]> => {
+    return new Promise((resolve) => {
 
-    for (let i = 0; i < path.length - 1; i++) {
-        const current: FlightPathElement = path[i]
-        const next: FlightPathElement = path[i + 1]
+        const newpath: FlightPosition[] = []
 
-        newpath.push({ lat: current.latitude, lon: current.longitude })
+        for (let i = 0; i < path.length - 1; i++) {
+            const current: FlightPathElement = path[i]
+            const next: FlightPathElement = path[i + 1]
 
-        const timeDif = Math.abs(current.time - next.time)
+            newpath.push({ lat: current.latitude, lon: current.longitude })
 
-        if (timeDif > threshold) {
-            const numNewPoints = Math.ceil(timeDif / threshold)
+            const timeDif = Math.abs(current.time - next.time)
 
-            if (numNewPoints > 1) {
-                for (let step = 0; step <= numNewPoints; step++) {
-                    const newpoint: FlightPosition = linearInterpFn(current, next, step, numNewPoints)
-                    newpath.push(newpoint)
+            if (timeDif > threshold) {
+                const numNewPoints = Math.ceil(timeDif / threshold)
+
+                if (numNewPoints > 1) {
+                    for (let step = 0; step <= numNewPoints; step++) {
+                        const newpoint: FlightPosition = linearInterpFn(current, next, step, numNewPoints)
+                        newpath.push(newpoint)
+                    }
                 }
             }
+
         }
 
-    }
+        const { latitude: finalLat, longitude: finalLon } = path[path.length - 1]
 
-    console.log(path)
+        newpath.push({ lat: finalLat, lon: finalLon })
 
-    const { latitude: finalLat, longitude: finalLon } = path[path.length - 1]
-
-    newpath.push({ lat: finalLat, lon: finalLon })
-
-    return newpath
+        resolve(newpath)
+    })
 }
 
-const removeDuplicateCoordinates = (coordinates: FlightPosition[]) => {
-    return coordinates.filter((coord, index, self) =>
-        index === 0 || coord.lat !== self[index - 1].lat || coord.lon !== self[index - 1].lon
-    )
+const removeDuplicateCoordinates = (coordinates: FlightPosition[]): Promise<FlightPosition[]> => {
+    return new Promise((resolve) => {
+
+        const removedCoordinates = coordinates.filter((coord, index, self) =>
+            index === 0 ||
+            coord.lat !== self[index - 1].lat ||
+            coord.lon !== self[index - 1].lon
+        )
+
+        resolve(removedCoordinates)
+    })
 }
 
-const interpolateGreatCirclePath = (coordinates: FlightPosition[]) => {
-    const interpolatedCoords = []
+const interpolateGreatCirclePath = (coordinates: FlightPosition[]): Promise<any[]> => {
+    return new Promise((resolve) => {
+        const interpolatedCoords: any = []
 
-    for (let i = 0; i < coordinates.length - 1; i++) {
+        for (let i = 0; i < coordinates.length - 1; i++) {
 
-        const { lat: lat1, lon: lon1 } = coordinates[i]
-        const { lat: lat2, lon: lon2 } = coordinates[i + 1]
+            const { lat: lat1, lon: lon1 } = coordinates[i]
+            const { lat: lat2, lon: lon2 } = coordinates[i + 1]
 
-        console.log(`From: [${lon1}, ${lat1}] ---- To: [${lon2}, ${lat2}]`)
+            const from = [lon1, lat1]
+            const to = [lon2, lat2]
+            const greatCircle = turf.greatCircle(turf.point(from), turf.point(to), { offset: 100, npoints: 200 })
 
-        const from = [lon1, lat1]
-        const to = [lon2, lat2]
-        const greatCircle = turf.greatCircle(turf.point(from), turf.point(to), { offset: 100, npoints: 200 })
+            interpolatedCoords.push(...greatCircle.geometry.coordinates)
+        }
 
-        interpolatedCoords.push(...greatCircle.geometry.coordinates)
-    }
+        const { lat: finalLat, lon: finalLon } = coordinates[coordinates.length - 1]
+        interpolatedCoords.push([finalLon, finalLat])
 
-    const { lat: finalLat, lon: finalLon } = coordinates[coordinates.length - 1]
-    interpolatedCoords.push([finalLon, finalLat])
-
-    return interpolatedCoords
-}
-
-const addSVGImageToMap = (map: any) => {
-    const svgUrl = '/vite.svg' // SVG 이미지 경로
-    const img = new Image()
-    img.src = svgUrl
-
-    img.onload = () => {
-        map.addImage('custom-airport-icon', img, { sdf: true })
-    }
+        resolve(interpolatedCoords)
+    })
 }
