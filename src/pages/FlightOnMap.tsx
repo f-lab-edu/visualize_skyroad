@@ -8,6 +8,11 @@ import { requestFlightTrack } from '../data/dataProcessingLayer'
 import { FlightPathElement } from "../api/flight"
 import { Airport } from '../api/airports'
 
+/*
+    시작 / 일시정지 / 재개 / 빠르게 / 느리게 / 정지
+*/
+
+
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
 const ERRORMESSAGE = {
@@ -108,7 +113,7 @@ const FlightOnMap: React.FC = ({ }) => {
             ]
         };
 
-        map.loadImage("airplane.png", (error: Error, image: HTMLIFrameElement) => {
+        map.loadImage("/airplane.png", (error: Error, image: HTMLIFrameElement) => {
             if (error) {
                 throw error
             }
