@@ -7,11 +7,7 @@ import { useLocation } from 'react-router-dom'
 import { requestFlightTrack } from '../data/dataProcessingLayer'
 import { FlightPathElement } from "../api/flight"
 import { Airport } from '../api/airports'
-
-/*
-    시작 / 일시정지 / 재개 / 빠르게 / 느리게 / 정지
-*/
-
+import { styled } from '@stitches/react'
 
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
@@ -47,6 +43,9 @@ const FlightOnMap: React.FC = ({ }) => {
     const location = useLocation()
     const { departure, arrival, flight } = location.state || {}
     const [route, setRoute] = useState(null) as any
+    const [line, setLine] = useState<FeatureCollection>(/* todo: explict empty obj */)
+    const [frame, setCurrentFrame] = useState<number>(0)
+    const [isPlaying, setIsPlaying] = useState<boolean>(false)
 
     if (!departure || !arrival || !flight) {
         return <p>{ERRORMESSAGE.NOFLIGHTDETAIL}</p>
@@ -93,12 +92,12 @@ const FlightOnMap: React.FC = ({ }) => {
 
     }
 
-    const animateAtoB = async (map: any, line: FeatureCollection) => {
+    const animateAtoB = async (map: any, line: FeatureCollection | null/* todo: remove null */) => {
 
         let frame = 0
-        const totalFrames = line.features[0].geometry.coordinates.length
+        const totalFrames = line?.features[0].geometry.coordinates.length
 
-        const origin = line.features[0].geometry.coordinates[0]
+        const origin = line?.features[0].geometry.coordinates[0]
         const point = {
             'type': 'FeatureCollection',
             'features': [
@@ -138,12 +137,12 @@ const FlightOnMap: React.FC = ({ }) => {
 
         const animate = () => {
             point.features[0].geometry.coordinates =
-                line.features[0].geometry.coordinates[frame];
+                line?.features[0].geometry.coordinates[frame];
 
             map.getSource('point')?.setData(point)
 
             frame += FRAME_OFFSET
-            if (frame < totalFrames) {
+            if (frame < (totalFrames || 0 /* todo: type명시해서 (|| 0)제거 */)) {
                 requestAnimationFrame(animate)
             }
 
@@ -190,8 +189,8 @@ const FlightOnMap: React.FC = ({ }) => {
 
             const { departure, arrival, }: { departure: Airport, arrival: Airport } = location.state || null
 
-            const timestampStarted = route.path[0][0]
-            const timestampTerminated = route.path[route.path.length - 1][0]
+            const timestampStarted = route.path.at(0)[0]// [0]
+            const timestampTerminated = route.path.at(-1)[0]
             const unitTime = (timestampTerminated - timestampStarted) / INTERPOLE_THRESHOLD
 
             const departureAirport: FlightPathElement = {
@@ -235,7 +234,6 @@ const FlightOnMap: React.FC = ({ }) => {
 
 
     useEffect(() => {
-
         if (!flight)
             return
 
@@ -243,28 +241,70 @@ const FlightOnMap: React.FC = ({ }) => {
 
     }, [flight])
 
-    useEffect(() => {
 
+    useEffect(() => {
         if (!route)
             return
 
         const map = mapRef.current?.getMap()
-        if (!map) {
-            alert("맵 없음.")
+        if (!map)
             return
-        }
 
         fitMapBound(map)
 
-        getLineFromRoute().then(line => {
-            drawStraightLine(map, line)
-            animateAtoB(map, line)
-        })
+        getLineFromRoute().then(setLine)
 
     }, [route])
 
+    useEffect(() => {
+        if (!line)
+            return
+
+        const map = mapRef.current?.getMap()
+        if (!map)
+            return
+
+        drawStraightLine(map, line)
+
+    }, [line])
+
+    const startAnimate = () => {
+        setIsPlaying(true)
+        setCurrentFrame(0)
+
+        const map = mapRef.current?.getMap()
+        if (!map)
+            return
+
+        getLineFromRoute().then(line => animateAtoB(map, line))
+
+    }
+
+    const pauseAnimate = () => {
+        setIsPlaying(false)
+        // cancelAnimationFrame(/* animationRef.current */)
+    }
+
+    const stopAnimate = () => {
+        setIsPlaying(false)
+        setCurrentFrame(0)
+        // cancelAnimationFrame(/* animationRef.current */)
+    }
+
+    const fasterAnimate = () => { }
+
+    const slowerAnimate = () => { }
+
 
     return (<>
+        <AnimationControlWrapper>
+            <button onClick={startAnimate}>시작</button>
+            <button onClick={stopAnimate}>정지</button>
+            <button onClick={pauseAnimate}>일시정지</button>
+            <button onClick={fasterAnimate}>빠르게</button>
+            <button onClick={slowerAnimate}>느리게</button>
+        </AnimationControlWrapper>
+
         <Map
             ref={mapRef}
             mapLib={maplibregl as any}
@@ -282,6 +322,15 @@ const FlightOnMap: React.FC = ({ }) => {
 
 
 export default FlightOnMap
+
+
+const AnimationControlWrapper = styled('div', {
+    backgroundColor: "skyblue",
+    padding: "5px",
+    display: "flex",
+    justifyItems: "center",
+
+})
 
 
 const linearInterpFn = (
