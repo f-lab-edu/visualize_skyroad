@@ -36,7 +36,8 @@ type FeatureCollection = {
 }
 
 const INTERPOLE_THRESHOLD = 500
-const FRAME_OFFSET = 5
+const MAX_ANI_SPEED = 50
+const MIN_ANI_SPEED = 1
 
 const FlightOnMap: React.FC = ({ }) => {
     const mapRef = useRef<MapRef>(null)
@@ -44,8 +45,10 @@ const FlightOnMap: React.FC = ({ }) => {
     const { departure, arrival, flight } = location.state || {}
     const [route, setRoute] = useState(null) as any
     const [line, setLine] = useState<FeatureCollection>(/* todo: explict empty obj */)
-    const [frame, setCurrentFrame] = useState<number>(0)
+    const [currentFrame, setCurrentFrame] = useState<number>(0)
     const [isPlaying, setIsPlaying] = useState<boolean>(false)
+    const aniRef = useRef<number | null>(null)
+    const [frameoffset, setFrameoffset] = useState<number>(1)
 
     if (!departure || !arrival || !flight) {
         return <p>{ERRORMESSAGE.NOFLIGHTDETAIL}</p>
@@ -92,9 +95,9 @@ const FlightOnMap: React.FC = ({ }) => {
 
     }
 
-    const animateAtoB = async (map: any, line: FeatureCollection | null/* todo: remove null */) => {
+    const animateAtoB = async (map: any, line: FeatureCollection | any/* todo: remove null */) => {
 
-        let frame = 0
+        let frame = currentFrame || 0
         const totalFrames = line?.features[0].geometry.coordinates.length
 
         const origin = line?.features[0].geometry.coordinates[0]
@@ -141,11 +144,12 @@ const FlightOnMap: React.FC = ({ }) => {
 
             map.getSource('point')?.setData(point)
 
-            frame += FRAME_OFFSET
+            frame += frameoffset
+            console.log(frameoffset)
             if (frame < (totalFrames || 0 /* todo: type명시해서 (|| 0)제거 */)) {
-                requestAnimationFrame(animate)
+                aniRef.current = requestAnimationFrame(animate)
             }
-
+            setCurrentFrame(frame)
         }
 
         animate()
@@ -268,39 +272,58 @@ const FlightOnMap: React.FC = ({ }) => {
 
     }, [line])
 
-    const startAnimate = () => {
+    useEffect(() => {
+        if (!line) return
+        const map = mapRef.current?.getMap()
+        if (!map) return
+
+    }, [currentFrame])
+
+    const startAnimate = async () => {
         setIsPlaying(true)
         setCurrentFrame(0)
 
         const map = mapRef.current?.getMap()
-        if (!map)
+        if (!map || !line)
             return
 
-        getLineFromRoute().then(line => animateAtoB(map, line))
-
+        animateAtoB(map, line)
     }
 
     const pauseAnimate = () => {
-        setIsPlaying(false)
-        // cancelAnimationFrame(/* animationRef.current */)
+        if (isPlaying) {
+            setIsPlaying(false)
+            cancelAnimationFrame(aniRef.current!)
+        } else {
+            setIsPlaying(true)
+            animateAtoB(mapRef.current?.getMap(), line)
+        }
     }
 
     const stopAnimate = () => {
         setIsPlaying(false)
         setCurrentFrame(0)
-        // cancelAnimationFrame(/* animationRef.current */)
+        cancelAnimationFrame(aniRef.current!)
     }
 
-    const fasterAnimate = () => { }
+    const fasterAnimate = () => {
+        if (MAX_ANI_SPEED > frameoffset - 10) {
+            setFrameoffset(frameoffset + 10)
+        }
+    }
 
-    const slowerAnimate = () => { }
+    const slowerAnimate = () => {
+        if (MIN_ANI_SPEED < frameoffset + 10) {
+            setFrameoffset(frameoffset - 10)
+        }
+    }
 
 
     return (<>
         <AnimationControlWrapper>
             <button onClick={startAnimate}>시작</button>
-            <button onClick={stopAnimate}>정지</button>
             <button onClick={pauseAnimate}>일시정지</button>
+            <button onClick={stopAnimate}>정지</button>
             <button onClick={fasterAnimate}>빠르게</button>
             <button onClick={slowerAnimate}>느리게</button>
         </AnimationControlWrapper>
@@ -322,6 +345,7 @@ const FlightOnMap: React.FC = ({ }) => {
 
 
 export default FlightOnMap
+
 
 
 const AnimationControlWrapper = styled('div', {
