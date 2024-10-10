@@ -213,36 +213,32 @@ const FlightOnMap: React.FC = ({ }) => {
     }
 
     useEffect(() => {
-        if (!flight)
-            return
-
-        getRoute()
+        if (flight)
+            getRoute()
 
     }, [flight])
 
     useEffect(() => {
-        if (!route)
-            return
-
         const map = mapRef.current?.getMap()
-        if (!map)
-            return
 
-        fitMapBound(map)
+        if (map && route) {
+            fitMapBound(map)
 
-        getLineFromRoute().then(setLine)
+            getLineFromRoute().then(setLine)
+
+        }
 
     }, [route])
 
     useEffect(() => {
         const map = mapRef.current?.getMap()
 
-        if (!line || !map)
-            return
+        if (map && line) {
+            setTotalFrames(line?.features[0].geometry.coordinates.length)
 
-        setTotalFrames(line?.features[0].geometry.coordinates.length)
+            drawStraightLine(map, line)
 
-        drawStraightLine(map, line)
+        }
 
     }, [line])
 
