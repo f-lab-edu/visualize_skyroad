@@ -19,16 +19,8 @@ function App() {
           <SuspenseWithLoadingScreen>
             <Routes>
 
-              <Route
-                path='/'
-                element={
-                  <Home />
-                } />
-
-              <Route
-                path='flight'
-                element={
-                  <FlightOnMap />} />
+              <Route path='/' element={<Home />} />
+              <Route path='flight' element={<FlightOnMap />} />
 
             </Routes>
           </SuspenseWithLoadingScreen>
