@@ -98,9 +98,6 @@ const FlightOnMap: React.FC = ({ }) => {
 
     const animateAtoB = async (map: any, line: FeatureCollection | any/* todo: remove null */) => {
 
-        // let frame = currentFrame || 0
-        // const totalFrames = line?.features[0].geometry.coordinates.length
-
         const origin = line?.features[0].geometry.coordinates[0]
         const point = {
             'type': 'FeatureCollection',
@@ -114,45 +111,24 @@ const FlightOnMap: React.FC = ({ }) => {
                     }
                 }
             ]
-        };
+        }
 
         map.loadImage("/airplane.png", (error: Error, image: HTMLIFrameElement) => {
             if (error) {
                 throw error
             }
+            !map.hasImage("airplane-icon") &&
+                map.addImage("airplane-icon", image)
 
-            map.addImage("airplane-icon", image)
 
-            map.addSource("point", {
-                type: "geojson",
-                data: point
-            })
+            !map.getSource("point") &&
+                map.addSource("point", { type: "geojson", data: point })
 
-            map.addLayer({
-                id: "points",
-                type: "symbol",
-                source: "point",
-                layout: {
-                    "icon-image": "airplane-icon",
-                    "icon-size": 0.25,
-                },
-            })
+            !map.getLayer("points") &&
+                map.addLayer({
+                    id: "points", type: "symbol", source: "point", layout: { "icon-image": "airplane-icon", "icon-size": 0.25, },
+                })
         })
-
-        // const animate = () => {
-        //     point.features[0].geometry.coordinates =
-        //         line?.features[0].geometry.coordinates[frame];
-
-        //     map.getSource('point')?.setData(point)
-
-        //     frame += frameOffset
-        //     if (frame < (totalFrames || 0 /* todo: type명시해서 (|| 0)제거 */)) {
-        //         aniRef.current = requestAnimationFrame(animate)
-        //     }
-        //     setCurrentFrame(frame)
-        // }
-
-        // animate()
 
     }
 
@@ -285,34 +261,53 @@ const FlightOnMap: React.FC = ({ }) => {
                         }
                     }
                 ]
-            };
+            }
             map.getSource("point").setData(point)
             return
         }
     }
-    let f = 0
+
     const handleUpdate = (props: any) => {
-        f++
-        // console.log(`${f}: ${line?.features[0].geometry.coordinates[f]} (${props})`)
-        const map = mapRef.current?.getMap()
-        draw(map, line?.features[0].geometry.coordinates[f])
+        setCurrentFrame((prevFrame) => {
+            const nextFrame = prevFrame + 1
+            const map = mapRef.current?.getMap()
+
+            if (line?.features[0].geometry.coordinates[nextFrame]) {
+                draw(map, line?.features[0].geometry.coordinates[nextFrame])
+            }
+
+            return nextFrame
+        })
     }
 
-    const handleStarted = () => {
+    const handleStart = () => {
         const map = mapRef.current?.getMap()
         animateAtoB(map, line)
     }
 
+    const handleStop = () => {
+        setCurrentFrame(0)
+        const map = mapRef.current?.getMap()
+        if (line?.features[0].geometry.coordinates[0])
+            draw(map, line?.features[0].geometry.coordinates[0])
+    }
+
     const { play, pause, stop, isPlaying, isPaused } =
-        useAnimationController(handleUpdate, handleStarted, totalFrames)
+        useAnimationController(handleUpdate, handleStart, handleStop, totalFrames)
 
     return (<>
         <AnimationControlWrapper>
             <button onClick={play} disabled={isPlaying}>Play</button>
             <button onClick={pause} disabled={isPaused || !isPlaying}>Pause</button>
             <button onClick={stop}>Stop</button>
-            {f} / {totalFrames} &nbsp;
-            {frameOffset}
+            <select onSelect={() => alert("다른거 개발하고 오겠음")}>
+                <option>x1</option>
+                <option>x10</option>
+                <option>x50</option>
+            </select>
+            {currentFrame}
+            /
+            {totalFrames}
         </AnimationControlWrapper>
 
         <Map

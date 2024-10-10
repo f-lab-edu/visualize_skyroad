@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 
 const useAnimationController = (
     onUpdate: (deltaTime: number, additionalParam: any) => void,
-    onStarted: () => void,
+    onStart: () => void,
+    onStop: () => void,
     duration: number) => {
     const [isPlaying, setIsPlaying] = useState<boolean>(false)
     const [isPaused, setIsPaused] = useState<boolean>(false)
@@ -13,7 +14,7 @@ const useAnimationController = (
         if (!isPlaying) {
             setIsPlaying(true)
             setIsPaused(false)
-            onStarted()
+            onStart()
         }
     }
     const pause = () => {
@@ -30,6 +31,7 @@ const useAnimationController = (
             requestRef.current = null
         }
         previousTimeRef.current = null
+        onStop()
     }
 
     const animate = (time: number) => {
