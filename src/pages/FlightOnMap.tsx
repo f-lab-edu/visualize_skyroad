@@ -7,7 +7,8 @@ import { useLocation } from 'react-router-dom'
 import { requestFlightTrack } from '../data/dataProcessingLayer'
 import { FlightPathElement } from "../api/flight"
 import { Airport } from '../api/airports'
-
+import { styled } from '@stitches/react'
+import useAnimationController from '../components/useAnimationController/useAnimationController'
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
 const ERRORMESSAGE = {
@@ -35,13 +36,20 @@ type FeatureCollection = {
 }
 
 const INTERPOLE_THRESHOLD = 500
-const FRAME_OFFSET = 5
+const MAX_ANI_SPEED = 50
+const MIN_ANI_SPEED = 1
 
 const FlightOnMap: React.FC = ({ }) => {
     const mapRef = useRef<MapRef>(null)
     const location = useLocation()
     const { departure, arrival, flight } = location.state || {}
     const [route, setRoute] = useState(null) as any
+    const [line, setLine] = useState<FeatureCollection>(/* todo: explict empty obj */)
+    const [currentFrame, setCurrentFrame] = useState<number>(0)
+    const [totalFrames, setTotalFrames] = useState<number>(0)
+    // const [isPlaying, setIsPlaying] = useState<boolean>(false)
+    const aniRef = useRef<number | null>(null)
+    const [frameOffset, setFrameOffset] = useState<number>(1)
 
     if (!departure || !arrival || !flight) {
         return <p>{ERRORMESSAGE.NOFLIGHTDETAIL}</p>
@@ -88,12 +96,9 @@ const FlightOnMap: React.FC = ({ }) => {
 
     }
 
-    const animateAtoB = async (map: any, line: FeatureCollection) => {
+    const animateAtoB = async (map: any, line: FeatureCollection | any/* todo: remove null */) => {
 
-        let frame = 0
-        const totalFrames = line.features[0].geometry.coordinates.length
-
-        const origin = line.features[0].geometry.coordinates[0]
+        const origin = line?.features[0].geometry.coordinates[0]
         const point = {
             'type': 'FeatureCollection',
             'features': [
@@ -106,45 +111,24 @@ const FlightOnMap: React.FC = ({ }) => {
                     }
                 }
             ]
-        };
+        }
 
-        map.loadImage("airplane.png", (error: Error, image: HTMLIFrameElement) => {
+        map.loadImage("/airplane.png", (error: Error, image: HTMLIFrameElement) => {
             if (error) {
                 throw error
             }
+            !map.hasImage("airplane-icon") &&
+                map.addImage("airplane-icon", image)
 
-            map.addImage("airplane-icon", image)
 
-            map.addSource("point", {
-                type: "geojson",
-                data: point
-            })
+            !map.getSource("point") &&
+                map.addSource("point", { type: "geojson", data: point })
 
-            map.addLayer({
-                id: "points",
-                type: "symbol",
-                source: "point",
-                layout: {
-                    "icon-image": "airplane-icon",
-                    "icon-size": 0.25,
-                },
-            })
+            !map.getLayer("points") &&
+                map.addLayer({
+                    id: "points", type: "symbol", source: "point", layout: { "icon-image": "airplane-icon", "icon-size": 0.25, },
+                })
         })
-
-        const animate = () => {
-            point.features[0].geometry.coordinates =
-                line.features[0].geometry.coordinates[frame];
-
-            map.getSource('point')?.setData(point)
-
-            frame += FRAME_OFFSET
-            if (frame < totalFrames) {
-                requestAnimationFrame(animate)
-            }
-
-        }
-
-        animate()
 
     }
 
@@ -185,8 +169,8 @@ const FlightOnMap: React.FC = ({ }) => {
 
             const { departure, arrival, }: { departure: Airport, arrival: Airport } = location.state || null
 
-            const timestampStarted = route.path[0][0]
-            const timestampTerminated = route.path[route.path.length - 1][0]
+            const timestampStarted = route.path.at(0)[0]// [0]
+            const timestampTerminated = route.path.at(-1)[0]
             const unitTime = (timestampTerminated - timestampStarted) / INTERPOLE_THRESHOLD
 
             const departureAirport: FlightPathElement = {
@@ -228,9 +212,7 @@ const FlightOnMap: React.FC = ({ }) => {
         })
     }
 
-
     useEffect(() => {
-
         if (!flight)
             return
 
@@ -239,27 +221,95 @@ const FlightOnMap: React.FC = ({ }) => {
     }, [flight])
 
     useEffect(() => {
-
         if (!route)
             return
 
         const map = mapRef.current?.getMap()
-        if (!map) {
-            alert("맵 없음.")
+        if (!map)
             return
-        }
 
         fitMapBound(map)
 
-        getLineFromRoute().then(line => {
-            drawStraightLine(map, line)
-            animateAtoB(map, line)
-        })
+        getLineFromRoute().then(setLine)
 
     }, [route])
 
+    useEffect(() => {
+        const map = mapRef.current?.getMap()
+
+        if (!line || !map)
+            return
+
+        setTotalFrames(line?.features[0].geometry.coordinates.length)
+
+        drawStraightLine(map, line)
+
+    }, [line])
+
+    const draw = (map: any, pos: any) => {
+        if (map?.getSource("point")) {
+            const origin = pos
+            const point = {
+                'type': 'FeatureCollection',
+                'features': [
+                    {
+                        'type': 'Feature',
+                        'properties': {},
+                        'geometry': {
+                            'type': 'Point',
+                            'coordinates': origin
+                        }
+                    }
+                ]
+            }
+            map.getSource("point").setData(point)
+            return
+        }
+    }
+
+    const handleUpdate = (props: any) => {
+        setCurrentFrame((prevFrame) => {
+            const nextFrame = prevFrame + 1
+            const map = mapRef.current?.getMap()
+
+            if (line?.features[0].geometry.coordinates[nextFrame]) {
+                draw(map, line?.features[0].geometry.coordinates[nextFrame])
+            }
+
+            return nextFrame
+        })
+    }
+
+    const handleStart = () => {
+        const map = mapRef.current?.getMap()
+        animateAtoB(map, line)
+    }
+
+    const handleStop = () => {
+        setCurrentFrame(0)
+        const map = mapRef.current?.getMap()
+        if (line?.features[0].geometry.coordinates[0])
+            draw(map, line?.features[0].geometry.coordinates[0])
+    }
+
+    const { play, pause, stop, isPlaying, isPaused } =
+        useAnimationController(handleUpdate, handleStart, handleStop, totalFrames)
 
     return (<>
+        <AnimationControlWrapper>
+            <button onClick={play} disabled={isPlaying}>Play</button>
+            <button onClick={pause} disabled={isPaused || !isPlaying}>Pause</button>
+            <button onClick={stop}>Stop</button>
+            <select onSelect={() => alert("다른거 개발하고 오겠음")}>
+                <option>x1</option>
+                <option>x10</option>
+                <option>x50</option>
+            </select>
+            {currentFrame}
+            /
+            {totalFrames}
+        </AnimationControlWrapper>
+
         <Map
             ref={mapRef}
             mapLib={maplibregl as any}
@@ -278,6 +328,14 @@ const FlightOnMap: React.FC = ({ }) => {
 
 export default FlightOnMap
 
+
+const AnimationControlWrapper = styled('div', {
+    backgroundColor: "skyblue",
+    padding: "5px",
+    display: "flex",
+    justifyItems: "center",
+
+})
 
 const linearInterpFn = (
     current: FlightPathElement,
