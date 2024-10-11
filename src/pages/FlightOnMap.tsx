@@ -259,18 +259,17 @@ const FlightOnMap: React.FC = ({ }) => {
                 ]
             }
             map.getSource("point").setData(point)
-            return
         }
     }
 
-    const handleUpdate = (props: any) => {
+    const handleUpdate = (deltaTime: number, { speed }: any) => {
+        console.log(deltaTime, speed)
         setCurrentFrame((prevFrame) => {
             const nextFrame = prevFrame + 1
             const map = mapRef.current?.getMap()
 
-            if (line?.features[0].geometry.coordinates[nextFrame]) {
+            if (line?.features[0].geometry.coordinates[nextFrame])
                 draw(map, line?.features[0].geometry.coordinates[nextFrame])
-            }
 
             return nextFrame
         })

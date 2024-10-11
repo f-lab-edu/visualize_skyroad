@@ -37,10 +37,14 @@ const useAnimationController = (
     const animate = (time: number) => {
         if (previousTimeRef.current !== null) {
             onUpdate(requestRef.current!, { speed: 1 })
+            console.log(requestRef.current!, duration)
         }
         previousTimeRef.current = time
         if (!isPaused) {
             requestRef.current = requestAnimationFrame(animate)
+        }
+        if (requestRef.current! === duration) {
+            cancelAnimationFrame(requestRef.current)
         }
     }
 
