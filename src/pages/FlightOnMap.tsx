@@ -10,7 +10,9 @@ import { Airport } from '../api/airports'
 import { styled } from '@stitches/react'
 import useAnimationController from '../components/useAnimationController/useAnimationController'
 
+
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
+
 const ERRORMESSAGE = {
     NOFLIGHTDETAIL: "항공상세정보를 가져오지 못하였습니다."
 }
@@ -36,8 +38,6 @@ type FeatureCollection = {
 }
 
 const INTERPOLE_THRESHOLD = 500
-const MAX_ANI_SPEED = 50
-const MIN_ANI_SPEED = 1
 
 const FlightOnMap: React.FC = ({ }) => {
     const mapRef = useRef<MapRef>(null)
@@ -47,9 +47,6 @@ const FlightOnMap: React.FC = ({ }) => {
     const [line, setLine] = useState<FeatureCollection>(/* todo: explict empty obj */)
     const [currentFrame, setCurrentFrame] = useState<number>(0)
     const [totalFrames, setTotalFrames] = useState<number>(0)
-    // const [isPlaying, setIsPlaying] = useState<boolean>(false)
-    const aniRef = useRef<number | null>(null)
-    const [frameOffset, setFrameOffset] = useState<number>(1)
 
     if (!departure || !arrival || !flight) {
         return <p>{ERRORMESSAGE.NOFLIGHTDETAIL}</p>
@@ -291,6 +288,7 @@ const FlightOnMap: React.FC = ({ }) => {
         useAnimationController(handleUpdate, handleStart, handleStop, totalFrames)
 
     return (<>
+
         <AnimationControlWrapper>
             <button onClick={play} disabled={isPlaying}>Play</button>
             <button onClick={pause} disabled={isPaused || !isPlaying}>Pause</button>
@@ -300,9 +298,7 @@ const FlightOnMap: React.FC = ({ }) => {
                 <option>x10</option>
                 <option>x50</option>
             </select>
-            {currentFrame}
-            /
-            {totalFrames}
+            ({currentFrame}/{totalFrames})
         </AnimationControlWrapper>
 
         <Map
