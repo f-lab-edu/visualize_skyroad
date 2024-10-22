@@ -121,12 +121,13 @@ const FlightMap: React.FC = ({ }) => {
         }
 
         map.loadImage("/airplane.png", (error: Error, image: HTMLIFrameElement) => {
+
             if (error) {
                 throw error
             }
+
             !map.hasImage("airplane-icon") &&
                 map.addImage("airplane-icon", image)
-
 
             !map.getSource("point") &&
                 map.addSource("point", { type: "geojson", data: point })
@@ -294,6 +295,12 @@ const FlightMap: React.FC = ({ }) => {
             draw(map, line?.features[0].geometry.coordinates[0])
     }
 
+    const handleChangeAniSpeed = (e: React.ChangeEvent<HTMLSelectElement>) => {
+
+        alert(e.target.value)
+
+    }
+
     const { play, pause, stop, isPlaying, isPaused } =
         useAnimationController(handleUpdate, handleStart, handleStop, totalFrames)
 
@@ -303,12 +310,12 @@ const FlightMap: React.FC = ({ }) => {
             <button onClick={play} disabled={isPlaying}>Play</button>
             <button onClick={pause} disabled={isPaused || !isPlaying}>Pause</button>
             <button onClick={stop}>Stop</button>
-            <select onSelect={() => alert("다른거 개발하고 오겠음")}>
-                <option>x1</option>
-                <option>x10</option>
-                <option>x50</option>
+            <select onChange={handleChangeAniSpeed}>
+                <option value={1}>x1</option>
+                <option value={10}>x10</option>
+                <option value={50}>x50</option>
             </select>
-            ({currentFrame}/{totalFrames})
+            &nbsp;({currentFrame}/{totalFrames})
         </AnimationControlWrapper>
 
         <Map
