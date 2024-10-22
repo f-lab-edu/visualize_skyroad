@@ -3,12 +3,13 @@ import * as turf from '@turf/turf'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { Map, MapRef } from 'react-map-gl'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { requestFlightTrack } from '../../data/dataProcessingLayer'
 import { FlightPathElement } from "../../api/flight"
 import { Airport } from '../../api/airports'
 import { styled } from '@stitches/react'
 import useAnimationController from '../../components/useAnimationController/useAnimationController'
+import VSkyButton from '../Button/VSKyButton'
 
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
@@ -47,9 +48,18 @@ const FlightMap: React.FC = ({ }) => {
     const [line, setLine] = useState<FeatureCollection>(/* todo: explict empty obj */)
     const [currentFrame, setCurrentFrame] = useState<number>(0)
     const [totalFrames, setTotalFrames] = useState<number>(0)
+    const navigate = useNavigate()
 
+    const backHome = () => {
+        navigate("/")
+    }
     if (!departure || !arrival || !flight) {
-        return <p>{ERRORMESSAGE.NOFLIGHTDETAIL}</p>
+        return <div style={{ textAlign: "center", margin: "auto" }}>
+            <p>
+                {ERRORMESSAGE.NOFLIGHTDETAIL}
+            </p>
+            <VSkyButton onClick={backHome}>첫 페이지</VSkyButton>
+        </div>
     }
 
     const getRoute = async () => {
