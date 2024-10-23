@@ -43,8 +43,8 @@ const useAnimationController = (
         if (!isPaused) {
             requestRef.current = requestAnimationFrame(animate)
         }
-        if (requestRef.current! === duration) {
-            cancelAnimationFrame(requestRef.current)
+        if (requestRef.current! >= duration) {
+            cancelAnimationFrame(requestRef.current!)
         }
     }
 

@@ -49,6 +49,7 @@ const FlightMap: React.FC = ({ }) => {
     const [currentFrame, setCurrentFrame] = useState<number>(0)
     const [totalFrames, setTotalFrames] = useState<number>(0)
     const navigate = useNavigate()
+    const [zoomLevel, setZoomLevel] = useState<number>(0)
 
     const backHome = () => {
         navigate("/")
@@ -304,7 +305,7 @@ const FlightMap: React.FC = ({ }) => {
     const { play, pause, stop, isPlaying, isPaused } =
         useAnimationController(handleUpdate, handleStart, handleStop, totalFrames)
 
-    return (<>
+    return (<div style={{ position: 'relative' }}>
 
         <AnimationControlWrapper>
             <button onClick={play} disabled={isPlaying}>Play</button>
@@ -330,7 +331,18 @@ const FlightMap: React.FC = ({ }) => {
             mapStyle={`https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_KEY}`}
         />
 
-    </>)
+        <div style={{
+            position: 'absolute',
+            top: 1,
+            right: 10,
+            background: 'rgba(0, 0, 0, 0.5)',
+            color: 'white',
+            padding: '5px',
+            borderRadius: '5px'
+        }}>
+            Zoom: {zoomLevel.toFixed(2)}
+        </div>
+    </div>)
 }
 
 
