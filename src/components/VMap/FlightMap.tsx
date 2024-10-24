@@ -19,7 +19,7 @@ const ERRORMESSAGE = {
   NOFLIGHTDETAIL: '항공상세정보를 가져오지 못하였습니다.',
 }
 
-const FlightMap: React.FC = ({}) => {
+const FlightMap: React.FC = () => {
   const mapRef = useRef<MapRef>(null)
   const [map, setMap] = useState<MapInstance | null>(null)
 
