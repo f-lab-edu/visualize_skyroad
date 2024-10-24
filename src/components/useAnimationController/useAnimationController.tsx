@@ -38,10 +38,7 @@ const useMapAnimationController = ({
     }
   }
 
-  const animateAtoB = async (
-    map: any,
-    line: any | FeatureCollection /* todo: remove null */
-  ) => {
+  const animateAtoB = async (map: any, line: any | FeatureCollection) => {
     const origin = line?.features[0].geometry.coordinates[0]
     const point = {
       type: 'FeatureCollection',

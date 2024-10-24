@@ -5,11 +5,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Map, MapInstance, MapRef } from 'react-map-gl'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-import { Airport } from '../../api/airports'
-import { FlightPathElement } from '../../api/flight'
-import useAnimationController from '../../components/useAnimationController/useAnimationController'
 import useMapAnimationController from '../../components/useAnimationController/useAnimationController'
-import { requestFlightTrack } from '../../data/dataProcessingLayer'
 import VSkyButton from '../Button/VSKyButton'
 import { useLine } from '../useLine'
 

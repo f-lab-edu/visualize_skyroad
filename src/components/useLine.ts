@@ -5,7 +5,7 @@ import { MapInstance } from 'react-map-gl'
 import { FlightPathElement } from '../api/flight'
 import { requestFlightTrack } from '../data/dataProcessingLayer'
 
-interface useGetLineProps {
+interface useLineProps {
   arrival: any
   departure: any
   flight: any
@@ -34,9 +34,9 @@ export type FeatureCollection = {
 
 const INTERPOLE_THRESHOLD = 500
 
-export function useLine({ map, flight, arrival, departure }: useGetLineProps) {
+export function useLine({ map, flight, arrival, departure }: useLineProps) {
   const [line, setLine] = useState<FeatureCollection | null>(null)
-  const [route, setRoute] = useState(null) as any
+  const [route, setRoute] = useState<any>(null)
   const [totalFrames, setTotalFrames] = useState<number>(0)
 
   const getRoute = async () => {
@@ -162,7 +162,7 @@ export function useLine({ map, flight, arrival, departure }: useGetLineProps) {
     }
   }
 
-  const getLineFromRoute = async ({
+  const getLineFromRoute = ({
     departure,
     arrival,
     flight,
@@ -171,7 +171,7 @@ export function useLine({ map, flight, arrival, departure }: useGetLineProps) {
     arrival: any
     flight: any
   }): Promise<FeatureCollection> => {
-    return new Promise(async (resolve) => {
+    return new Promise((resolve, reject) => {
       const timestampStarted = route.path.at(0)[0] // [0]
       const timestampTerminated = route.path.at(-1)[0]
       const unitTime =
@@ -185,6 +185,7 @@ export function useLine({ map, flight, arrival, departure }: useGetLineProps) {
         true_track: 0,
         on_ground: true,
       }
+
       const arrivalAirport: FlightPathElement = {
         time: timestampTerminated + unitTime,
         latitude: arrival.latitude,
@@ -194,28 +195,33 @@ export function useLine({ map, flight, arrival, departure }: useGetLineProps) {
         on_ground: true,
       }
 
-      const coordinates = await interpolatedRawPath(
+      // 비동기 함수 체인을 사용하여 결과를 resolve합니다.
+      interpolatedRawPath(
         [departureAirport, arrivalAirport],
         INTERPOLE_THRESHOLD
       )
-      const filteredCoordenates = await removeDuplicateCoordinates(coordinates)
-      const interpolatedPath =
-        await interpolateGreatCirclePath(filteredCoordenates)
-
-      const line: FeatureCollection = {
-        type: 'FeatureCollection',
-        features: [
-          {
-            type: 'Feature',
-            geometry: {
-              type: 'LineString',
-              coordinates: interpolatedPath as number[][],
-            },
-          },
-        ],
-      }
-
-      resolve(line)
+        .then((coordinates) => removeDuplicateCoordinates(coordinates))
+        .then((filteredCoordinates) =>
+          interpolateGreatCirclePath(filteredCoordinates)
+        )
+        .then((interpolatedPath) => {
+          const line: FeatureCollection = {
+            type: 'FeatureCollection',
+            features: [
+              {
+                type: 'Feature',
+                geometry: {
+                  type: 'LineString',
+                  coordinates: interpolatedPath as number[][],
+                },
+              },
+            ],
+          }
+          resolve(line)
+        })
+        .catch((error) => {
+          reject(error)
+        })
     })
   }
 
