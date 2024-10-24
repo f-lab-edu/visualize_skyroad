@@ -18,6 +18,9 @@ const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
 const ERRORMESSAGE = {
   NOFLIGHTDETAIL: '항공상세정보를 가져오지 못하였습니다.',
 }
+const STRINGS = {
+  HOME: '첫 페이지',
+}
 
 const FlightMap: React.FC = () => {
   const mapRef = useRef<MapRef>(null)
@@ -59,7 +62,7 @@ const FlightMap: React.FC = () => {
     return (
       <div style={{ textAlign: 'center', margin: 'auto' }}>
         <p>{ERRORMESSAGE.NOFLIGHTDETAIL}</p>
-        <VSkyButton onClick={backHome}>첫 페이지</VSkyButton>
+        <VSkyButton onClick={backHome}>{STRINGS.HOME}</VSkyButton>
       </div>
     )
   }
