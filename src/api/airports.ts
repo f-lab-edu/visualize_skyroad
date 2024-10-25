@@ -14,26 +14,26 @@ const fetchAirports = async () => {
 
     const parseCSV = (data: string) => {
         /*
-          ID: The unique identifier of the airport.
-          Airport Name: The name of the airport.
-          City: The city where the airport is located.
-          Country: The country where the airport is located.
-          IATA Code: The IATA airport code.
-          ICAO Code: The ICAO airport code.
-          Latitude: The latitude of the airport.
-          Longitude: The longitude of the airport.
-          Altitude: The altitude of the airport.
-          Timezone: The timezone in which the airport is located.
-          DST: Daylight saving time information.
-          Tz Database Timezone: The timezone database name.
-          Type: The type of location (e.g., "airport").
-          Source: The source of the data.
+            ID: The unique identifier of the airport.
+            Airport Name: The name of the airport.
+            City: The city where the airport is located.
+            Country: The country where the airport is located.
+            IATA Code: The IATA airport code.
+            ICAO Code: The ICAO airport code.
+            Latitude: The latitude of the airport.
+            Longitude: The longitude of the airport.
+            Altitude: The altitude of the airport.
+            Timezone: The timezone in which the airport is located.
+            DST: Daylight saving time information.
+            Tz Database Timezone: The timezone database name.
+            Type: The type of location (e.g., "airport").
+            Source: The source of the data.
         */
         return data
             .trim()
             .split('\n')
-            .map((line) => {
-                const parts = line.split(',')
+            .map((record) => {
+                const parts = record.split(',')
 
                 return {
                     id: parts[0],
@@ -45,14 +45,16 @@ const fetchAirports = async () => {
                     latitude: parseFloat(parts[6]), // Latitude
                     longitude: parseFloat(parts[7]), // Longitude
                     altitude: parseInt(parts[8]), // Altitude
-                    timezone: parts[9], // Timezone
-                    dst: parts[10], // DST information
-                    tzDatabaseTimezone: parts[11], // Tz database timezone
-                    type: parts[12], // Type (e.g., airport)
-                    source: parts[13], // Source (e.g., OurAirports)
+                    timezone: parts[9].replace(/"/g, ''), // Timezone
+                    dst: parts[10].replace(/"/g, ''), // DST information
+                    tzDatabaseTimezone: parts[11].replace(/"/g, ''), // Tz database timezone
+                    type: parts[12].replace(/"/g, ''), // Type (e.g., airport)
+                    source: parts[13].replace(/"/g, ''), // Source (e.g., OurAirports)
                 }
             })
+            .filter(airport => airport.type === "airport" && airport.source === "OurAirports")
     }
+
     return parseCSV(textData)
 }
 
@@ -65,6 +67,6 @@ export const useAirports = () => {
         queryKey: ['airports'],
         queryFn: fetchAirports,
     })
-
+    console.log(airports)
     return { airports, isLoading, error }
 }
