@@ -145,7 +145,7 @@ export const countryNameToCode: Record<string, string> = {
     "Northern Mariana Islands": "MP",
     "Guam": "GU",
     "Marshall Islands": "MH",
-    "Midway Islands": "US", // 미국 영토로 대체
+    "Midway Islands": "US",
     "Micronesia": "FM",
     "Palau": "PW",
     "Taiwan": "TW",
@@ -229,11 +229,11 @@ export const countryNameToCode: Record<string, string> = {
     "Namibia": "NA",
     "Djibouti": "DJ",
     "Montserrat": "MS",
-    "Johnston Atoll": "-", // 미국 영토로 대체
+    "Johnston Atoll": "-", // 지구로 표시
     "Western Sahara": "EH",
     "Niue": "NU",
     "Cocos (Keeling) Islands": "CC",
     "Myanmar": "MM",
     "Svalbard": "SJ",
-    "Wake Island": "-" // 미국 영토로 대체
+    "Wake Island": "-" // 지구로 표시
 };
