@@ -32,16 +32,18 @@ const Dropdown = styled('ul', {
 })
 const Option = styled('li', {
   display: 'flex',
-  width: '100%',
-  overflow: 'hidden',
-  padding: '8px',
-  cursor: 'pointer',
-  '&:hover': {
-    backgroundColor: '#DDD',
-  },
   justifyContent: 'flex-start',
   alignItems: 'center',
   textAlign: 'left',
+  width: 'max-content',
+  padding: '8px',
+  overflow: 'hidden',
+  cursor: 'pointer',
+
+  '&:hover': {
+    backgroundColor: '#DDD',
+  },
+
   'p': {
     fontWeight: 'bold',
     fontSize: '.8rem',
