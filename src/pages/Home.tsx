@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react'
 import { styled } from '@stitches/react'
-import ComboBox from '../components/ComboBox/ComboBox'
-import SkyButton from '../components/Button/VSKyButton'
-import backgroundImage from '../assets/sky1.jpg'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Airport, useAirports } from '../api/airports'
 import { fetchFlight, Flight, FlightList } from '../api/flight'
-import { findFlightFromICNtoJFK } from "../data/dataProcessingLayer"
+import backgroundImage from '../assets/sky1.jpg'
+import SkyButton from '../components/Button/VSKyButton'
+import AirportComboBox from '../components/AirportComboBox/AirportComboBox'
+import { findFlightFromICNtoJFK } from '../data/dataProcessingLayer'
 
 const STINGS = {
   Header: 'ExploreTheWorld!!',
@@ -61,17 +61,21 @@ const Home = () => {
       </HomeHeaderText>
 
       <RouteComboxBoxContainer>
-        <ComboBox
-          blacklist={arrivalAirport}
-          airports={airports}
-          onSelectAirport={setDepartureAirport}
-        />
-        <ComboBox
-          blacklist={departureAirport}
-          airports={airports}
-          onSelectAirport={setArrivalAirport}
-        />
-        <SkyButton onClick={handleSearch}>{STINGS.buttonText}</SkyButton>
+        <div>
+          <AirportComboBox
+            airports={airports}
+            blacklist={arrivalAirport}
+            onSelectAirport={setDepartureAirport}
+          />
+          <AirportComboBox
+            airports={airports}
+            blacklist={departureAirport}
+            onSelectAirport={setArrivalAirport}
+          />
+        </div>
+        <div>
+          <SkyButton onClick={handleSearch}>{STINGS.buttonText}</SkyButton>
+        </div>
       </RouteComboxBoxContainer>
 
       {flightList.length > 0 && (
@@ -114,6 +118,7 @@ const HomeLayoutSytle = styled('div', {
 
 const RouteComboxBoxContainer = styled('div', {
   display: 'flex',
+  // flexDirection: 'column',
   backgroundColor: '#FAFAFA',
   width: 'max-content',
   borderRadius: '100px',

@@ -12,4 +12,7 @@ module.exports = {
     semi: ['error', 'never'],
     // '@typescript-eslint/semi': ['error', 'never'],
   },
+  overrides: {
+    files: ['*.ts', '*.tsx'], // .ts와 .tsx 파일에 린트 적용
+  },
 }
