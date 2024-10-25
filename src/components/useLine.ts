@@ -195,15 +195,12 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
         on_ground: true,
       }
 
-      // 비동기 함수 체인을 사용하여 결과를 resolve합니다.
       interpolatedRawPath(
         [departureAirport, arrivalAirport],
         INTERPOLE_THRESHOLD
       )
-        .then((coordinates) => removeDuplicateCoordinates(coordinates))
-        .then((filteredCoordinates) =>
-          interpolateGreatCirclePath(filteredCoordinates)
-        )
+        .then(removeDuplicateCoordinates)
+        .then(interpolateGreatCirclePath)
         .then((interpolatedPath) => {
           const line: FeatureCollection = {
             type: 'FeatureCollection',
@@ -219,9 +216,7 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
           }
           resolve(line)
         })
-        .catch((error) => {
-          reject(error)
-        })
+        .catch(reject)
     })
   }
 
