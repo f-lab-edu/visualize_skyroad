@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react'
 import { styled } from '@stitches/react'
-import ComboBox from '../components/ComboBox/ComboBox'
-import SkyButton from '../components/Button/VSKyButton'
-import backgroundImage from '../assets/sky1.jpg'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Airport, useAirports } from '../api/airports'
 import { fetchFlight, Flight, FlightList } from '../api/flight'
-import { findFlightFromICNtoJFK } from "../data/dataProcessingLayer"
+import backgroundImage from '../assets/sky1.jpg'
+import SkyButton from '../components/Button/VSKyButton'
+import ComboBox from '../components/ComboBox/ComboBox'
+import { findFlightFromICNtoJFK } from '../data/dataProcessingLayer'
 
 const STINGS = {
   Header: 'ExploreTheWorld!!',
@@ -62,13 +62,13 @@ const Home = () => {
 
       <RouteComboxBoxContainer>
         <ComboBox
-          blacklist={arrivalAirport}
           airports={airports}
+          blacklist={arrivalAirport}
           onSelectAirport={setDepartureAirport}
         />
         <ComboBox
-          blacklist={departureAirport}
           airports={airports}
+          blacklist={departureAirport}
           onSelectAirport={setArrivalAirport}
         />
         <SkyButton onClick={handleSearch}>{STINGS.buttonText}</SkyButton>
