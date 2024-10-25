@@ -1,5 +1,5 @@
 import { styled } from '@stitches/react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 const ComboBoxContainer = styled('div', {
   display: 'flex',
@@ -15,6 +15,7 @@ const Input = styled('input', {
   borderRadius: '4px',
   border: '1px solid #CCC',
   marginBottom: '8px',
+  // position: 'absolute',
 })
 const Dropdown = styled('ul', {
   listStyle: 'none',
@@ -43,21 +44,21 @@ const ComboBox = ({ airports, onSelectAirport, blacklist }: any) => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setSearchTerm(value)
-    if (value == '') {
-      setFilteredAirports([])
-      return
-    }
-    //const filtered = (airports).filter((airport: any) => (airport.name.toLowerCase().indexOf(value.toLocaleLowerCase())) > -1)
-    const filtered = airports.filter((airport: any) => {
-      return (
-        // airport.name.toLowerCase().includes(value) ||
-        airport.city.toLowerCase().replace(/ /gi, '').includes(value) ||
-        airport.country.toLowerCase().replace(/ /gi, '').includes(value)
-      )
-    })
-    // console.log(filtered);
-    setFilteredAirports(filtered)
   }
+
+  useEffect(() => {
+    if (searchTerm === '' || searchTerm.length < 2) return
+
+    const filtered = airports.filter(
+      (airport: any) =>
+        airport.city
+          .replaceAll(' ', '')
+          .toLowerCase()
+          .indexOf(searchTerm.toLocaleLowerCase()) > -1
+    )
+    setFilteredAirports(filtered)
+    console.log('--*--', searchTerm, '--*--', filtered)
+  }, [searchTerm])
 
   const handleOptionClick = (airport: any) => {
     onSelectAirport(airport)
@@ -82,7 +83,7 @@ const ComboBox = ({ airports, onSelectAirport, blacklist }: any) => {
                 key={airport.id}
                 onClick={() => handleOptionClick(airport)}
               >
-                ({airport.city}) {airport.name}
+                ({airport.country}:{airport.city}) {airport.name}
               </Option>
             ))}
         </Dropdown>

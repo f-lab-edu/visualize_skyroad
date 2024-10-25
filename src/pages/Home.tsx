@@ -61,17 +61,21 @@ const Home = () => {
       </HomeHeaderText>
 
       <RouteComboxBoxContainer>
-        <ComboBox
-          airports={airports}
-          blacklist={arrivalAirport}
-          onSelectAirport={setDepartureAirport}
-        />
-        <ComboBox
-          airports={airports}
-          blacklist={departureAirport}
-          onSelectAirport={setArrivalAirport}
-        />
-        <SkyButton onClick={handleSearch}>{STINGS.buttonText}</SkyButton>
+        <div>
+          <ComboBox
+            airports={airports}
+            blacklist={arrivalAirport}
+            onSelectAirport={setDepartureAirport}
+          />
+          <ComboBox
+            airports={airports}
+            blacklist={departureAirport}
+            onSelectAirport={setArrivalAirport}
+          />
+        </div>
+        <div>
+          <SkyButton onClick={handleSearch}>{STINGS.buttonText}</SkyButton>
+        </div>
       </RouteComboxBoxContainer>
 
       {flightList.length > 0 && (
@@ -114,6 +118,7 @@ const HomeLayoutSytle = styled('div', {
 
 const RouteComboxBoxContainer = styled('div', {
   display: 'flex',
+  // flexDirection: 'column',
   backgroundColor: '#FAFAFA',
   width: 'max-content',
   borderRadius: '100px',
