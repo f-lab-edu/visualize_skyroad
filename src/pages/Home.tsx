@@ -6,7 +6,7 @@ import { Airport, useAirports } from '../api/airports'
 import { fetchFlight, Flight, FlightList } from '../api/flight'
 import backgroundImage from '../assets/sky1.jpg'
 import SkyButton from '../components/Button/VSKyButton'
-import ComboBox from '../components/ComboBox/ComboBox'
+import AirportComboBox from '../components/AirportComboBox/AirportComboBox'
 import { findFlightFromICNtoJFK } from '../data/dataProcessingLayer'
 
 const STINGS = {
@@ -62,12 +62,12 @@ const Home = () => {
 
       <RouteComboxBoxContainer>
         <div>
-          <ComboBox
+          <AirportComboBox
             airports={airports}
             blacklist={arrivalAirport}
             onSelectAirport={setDepartureAirport}
           />
-          <ComboBox
+          <AirportComboBox
             airports={airports}
             blacklist={departureAirport}
             onSelectAirport={setArrivalAirport}

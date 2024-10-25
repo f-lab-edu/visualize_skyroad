@@ -57,6 +57,7 @@ const RAW_RUNTIME_STATE =
           ["react", "npm:18.3.1"],\
           ["react-dom", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:18.3.1"],\
           ["react-error-boundary", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:4.1.2"],\
+          ["react-flagkit", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:2.0.4"],\
           ["react-map-gl", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:7.1.7"],\
           ["react-router-dom", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:6.27.0"],\
           ["typescript", "patch:typescript@npm%3A5.6.3#optional!builtin<compat/typescript>::version=5.6.3&hash=8c6c40"],\
@@ -6995,6 +6996,28 @@ const RAW_RUNTIME_STATE =
         "linkType": "HARD"\
       }]\
     ]],\
+    ["react-flagkit", [\
+      ["npm:2.0.4", {\
+        "packageLocation": "./.yarn/cache/react-flagkit-npm-2.0.4-be3606bdf5-b05afc718b.zip/node_modules/react-flagkit/",\
+        "packageDependencies": [\
+          ["react-flagkit", "npm:2.0.4"]\
+        ],\
+        "linkType": "SOFT"\
+      }],\
+      ["virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:2.0.4", {\
+        "packageLocation": "./.yarn/__virtual__/react-flagkit-virtual-5df744bce3/0/cache/react-flagkit-npm-2.0.4-be3606bdf5-b05afc718b.zip/node_modules/react-flagkit/",\
+        "packageDependencies": [\
+          ["react-flagkit", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:2.0.4"],\
+          ["@types/react", "npm:18.3.12"],\
+          ["react", "npm:18.3.1"]\
+        ],\
+        "packagePeers": [\
+          "@types/react",\
+          "react"\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
     ["react-is", [\
       ["npm:16.13.1", {\
         "packageLocation": "./.yarn/cache/react-is-npm-16.13.1-a9b9382b4f-33977da7a5.zip/node_modules/react-is/",\
@@ -8146,6 +8169,7 @@ const RAW_RUNTIME_STATE =
           ["react", "npm:18.3.1"],\
           ["react-dom", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:18.3.1"],\
           ["react-error-boundary", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:4.1.2"],\
+          ["react-flagkit", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:2.0.4"],\
           ["react-map-gl", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:7.1.7"],\
           ["react-router-dom", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:6.27.0"],\
           ["typescript", "patch:typescript@npm%3A5.6.3#optional!builtin<compat/typescript>::version=5.6.3&hash=8c6c40"],\

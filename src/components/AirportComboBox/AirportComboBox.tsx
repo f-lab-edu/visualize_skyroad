@@ -1,5 +1,7 @@
 import { styled } from '@stitches/react'
 import React, { useEffect, useState } from 'react'
+import FlagIcon from 'react-flagkit';
+import { AirportList } from '../../api/airports';
 
 const ComboBoxContainer = styled('div', {
   display: 'flex',
@@ -25,21 +27,32 @@ const Dropdown = styled('ul', {
   borderRadius: '4px',
   backgroundColor: '#FFF',
   maxHeight: '150px',
-  maxWidth: '250px',
+  maxWidth: '350px',
   overflowY: 'auto',
 })
 const Option = styled('li', {
+  display: 'flex',
+  width: '100%',
+  overflow: 'hidden',
   padding: '8px',
   cursor: 'pointer',
   '&:hover': {
     backgroundColor: '#DDD',
   },
+  justifyContent: 'flex-start',
+  alignItems: 'center',
   textAlign: 'left',
+  'p': {
+    fontWeight: 'bold',
+    fontSize: '.8rem',
+    margin: '0',
+    padding: '0',
+  }
 })
 
 const ComboBox = ({ airports, onSelectAirport, blacklist }: any) => {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [filteredAirports, setFilteredAirports] = useState([])
+  const [searchTerm, setSearchTerm] = useState<string>('')
+  const [filteredAirports, setFilteredAirports] = useState<AirportList>([])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
@@ -47,17 +60,18 @@ const ComboBox = ({ airports, onSelectAirport, blacklist }: any) => {
   }
 
   useEffect(() => {
-    if (searchTerm === '' || searchTerm.length < 2) return
+
+    if (searchTerm === '' || searchTerm.length < 2) {
+      setFilteredAirports([])
+      return
+    }
 
     const filtered = airports.filter(
       (airport: any) =>
-        airport.city
-          .replaceAll(' ', '')
-          .toLowerCase()
-          .indexOf(searchTerm.toLocaleLowerCase()) > -1
+        airport.city.replaceAll(' ', '').toLowerCase().indexOf(searchTerm.toLocaleLowerCase()) > -1
+        || airport.country.replaceAll(' ', '').toLowerCase().indexOf(searchTerm.toLocaleLowerCase()) > -1
     )
     setFilteredAirports(filtered)
-    console.log('--*--', searchTerm, '--*--', filtered)
   }, [searchTerm])
 
   const handleOptionClick = (airport: any) => {
@@ -65,6 +79,7 @@ const ComboBox = ({ airports, onSelectAirport, blacklist }: any) => {
     setSearchTerm(airport.name)
     setFilteredAirports([])
   }
+
 
   return (
     <ComboBoxContainer>
@@ -83,7 +98,8 @@ const ComboBox = ({ airports, onSelectAirport, blacklist }: any) => {
                 key={airport.id}
                 onClick={() => handleOptionClick(airport)}
               >
-                ({airport.country}:{airport.city}) {airport.name}
+                {airport.flag === '-' ? '🌏' : <FlagIcon alt={airport.country} country={airport.flag} />}
+                &nbsp;<p>{airport.city}</p>&nbsp;{airport.name}
               </Option>
             ))}
         </Dropdown>

@@ -1,4 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
+import { countryNameToCode } from '../countryNameToCode'
 
 export type AirportList = Awaited<ReturnType<typeof fetchAirports>>
 export type Airport = AirportList[number]
@@ -40,6 +41,7 @@ const fetchAirports = async () => {
                     name: parts[1].replace(/"/g, ''), // Remove quotes from the airport name
                     city: parts[2].replace(/"/g, ''), // City name
                     country: parts[3].replace(/"/g, ''), // Country name
+                    flag: countryNameToCode[parts[3].replace(/"/g, '')], // Country Code for Flag
                     iata: parts[4].replace(/"/g, ''), // IATA code
                     icao: parts[5].replace(/"/g, ''), // ICAO code
                     latitude: parseFloat(parts[6]), // Latitude
@@ -67,6 +69,10 @@ export const useAirports = () => {
         queryKey: ['airports'],
         queryFn: fetchAirports,
     })
-    console.log(airports)
+    const nations = new Set<string>()
+    airports.map(airport => {
+        nations.add(airport.country)
+    })
+    console.log([...nations], airports)
     return { airports, isLoading, error }
 }
