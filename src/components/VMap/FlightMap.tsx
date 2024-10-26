@@ -126,30 +126,16 @@ const FlightMap: React.FC = () => {
         </AnimationControlWrapper>
 
         <Map
-          initialViewState={{
-            longitude: 126.3967,
-            latitude: 37.4895,
-            zoom: 5,
-          }}
+          initialViewState={InitialViewStateKR}
           mapLib={maplibregl as any}
           mapStyle={`https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_KEY}`}
           ref={mapRef}
-          style={{ width: '100%', height: '600px' }}
+          style={StyleMap}
         />
 
-        <div
-          style={{
-            position: 'absolute',
-            top: 1,
-            right: 10,
-            background: 'rgba(0, 0, 0, 0.5)',
-            color: 'white',
-            padding: '5px',
-            borderRadius: '5px',
-          }}
-        >
+        <ZoomIndicator>
           Zoom: {zoomLevel.toFixed(2)}
-        </div>
+        </ZoomIndicator>
       </div>
     </Container>
   )
@@ -195,3 +181,22 @@ const Container = styled('div', {
     },
   },
 })
+
+const ZoomIndicator = styled('div', {
+  position: 'absolute',
+  top: 1,
+  right: 10,
+  background: 'rgba(0, 0, 0, 0.5)',
+  color: 'white',
+  padding: '5px',
+  borderRadius: '5px',
+})
+
+const InitialViewStateKR = {
+  // RKIS
+  longitude: 126.3967,
+  latitude: 37.4895,
+  zoom: 3.5,
+}
+
+const StyleMap = { width: '100%', height: '100vh' }
