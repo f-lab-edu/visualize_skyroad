@@ -107,49 +107,37 @@ const FlightMap: React.FC = () => {
   }
 
   return (
-    <div style={{ position: 'relative' }}>
-      <AnimationControlWrapper>
-        <button disabled={isPlaying} onClick={play}>
-          Play
-        </button>
-        <button disabled={isPaused || !isPlaying} onClick={pause}>
-          Pause
-        </button>
-        <button onClick={stop}>Stop</button>
-        <select onChange={handleChangeAniSpeed}>
-          <option value={1}>x1</option>
-          <option value={10}>x10</option>
-          <option value={50}>x50</option>
-        </select>
-        &nbsp;({currentFrame}/{totalFrames})
-      </AnimationControlWrapper>
+    <Container>
+      <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
+        <AnimationControlWrapper>
+          <button disabled={isPlaying} onClick={play}>
+            Play
+          </button>
+          <button disabled={isPaused || !isPlaying} onClick={pause}>
+            Pause
+          </button>
+          <button onClick={stop}>Stop</button>
+          <select onChange={handleChangeAniSpeed}>
+            <option value={1}>x1</option>
+            <option value={10}>x10</option>
+            <option value={50}>x50</option>
+          </select>
+          &nbsp;({currentFrame}/{totalFrames})
+        </AnimationControlWrapper>
 
-      <Map
-        initialViewState={{
-          longitude: 126.3967,
-          latitude: 37.4895,
-          zoom: 5,
-        }}
-        mapLib={maplibregl as any}
-        mapStyle={`https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_KEY}`}
-        ref={mapRef}
-        style={{ width: '100%', height: '600px' }}
-      />
+        <Map
+          initialViewState={InitialViewStateKR}
+          mapLib={maplibregl as any}
+          mapStyle={`https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_KEY}`}
+          ref={mapRef}
+          style={StyleMap}
+        />
 
-      <div
-        style={{
-          position: 'absolute',
-          top: 1,
-          right: 10,
-          background: 'rgba(0, 0, 0, 0.5)',
-          color: 'white',
-          padding: '5px',
-          borderRadius: '5px',
-        }}
-      >
-        Zoom: {zoomLevel.toFixed(2)}
+        <ZoomIndicator>
+          Zoom: {zoomLevel.toFixed(2)}
+        </ZoomIndicator>
       </div>
-    </div>
+    </Container>
   )
 }
 
@@ -161,3 +149,54 @@ const AnimationControlWrapper = styled('div', {
   display: 'flex',
   justifyItems: 'center',
 })
+
+const Container = styled('div', {
+  background: 'linear-gradient(135deg, #9f9fff, #d0e8f2, #87cefa)',
+  backgroundSize: '200% 200%',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  height: '100vh',
+  margin: '0',
+  fontFamily: 'Arial, sans-serif',
+  animation: 'rotateBackground 10s linear infinite', // 애니메이션 추가
+  '.LoadingText': {
+    fontSize: '2rem',
+    marginBottom: '20px',
+    color: 'White',
+    background: 'skyblue',
+    opacity: '0.85',
+    padding: '10px 25px',
+    borderRadius: '25px',
+  },
+  backgroundBlendMode: 'overlay',
+  backgroundOpacity: '0.9',
+
+  '@keyframes rotateBackground': {
+    '0%': {
+      backgroundPosition: '0% 50%',
+    },
+    '100%': {
+      backgroundPosition: '100% 50%',
+    },
+  },
+})
+
+const ZoomIndicator = styled('div', {
+  position: 'absolute',
+  top: 1,
+  right: 10,
+  background: 'rgba(0, 0, 0, 0.5)',
+  color: 'white',
+  padding: '5px',
+  borderRadius: '5px',
+})
+
+const InitialViewStateKR = {
+  // RKIS
+  longitude: 126.3967,
+  latitude: 37.4895,
+  zoom: 3.5,
+}
+
+const StyleMap = { width: '100%', height: '100vh' }

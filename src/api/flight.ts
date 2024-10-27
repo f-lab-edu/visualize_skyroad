@@ -34,18 +34,17 @@ export type Aircraft = {
     origin_country: string
     time_position: number
     last_contact: number
-    longitude: number | null
-    latitude: number | null
-    baro_altitude: number | null
+    longitude: null | number
+    latitude: null | number
+    baro_altitude: null | number
     on_ground: boolean
-    velocity: number | null
-    true_track: number | null
-    vertical_rate: number | null
-    geo_altitude: number | null
+    velocity: null | number
+    true_track: null | number
+    vertical_rate: null | number
+    geo_altitude: null | number
 }
 
 export type AircraftStatus = Aircraft | false
-
 
 export const getAllActiveFlights = async (): Promise<Aircraft[]> => {
     const response = await fetch(`https://opensky-network.org/api/states/all`)
