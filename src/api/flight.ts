@@ -1,6 +1,28 @@
 import { requestFlightList } from '../data/dataProcessingLayer'
 import { Airport } from './airports'
 
+
+
+export type FlightPosition = {
+    lat: number
+    lon: number
+}
+
+export type LineStringGeometry = {
+    type: 'LineString'
+    coordinates: number[][] // [longitude, latitude] 쌍의 배열
+}
+
+export type Feature = {
+    type: 'Feature'
+    geometry: LineStringGeometry
+}
+
+export type FeatureCollection = {
+    type: 'FeatureCollection'
+    features: Feature[]
+}
+
 export type FlightList = Awaited<ReturnType<typeof requestFlightList>>
 export type Flight = FlightList[number]
 export type FlightPathElement = {

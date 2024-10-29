@@ -73,6 +73,5 @@ export const useAirports = () => {
     airports.map(airport => {
         nations.add(airport.country)
     })
-    console.log([...nations], airports)
     return { airports, isLoading, error }
 }

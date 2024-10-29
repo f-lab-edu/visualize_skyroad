@@ -9,9 +9,9 @@ const requestFlightTrack = async (flight: any) => {
     return flightsLAX2RKSI[index] || {};
 }
 const requestFlightList = async (departureAirport: any, arrivalAirport: any) => {
-    // console.log(departureAirport, arrivalAirport);
+    // 
     // await getDepatureAirport(departureAirport["icao24"]);
-    // console.log(flightsDepartureAirport.map(flight => flight))
+    // 
     const FlightList = flightsDepartureAirport
         .filter(flight => flight.estDepartureAirport === departureAirport.icao &&
             flight.estArrivalAirport === arrivalAirport.icao)
@@ -23,7 +23,7 @@ const requestFlightList = async (departureAirport: any, arrivalAirport: any) => 
                 arr: `도착:[공항이름](${flight.estArrivalAirport})`
             }));
 
-    // console.log("---", FlightList);
+    // 
     /*
         "icao24": "4d00f3",
         "firstSeen": 1725186940,
@@ -37,7 +37,7 @@ const requestFlightList = async (departureAirport: any, arrivalAirport: any) => 
 
 const findFlightFromICNtoJFK = async (): Promise<AircraftStatus> => {
     const flights = await getAllActiveFlights()
-    console.log(flights)
+
     for (const flight of flights) {
         if (true) {
             return flight

@@ -75,7 +75,7 @@ const useMapAnimationController = ({
   }
 
   const handleUpdate = (deltaTime: number, { speed }: any) => {
-    console.log(deltaTime, speed)
+
     setCurrentFrame((prevFrame) => {
       const nextFrame = prevFrame + 1
 
@@ -123,7 +123,7 @@ const useMapAnimationController = ({
   const animate = (time: number) => {
     if (previousTimeRef.current !== null) {
       handleUpdate(requestRef.current!, { speed: 1 })
-      console.log(requestRef.current!, duration)
+
     }
     previousTimeRef.current = time
     if (!isPaused) {
