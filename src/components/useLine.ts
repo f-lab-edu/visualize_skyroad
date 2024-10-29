@@ -286,3 +286,11 @@ const interpolateGreatCirclePath = (
     resolve(interpolatedCoords)
   })
 }
+
+const isPathCrossingIDL = (A: FlightPosition, B: FlightPosition): boolean => {
+  /* IDL: 국제 날자변경선 */
+  if (A.lat < B.lat && A.lat < 0 && B.lat > 0)
+    return true
+
+  return false
+}
