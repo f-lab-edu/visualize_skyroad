@@ -1,7 +1,6 @@
 import { requestFlightList } from '../data/dataProcessingLayer'
 import { Airport } from './airports'
 
-
 export type FlightPosition = {
     lat: number
     lon: number
@@ -22,8 +21,29 @@ export type FeatureCollection = {
     features: Feature[]
 }
 
-export type FlightList = Awaited<ReturnType<typeof requestFlightList>>
-export type Flight = FlightList[number]
+export type Flight = {
+    icao24: string,
+    firstSeen: number,
+    estDepartureAirport: string,
+    lastSeen: number,
+    estArrivalAirport: string,
+    callsign: string,
+    estDepartureAirportHorizDistance: number,
+    estDepartureAirportVertDistance: number,
+    estArrivalAirportHorizDistance: number,
+    estArrivalAirportVertDistance: number,
+    departureAirportCandidatesCount: number,
+    arrivalAirportCandidatesCount: number
+}
+
+export type FlightForDisplay = {
+    text: string,
+    dep: string,
+    arr: string,
+}
+
+export type FlightList = (Flight & FlightForDisplay)[]
+
 export type FlightPathElement = {
     // 0 time integer Time which the given waypoint is associated with in seconds since epoch (Unix time).
     // 1 latitude float WGS-84 latitude in decimal degrees. Can be null.
@@ -45,8 +65,9 @@ export const fetchFlight = ({
 }: {
     departureAirport: Airport
     arrivalAirport: Airport
-}) => {
-    return requestFlightList(departureAirport, arrivalAirport)
+}): FlightList => {
+    // return 
+    // return requestFlightList(departureAirport, arrivalAirport)
 }
 
 export type Aircraft = {
@@ -87,3 +108,24 @@ export const getAllActiveFlights = async (): Promise<Aircraft[]> => {
         geo_altitude: state[13],
     }))
 }
+
+export const getDepartureAirport = async (airportICAO: string): Promise<any> => {
+    const TIMESTAMP_BEGIN = 1729589334
+    const TIMESTAMP_END = 1730194134
+    const url = `https://opensky-network.org/api/flights/departure?airport=${airportICAO}&begin=${TIMESTAMP_BEGIN}&end=${TIMESTAMP_END}`
+    console.log(url)
+    const response = await fetch(url)
+    const data = await response.json()
+
+    return data
+}
+// export const getArrivalAirport = async (airportICAO: string): Promise<any> => {
+//     const TIMESTAMP_BEGIN = 1729589334
+//     const TIMESTAMP_END = 1730194134
+//     const url = `https://opensky-network.org/api/flights/arrival?airport=${airportICAO}&begin=${TIMESTAMP_BEGIN}&end=${TIMESTAMP_END}`
+//     console.log(url)
+//     const response = await fetch(url)
+//     const data = await response.json()
+
+//     return data
+// }

@@ -22,10 +22,12 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
 
   const getRoute = async () => {
     const flightRoute = await requestFlightTrack(flight)
+    console.log(flightRoute)
     setRoute(flightRoute)
   }
 
   useEffect(() => {
+    console.log('---------getRoute', flight)
     if (flight) getRoute()
   }, [flight])
 
