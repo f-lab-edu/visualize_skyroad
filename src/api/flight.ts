@@ -2,7 +2,6 @@ import { requestFlightList } from '../data/dataProcessingLayer'
 import { Airport } from './airports'
 
 
-
 export type FlightPosition = {
     lat: number
     lon: number

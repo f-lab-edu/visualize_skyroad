@@ -2,13 +2,17 @@
 import { flightsLAX2RKSI, flightsDepartureAirport } from "../dummyData";
 import { Aircraft, AircraftStatus } from "../api/flight";
 import { getAllActiveFlights } from "../api/flight";
+import { Airport } from "../api/airports";
 
 const requestFlightTrack = async (flight: any) => {
     // return await getAircraftTracks(flight.icao24);
     const index = await flightsLAX2RKSI.findIndex(track => track.icao24 === flight.icao24);
     return flightsLAX2RKSI[index] || {};
 }
-const requestFlightList = async (departureAirport: any, arrivalAirport: any) => {
+const requestFlightList = async (departureAirport: Airport, arrivalAirport: Airport) => {
+
+    console.log("****", departureAirport, arrivalAirport)
+
     // 
     // await getDepatureAirport(departureAirport["icao24"]);
     // 
