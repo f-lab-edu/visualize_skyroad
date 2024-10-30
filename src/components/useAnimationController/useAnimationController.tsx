@@ -79,8 +79,8 @@ const useMapAnimationController = ({
     setCurrentFrame((prevFrame) => {
       const nextFrame = prevFrame + 1
 
-      if (line?.features[0].geometry.coordinates[nextFrame])
-        draw(map, line?.features[0].geometry.coordinates[nextFrame])
+      // if (line?.features[0].geometry.coordinates[nextFrame])
+      //   draw(map, line?.features[0].geometry.coordinates[nextFrame])
 
       return nextFrame
     })
@@ -92,15 +92,16 @@ const useMapAnimationController = ({
 
   const handleStop = () => {
     setCurrentFrame(0)
-    if (line?.features[0].geometry.coordinates[0])
-      draw(map, line?.features[0].geometry.coordinates[0])
+    console.log(line)
+    // if (line?.features[0].geometry.coordinates[0])
+    //   draw(map, line?.features[0].geometry.coordinates[0])
   }
 
   const play = () => {
     if (!isPlaying) {
       setIsPlaying(true)
       setIsPaused(false)
-      handleStart()
+      // handleStart()
     }
   }
   const pause = () => {

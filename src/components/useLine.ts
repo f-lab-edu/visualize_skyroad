@@ -2,9 +2,9 @@ import * as turf from '@turf/turf'
 import { useEffect, useState } from 'react'
 import { MapInstance } from 'react-map-gl'
 
-import { FlightPathElement, FlightPosition } from '../api/flight'
+import { FlightPathElement, FeatureCollection, FlightPosition } from '../api/flight'
 import { requestFlightTrack } from '../data/dataProcessingLayer'
-import { FeatureCollection } from '@turf/turf'
+// import { FeatureCollection } from '@turf/turf'
 
 interface useLineProps {
   arrival: any
@@ -42,10 +42,10 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
   useEffect(() => {
     if (map && line) {
       console.log(line)
-      line.forEach((item: FeatureCollection) => {
-        //   setTotalFrames(line?.features[0].geometry.coordinates.length)
-        drawStraightLine(map, item)
-
+      line.forEach((item: any, index: number) => {
+        console.log(item.features[0].geometry.coordinates.length)
+        // setTotalFrames(item.features[0].geometry)
+        drawStraightLine(map, item, `line-${index}`)
       })
     }
     // if (map && line) {
@@ -201,16 +201,10 @@ const drawLineOnRouteLayer = (
   })
 }
 
-const drawStraightLine = async (map: any, line: FeatureCollection) => {
-  const option = { name: 'straight-line', color: 'yellow', isDash: true }
+const drawStraightLine = async (map: any, line: FeatureCollection, layerName: string) => {
+  const option = { name: layerName || 'straight-line', color: 'yellow', isDash: true }
   console.log('***LINE***', line)
-  if (map.isStyleLoaded()) {
-    drawLineOnRouteLayer(map, line, option)
-  } else {
-    map.on('load', () => {
-      drawLineOnRouteLayer(map, line, option)
-    })
-  }
+  drawLineOnRouteLayer(map, line, option)
 }
 
 const getLineFromRoute = ({
@@ -228,25 +222,27 @@ const getLineFromRoute = ({
     const unitTime =
       (timestampTerminated - timestampStarted) / INTERPOLE_THRESHOLD
 
-    // const departureAirport: FlightPathElement = {
-    //   time: timestampStarted - unitTime,
-    //   latitude: departure.latitude,
-    //   longitude: departure.longitude,
-    //   baro_altitude: 0,
-    //   true_track: 0,
-    //   on_ground: true,
-    // }
+    const departureAirport: FlightPathElement = {
+      time: timestampStarted - unitTime,
+      latitude: departure.latitude,
+      longitude: departure.longitude,
+      baro_altitude: 0,
+      true_track: 0,
+      on_ground: true,
+    }
 
-    // const arrivalAirport: FlightPathElement = {
-    //   time: timestampTerminated + unitTime,
-    //   latitude: arrival.latitude,
-    //   longitude: arrival.longitude,
-    //   baro_altitude: 0,
-    //   true_track: 0,
-    //   on_ground: true,
-    // }
+    const arrivalAirport: FlightPathElement = {
+      time: timestampTerminated + unitTime,
+      latitude: arrival.latitude,
+      longitude: arrival.longitude,
+      baro_altitude: 0,
+      true_track: 0,
+      on_ground: true,
+    }
 
-    const path = route.path.map((item: any) => {
+    console.log(arrival, departure, isPathCrossingIDL(departureAirport, arrivalAirport))
+
+    const path = [departureAirport, ...route.path.map((item: any) => {
       const casted: FlightPathElement = {
         time: Number(item[0]),
         latitude: Number(item[1]),
@@ -256,24 +252,37 @@ const getLineFromRoute = ({
         on_ground: Boolean(item[5]),
       }
       return casted
-    })
+    })]
+    path.push(arrivalAirport)
+
     const splitLines: FlightPathElement[][] = []
     let line: FlightPathElement[] = []
     for (let i = 0; i < path.length - 1; ++i) {
       if (isPathCrossingIDL(path[i], path[i + 1])) {
+        const pointA: FlightPathElement = path[i]
+        const pointB: FlightPathElement = path[i + 1]
+        const latitude: number = (pointA.latitude + pointB.latitude) / 2
+        pointA.latitude = latitude
+        pointB.latitude = latitude
+        pointA.longitude = -180
+        pointB.longitude = 180
+
+        line.push(pointA)
         splitLines.push(line)
-        line = []
+        line = [pointB]
+
       } else {
         line.push(path[i])
+
       }
     }
+
     splitLines.push(line)
     splitLines[splitLines.length - 1].push(path[path.length - 1])
     const lines: FeatureCollection[] = []
     splitLines.forEach(line => {
       interpolatedRawPath(
-        line,
-        // [departureAirport, arrivalAirport],
+        line, // [departureAirport, arrivalAirport],
         INTERPOLE_THRESHOLD
       )
         .then(removeDuplicateCoordinates)
@@ -288,7 +297,7 @@ const getLineFromRoute = ({
                   type: 'LineString',
                   coordinates: interpolatedPath,
                 },
-                properties: null
+                // properties: null
               },
             ],
           }
