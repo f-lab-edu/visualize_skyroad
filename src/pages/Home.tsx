@@ -3,11 +3,11 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Airport, useAirports } from '../api/airports'
-import { fetchFlight, Flight, FlightList } from '../api/flight'
+import { fetchFlight, Flight, FlightForDisplay, FlightList } from '../api/flight'
 import backgroundImage from '../assets/sky1.jpg'
 import SkyButton from '../components/Button/VSKyButton'
 import AirportComboBox from '../components/AirportComboBox/AirportComboBox'
-// import { findFlightFromICNtoJFK } from '../data/dataProcessingLayer'
+import { requestFlightList } from '../data/dataProcessingLayer'
 
 const STINGS = {
   Header: 'ExploreTheWorld!!',
@@ -19,16 +19,10 @@ const STINGS = {
 
 const Home = () => {
   const { airports } = useAirports()
-
   const navigate = useNavigate()
   const [departureAirport, setDepartureAirport] = useState<Airport | null>(null)
   const [arrivalAirport, setArrivalAirport] = useState<Airport | null>(null)
   const [flightList, setFlightList] = useState<FlightList>([])
-  // const [flight, setFlight] = useState();
-
-  // useEffect(() => {
-  //   findFlightFromICNtoJFK().then(console.log)
-  // }, [])
 
   const handleSearch = async () => {
     if (!(departureAirport && arrivalAirport)) {
@@ -36,13 +30,15 @@ const Home = () => {
       return
     }
 
-    const flightList = await fetchFlight({
+    const flightList = await requestFlightList({
       departureAirport,
       arrivalAirport,
     })
-
+    console.log(flightList)
     setFlightList(flightList)
+
   }
+
   const handleFlight = (index: number) => {
     navigate('/flight', {
       state: {
@@ -78,16 +74,15 @@ const Home = () => {
         </div>
       </RouteComboxBoxContainer>
 
-      {flightList.length > 0 && (
-        <FlightListContainer>
-          {flightList.map((flight: Flight, index: number) => (
+      {flightList.length > 0
+        && (<FlightListContainer>
+          {flightList.map((flight: Flight & FlightForDisplay, index: number) => (
             <li key={flight.icao24 + flight.firstSeen}>
               {flight.text} &nbsp;|&nbsp; {flight.dep}&nbsp;|&nbsp; {flight.arr}{' '}
               |<SkyButton onClick={() => handleFlight(index)}>Flight</SkyButton>
             </li>
           ))}
-        </FlightListContainer>
-      )}
+        </FlightListContainer>)}
     </HomeLayoutSytle>
   )
 }
