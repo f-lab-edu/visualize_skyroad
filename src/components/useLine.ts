@@ -184,13 +184,13 @@ const drawLineOnRouteLayer = (
 
   const paintOptions: any = {
     'line-color': color,
-    'line-width': 4,
+    'line-width': 2,
     'line-opacity': 0.8,
   }
 
-  if (isDash) {
-    paintOptions['line-dasharray'] = [4, 2]
-  }
+  // if (isDash) {
+  //   paintOptions['line-dasharray'] = [2, 2]
+  // }
 
   map.addLayer({
     id: name,
@@ -261,7 +261,7 @@ const getLineFromRoute = ({
       if (isPathCrossingIDL(path[i], path[i + 1])) {
         const pointA: FlightPathElement = path[i]
         const pointB: FlightPathElement = path[i + 1]
-        const latitude: number = (pointA.latitude + pointB.latitude) / 2
+        const latitude: number = (pointA.latitude + pointB.latitude) / 1.45
         pointA.latitude = latitude
         pointB.latitude = latitude
         pointA.longitude = -180
