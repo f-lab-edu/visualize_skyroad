@@ -7,4 +7,7 @@ export default defineConfig({
   esbuild: {
     target: 'esnext',
   },
+  build: {
+    outDir: 'dist',
+  }
 })
