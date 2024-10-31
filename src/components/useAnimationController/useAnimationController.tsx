@@ -10,7 +10,7 @@ const useMapAnimationController = ({
 }: {
   map: MapInstance | null
   duration: number
-  line: FeatureCollection | null
+  line: FeatureCollection[] | null
 }) => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
   const [isPaused, setIsPaused] = useState<boolean>(false)
