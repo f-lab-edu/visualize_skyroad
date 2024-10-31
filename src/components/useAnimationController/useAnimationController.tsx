@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { MapInstance } from 'react-map-gl'
 
-import { FeatureCollection } from '../useLine'
+import { FeatureCollection } from '../../api/flight'
 
 const useMapAnimationController = ({
   duration,
