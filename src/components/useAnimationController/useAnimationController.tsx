@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { MapInstance } from 'react-map-gl'
 
-import { FeatureCollection } from '../useLine'
+import { FeatureCollection } from '../../api/flight'
 
 const useMapAnimationController = ({
   duration,
@@ -10,7 +10,7 @@ const useMapAnimationController = ({
 }: {
   map: MapInstance | null
   duration: number
-  line: FeatureCollection | null
+  line: FeatureCollection[] | null
 }) => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
   const [isPaused, setIsPaused] = useState<boolean>(false)

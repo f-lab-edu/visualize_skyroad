@@ -66,7 +66,7 @@ export const fetchFlight = ({
     departureAirport: Airport
     arrivalAirport: Airport
 }): FlightList => {
-    // return 
+    return []
     // return requestFlightList(departureAirport, arrivalAirport)
 }
 
