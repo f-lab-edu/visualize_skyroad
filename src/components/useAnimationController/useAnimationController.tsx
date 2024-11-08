@@ -37,7 +37,9 @@ const useMapAnimationController = ({
   }
 
   const animateAtoB = async (mapInstance: any, lineData: any | FeatureCollection) => {
-    if (!lineData) return
+    if (!lineData) {
+      return
+    }
 
     const origin = lineData?.features[0].geometry.coordinates[0]
     const point = {
@@ -60,15 +62,15 @@ const useMapAnimationController = ({
         throw error
       }
 
-      if (mapInstance.hasImage('airplane-icon')) {
+      if (!mapInstance.hasImage('airplane-icon')) {
         mapInstance.addImage('airplane-icon', image)
       }
 
-      if (mapInstance.getSource('point')) {
+      if (!mapInstance.getSource('point')) {
         mapInstance.addSource('point', { type: 'geojson', data: point })
       }
 
-      if (mapInstance.getLayer('points')) {
+      if (!mapInstance.getLayer('points')) {
         mapInstance.addLayer({
           id: 'points',
           type: 'symbol',
