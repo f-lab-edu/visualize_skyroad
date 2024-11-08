@@ -27,21 +27,22 @@ const requestFlightTrack = async (flight: any) => {
 }
 
 const requestFlightList = async ({ departureAirport, arrivalAirport, }
-    : { departureAirport: Airport, arrivalAirport: Airport })
+    : { departureAirport: Airport | null, arrivalAirport: Airport | null })
     : Promise<FlightList> => {
 
     console.log("****", departureAirport, arrivalAirport)
-
+    if (!departureAirport || !arrivalAirport)
+        return []
     return await getDepartureAirport(departureAirport["icao"])
         .then(flights => {
             const flightList: FlightList = flights
-                .filter((flight: any) => flight.estArrivalAirport === arrivalAirport['icao'])
-                .map((flight: any) => ({
-                    ...flight,
-                    text: `항공편:${flight.callsign}`,
-                    dep: `출발:[공항이름](${flight.estDepartureAirport})`,
-                    arr: `도착:[공항이름](${flight.estArrivalAirport})`
-                }))
+                .filter((flight: Flight) => flight.estArrivalAirport === arrivalAirport['icao'])
+            // .map((flight: Flight) => ({
+            //     ...flight,
+            //     text: `항공편:${flight.callsign}`,
+            //     dep: `출발:[공항이름](${flight.estDepartureAirport})`,
+            //     arr: `도착:[공항이름](${flight.estArrivalAirport})`
+            // }))
             console.log('******depart', flightList)
             return flightList
         })
