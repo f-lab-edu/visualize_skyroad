@@ -1,4 +1,4 @@
-import { requestFlightList } from '../data/dataProcessingLayer'
+// import { requestFlightList } from '../data/dataProcessingLayer'
 import { Airport } from './airports'
 
 export type FlightPosition = {
@@ -109,15 +109,32 @@ export const getAllActiveFlights = async (): Promise<Aircraft[]> => {
     }))
 }
 
+const getTimeAsUnixTime = (days: number | null): number => {
+    if (days === null) {
+        return Math.floor(new Date().getTime() / 1000)
+    }
+    const daysInMilliseconds = days * 24 * 60 * 60 * 1000;
+    const oneWeekAgo = () => new Date(new Date().getTime() - daysInMilliseconds);
+    return Math.floor(oneWeekAgo().getTime() / 1000);
+}
 export const getDepartureAirport = async (airportICAO: string): Promise<any> => {
-    const TIMESTAMP_BEGIN = 1729589334
-    const TIMESTAMP_END = 1730194134
+    // const TIMESTAMP_BEGIN = 1729589334
+    // const TIMESTAMP_END = 1730194134
+    const TIMESTAMP_BEGIN = getTimeAsUnixTime(7)
+    const TIMESTAMP_END = getTimeAsUnixTime(null)
     const url = `https://opensky-network.org/api/flights/departure?airport=${airportICAO}&begin=${TIMESTAMP_BEGIN}&end=${TIMESTAMP_END}`
-    console.log(url)
-    const response = await fetch(url)
-    const data = await response.json()
 
-    return data
+    console.log(url)
+
+    const response = await fetch(url)
+
+    console.log(response.status)
+    if (response.status === 200) {
+        const data = await response.json()
+        return data
+    } else {
+        return new Error(`${response.status}`)
+    }
 }
 // export const getArrivalAirport = async (airportICAO: string): Promise<any> => {
 //     const TIMESTAMP_BEGIN = 1729589334

@@ -26,7 +26,10 @@ const Home = () => {
 
   const { data: flightList, isLoading, error, refetch } = useSuspenseQuery<FlightList>({
     queryKey: ['flightList', departureAirport, arrivalAirport],
-    queryFn: () => requestFlightList({ departureAirport, arrivalAirport }),
+    queryFn: async (): Promise<FlightList> => {
+      const result = await requestFlightList({ departureAirport, arrivalAirport })
+      return result ?? []
+    },
   })
 
   const handleSearch = async () => {
@@ -68,6 +71,7 @@ const Home = () => {
             blacklist={departureAirport}
             onSelectAirport={setArrivalAirport}
           />
+          {isLoading && <div>로딩중...</div>}
         </div>
         <div>
           <SkyButton onClick={handleSearch}>{STINGS.buttonText}</SkyButton>
