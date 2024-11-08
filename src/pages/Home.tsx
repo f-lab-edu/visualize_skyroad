@@ -1,14 +1,14 @@
 import { styled } from '@stitches/react'
-import React, { Suspense, useEffect, useState } from 'react'
+import React, { Suspense, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Airport, useAirports } from '../api/airports'
-import { fetchFlight, Flight, FlightForDisplay, FlightList } from '../api/flight'
+import { Flight, FlightForDisplay, FlightList } from '../api/flight'
 import backgroundImage from '../assets/sky1.jpg'
 import SkyButton from '../components/Button/VSKyButton'
 import AirportComboBox from '../components/AirportComboBox/AirportComboBox'
 import { requestFlightList } from '../data/dataProcessingLayer'
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 
 const STINGS = {
   Header: 'ExploreTheWorld!!',
@@ -23,22 +23,11 @@ const Home = () => {
   const navigate = useNavigate()
   const [departureAirport, setDepartureAirport] = useState<Airport | null>(null)
   const [arrivalAirport, setArrivalAirport] = useState<Airport | null>(null)
-  // const [flightList, setFlightList] = useState<FlightList>([])
 
   const { data: flightList, isLoading, error, refetch } = useSuspenseQuery<FlightList>({
     queryKey: ['flightList', departureAirport, arrivalAirport],
     queryFn: () => requestFlightList({ departureAirport, arrivalAirport }),
   })
-  // const {
-  //   data: flightList,
-  //   refetch,
-  //   isFetching,
-  //   error,
-  // } = useQuery<FlightList>({
-  //   queryKey: ['flightList', departureAirport, arrivalAirport],
-  //   queryFn: () => requestFlightList({ departureAirport, arrivalAirport }),
-  //   enabled: false, // Prevents automatic fetching
-  // })
 
   const handleSearch = async () => {
     if (!(departureAirport && arrivalAirport)) {
@@ -46,13 +35,7 @@ const Home = () => {
       return
     }
 
-    // const flightList = await requestFlightList({
-    //   departureAirport,
-    //   arrivalAirport,
-    // })
-    // console.log(flightList)
     refetch()
-    // setFlightList(flightList)
 
   }
 
