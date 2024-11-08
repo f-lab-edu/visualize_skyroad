@@ -63,16 +63,13 @@ const FlightMap: React.FC = () => {
     )
   }
 
-  const fitMapBound = (map: any) => {
+  const fitMapBound = () => {
     const from = route.path[0]
-    const to = route.path[route.path.length - 1]
-
     const fromPosition: [number, number] = [from[2], from[1]]
-    const toPosition: [number, number] = [to[2], to[1]]
 
-    map?.fitBounds([fromPosition, toPosition], {
+    map?.fitBounds([fromPosition, fromPosition], {
       padding: 100,
-      maxZoom: 5,
+      maxZoom: 4.5,
     })
 
     return () => map?.remove()
@@ -80,9 +77,9 @@ const FlightMap: React.FC = () => {
 
   useEffect(() => {
     if (map) {
-      fitMapBound(map)
+      fitMapBound()
     }
-  }, [])
+  }, [line !== null])
 
   useEffect(() => {
     const map = mapRef.current?.getMap()
@@ -193,9 +190,12 @@ const ZoomIndicator = styled('div', {
 })
 
 const InitialViewStateKR = {
-  // RKIS
-  longitude: 126.3967,
-  latitude: 37.4895,
+  // IDL
+  longitude: -180,
+  latitude: 0,
+  // // RKIS
+  // longitude: 126.3967,
+  // latitude: 37.4895,
   zoom: 3.5,
 }
 
