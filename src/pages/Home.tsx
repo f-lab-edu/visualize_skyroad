@@ -96,8 +96,8 @@ const Home = () => {
           && (<FlightListContainer>
             {flightList && flightList.map((flight: Flight & FlightForDisplay, index: number) => (
               <li key={flight.icao24 + flight.firstSeen}>
-                {flight.text} &nbsp;|&nbsp; {flight.dep}&nbsp;|&nbsp; {flight.arr}{' '}
-                |<SkyButton onClick={() => handleFlight(index)}>Flight</SkyButton>
+                `항공편: {flight.callsign} | 출발: [공항이름] {flight.estDepartureAirport} | 도착: [공항이름] {flight.estArrivalAirport} | `
+                <SkyButton onClick={() => handleFlight(index)}>Flight</SkyButton>
               </li>
             ))}
           </FlightListContainer>)}
