@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { MapInstance } from 'react-map-gl'
-
 import { FeatureCollection } from '../../api/flight'
 
 const useMapAnimationController = ({
@@ -18,9 +17,8 @@ const useMapAnimationController = ({
   const previousTimeRef = useRef<null | number>(null)
   const [currentFrame, setCurrentFrame] = useState<number>(0)
 
-  const draw = (map: any, pos: any) => {
-    if (map?.getSource('point')) {
-      const origin = pos
+  const draw = (mapInstance: any, position: any) => {
+    if (mapInstance?.getSource('point')) {
       const point = {
         type: 'FeatureCollection',
         features: [
@@ -29,17 +27,21 @@ const useMapAnimationController = ({
             properties: {},
             geometry: {
               type: 'Point',
-              coordinates: origin,
+              coordinates: position,
             },
           },
         ],
       }
-      map.getSource('point').setData(point)
+      mapInstance.getSource('point').setData(point)
     }
   }
 
-  const animateAtoB = async (map: any, line: any | FeatureCollection) => {
-    const origin = line?.features[0].geometry.coordinates[0]
+  const animateAtoB = async (mapInstance: any, lineData: any | FeatureCollection) => {
+    if (!lineData) {
+      return
+    }
+
+    const origin = lineData?.features[0].geometry.coordinates[0]
     const point = {
       type: 'FeatureCollection',
       features: [
@@ -54,66 +56,76 @@ const useMapAnimationController = ({
       ],
     }
 
-    map.loadImage('/airplane.png', (error: Error, image: HTMLIFrameElement) => {
+    mapInstance.loadImage('/airplane.png', (error: Error, image: HTMLIFrameElement) => {
       if (error) {
+        console.error('**에러: ', error)
         throw error
       }
 
-      !map.hasImage('airplane-icon') && map.addImage('airplane-icon', image)
+      if (!mapInstance.hasImage('airplane-icon')) {
+        mapInstance.addImage('airplane-icon', image)
+      }
 
-      !map.getSource('point') &&
-        map.addSource('point', { type: 'geojson', data: point })
+      if (!mapInstance.getSource('point')) {
+        mapInstance.addSource('point', { type: 'geojson', data: point })
+      }
 
-      !map.getLayer('points') &&
-        map.addLayer({
+      if (!mapInstance.getLayer('points')) {
+        mapInstance.addLayer({
           id: 'points',
           type: 'symbol',
           source: 'point',
-          layout: { 'icon-image': 'airplane-icon', 'icon-size': 0.25 },
+          layout: {
+            'icon-image': 'airplane-icon',
+            'icon-size': 0.25
+          },
         })
+      }
     })
   }
 
-  const handleUpdate = (deltaTime: number, { speed }: any) => {
-
+  const handleUpdate = (deltaTime: number) => {
     setCurrentFrame((prevFrame) => {
       const nextFrame = prevFrame + 1
-
-      // if (line?.features[0].geometry.coordinates[nextFrame])
-      //   draw(map, line?.features[0].geometry.coordinates[nextFrame])
-
+      if (line?.[0].features[0]?.geometry.coordinates[nextFrame]) {
+        draw(map, line[0].features[0].geometry.coordinates[nextFrame])
+      }
       return nextFrame
     })
   }
 
   const handleStart = () => {
-    animateAtoB(map, line)
+    if (map && line) {
+      animateAtoB(map, line[0])
+    }
   }
 
   const handleStop = () => {
     setCurrentFrame(0)
-    console.log(line)
-    // if (line?.features[0].geometry.coordinates[0])
-    //   draw(map, line?.features[0].geometry.coordinates[0])
+    if (line?.[0]?.features[0]?.geometry.coordinates[0]) {
+      draw(map, line[0].features[0].geometry.coordinates[0])
+    }
   }
 
   const play = () => {
     if (!isPlaying) {
       setIsPlaying(true)
       setIsPaused(false)
-      // handleStart()
+      handleStart()
     }
   }
+
   const pause = () => {
     if (isPlaying) {
       setIsPaused(true)
       setIsPlaying(false)
     }
   }
+
   const stop = () => {
     setIsPlaying(false)
     setIsPaused(false)
-    if (requestRef.current) {
+    if (requestRef.current !== null) {
       cancelAnimationFrame(requestRef.current)
       requestRef.current = null
     }
@@ -123,24 +135,28 @@ const useMapAnimationController = ({
 
   const animate = (time: number) => {
     if (previousTimeRef.current !== null) {
-      handleUpdate(requestRef.current!, { speed: 1 })
-
+      handleUpdate(time - previousTimeRef.current)
     }
     previousTimeRef.current = time
+
     if (!isPaused) {
       requestRef.current = requestAnimationFrame(animate)
     }
-    if (requestRef.current! >= duration) {
-      cancelAnimationFrame(requestRef.current!)
+
+    if (currentFrame >= duration) {
+      stop()
     }
   }
 
   useEffect(() => {
-    if (isPlaying && !isPaused)
+    if (isPlaying && !isPaused) {
       requestRef.current = requestAnimationFrame(animate)
+    }
 
     return () => {
-      if (requestRef.current) cancelAnimationFrame(requestRef.current)
+      if (requestRef.current !== null) {
+        cancelAnimationFrame(requestRef.current)
+      }
     }
   }, [isPlaying, isPaused])
 

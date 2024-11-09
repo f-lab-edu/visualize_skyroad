@@ -1,13 +1,14 @@
 import { styled } from '@stitches/react'
-import React, { useEffect, useState } from 'react'
+import React, { Suspense, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Airport, useAirports } from '../api/airports'
-import { fetchFlight, Flight, FlightForDisplay, FlightList } from '../api/flight'
+import { Flight, FlightForDisplay, FlightList } from '../api/flight'
 import backgroundImage from '../assets/sky1.jpg'
 import SkyButton from '../components/Button/VSKyButton'
 import AirportComboBox from '../components/AirportComboBox/AirportComboBox'
 import { requestFlightList } from '../data/dataProcessingLayer'
+import { useSuspenseQuery } from '@tanstack/react-query'
 
 const STINGS = {
   Header: 'ExploreTheWorld!!',
@@ -22,7 +23,11 @@ const Home = () => {
   const navigate = useNavigate()
   const [departureAirport, setDepartureAirport] = useState<Airport | null>(null)
   const [arrivalAirport, setArrivalAirport] = useState<Airport | null>(null)
-  const [flightList, setFlightList] = useState<FlightList>([])
+
+  const { data: flightList, isLoading, error, refetch } = useSuspenseQuery<FlightList>({
+    queryKey: ['flightList', departureAirport, arrivalAirport],
+    queryFn: () => requestFlightList({ departureAirport, arrivalAirport }),
+  })
 
   const handleSearch = async () => {
     if (!(departureAirport && arrivalAirport)) {
@@ -30,12 +35,7 @@ const Home = () => {
       return
     }
 
-    const flightList = await requestFlightList({
-      departureAirport,
-      arrivalAirport,
-    })
-    console.log(flightList)
-    setFlightList(flightList)
+    refetch()
 
   }
 
@@ -44,7 +44,7 @@ const Home = () => {
       state: {
         departure: departureAirport,
         arrival: arrivalAirport,
-        flight: flightList[index],
+        flight: flightList ? flightList[index] : null,
       },
     })
   }
@@ -74,20 +74,23 @@ const Home = () => {
         </div>
       </RouteComboxBoxContainer>
 
-      {flightList.length > 0
-        && (<FlightListContainer>
-          {flightList.map((flight: Flight & FlightForDisplay, index: number) => (
-            <li key={flight.icao24 + flight.firstSeen}>
-              {flight.text} &nbsp;|&nbsp; {flight.dep}&nbsp;|&nbsp; {flight.arr}{' '}
-              |<SkyButton onClick={() => handleFlight(index)}>Flight</SkyButton>
-            </li>
-          ))}
-        </FlightListContainer>)}
+      <Suspense fallback={<div>로딩중...</div>}>
+        {flightList && flightList.length > 0
+          && (<FlightListContainer>
+            {flightList && flightList.map((flight: Flight & FlightForDisplay, index: number) => (
+              <li key={flight.icao24 + flight.firstSeen}>
+                `항공편: {flight.callsign} | 출발: [공항이름] {flight.estDepartureAirport} | 도착: [공항이름] {flight.estArrivalAirport} | `
+                <SkyButton onClick={() => handleFlight(index)}>Flight</SkyButton>
+              </li>
+            ))}
+          </FlightListContainer>)}
+      </Suspense>
     </HomeLayoutSytle>
   )
 }
 
 export default Home
+
 const HomeLayoutSytle = styled('div', {
   margin: 'none',
   height: '100vh',
