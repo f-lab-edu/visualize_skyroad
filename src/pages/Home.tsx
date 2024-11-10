@@ -25,7 +25,7 @@ const Home = () => {
   const [arrivalAirport, setArrivalAirport] = useState<Airport | null>(null)
 
   const { data: flightList, isLoading, error, refetch } = useSuspenseQuery<FlightList>({
-    queryKey: ['flightList', departureAirport, arrivalAirport],
+    queryKey: ['flightList'],//, departureAirport, arrivalAirport],
     queryFn: async (): Promise<FlightList> => {
       const result = await requestFlightList({ departureAirport, arrivalAirport })
       return result ?? []
@@ -78,17 +78,17 @@ const Home = () => {
         </div>
       </RouteComboxBoxContainer>
 
-      <Suspense fallback={<div>로딩중...</div>}>
-        {flightList && flightList.length > 0
-          && (<FlightListContainer>
+      {flightList && flightList.length > 0
+        && (<FlightListContainer>
+          <Suspense fallback={<div>로딩중...</div>}>
             {flightList && flightList.map((flight: Flight & FlightForDisplay, index: number) => (
               <li key={flight.icao24 + flight.firstSeen}>
                 `항공편: {flight.callsign} | 출발: [공항이름] {flight.estDepartureAirport} | 도착: [공항이름] {flight.estArrivalAirport} | `
                 <SkyButton onClick={() => handleFlight(index)}>Flight</SkyButton>
               </li>
             ))}
-          </FlightListContainer>)}
-      </Suspense>
+          </Suspense>
+        </FlightListContainer>)}
     </HomeLayoutSytle>
   )
 }
