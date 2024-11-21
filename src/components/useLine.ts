@@ -22,13 +22,13 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
 
   const getRoute = async () => {
     const flightRoute = await requestFlightTrack(flight)
-    console.log(flightRoute)
     setRoute(flightRoute)
   }
 
   useEffect(() => {
-    console.log('---------getRoute', flight)
-    if (flight) getRoute()
+    if (flight) {
+      getRoute()
+    }
   }, [flight])
 
   useEffect(() => {
@@ -43,10 +43,8 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
 
   useEffect(() => {
     if (map && line) {
-      console.log(line)
       line.forEach((item: any, index: number) => {
-        console.log(item.features[0].geometry.coordinates.length)
-        // setTotalFrames(item.features[0].geometry)
+        setTotalFrames(totalFrames + item.features[0].geometry.coordinates.length)
         drawStraightLine(map, item, `line-${index}`)
       })
     }
@@ -172,7 +170,6 @@ const drawLineOnRouteLayer = (
   option = { name: 'route', color: 'blue', isDash: false }
 ) => {
   const { name = 'route', color = 'blue', isDash = false } = option
-  console.log('***RouteOnMap***', routeOnMap)
 
   if (map.getSource(name)) {
     map.getSource(name).setData(routeOnMap)
@@ -205,7 +202,6 @@ const drawLineOnRouteLayer = (
 
 const drawStraightLine = async (map: any, line: FeatureCollection, layerName: string) => {
   const option = { name: layerName || 'straight-line', color: 'yellow', isDash: true }
-  console.log('***LINE***', line)
   drawLineOnRouteLayer(map, line, option)
 }
 
@@ -242,8 +238,6 @@ const getLineFromRoute = ({
       on_ground: true,
     }
 
-    console.log(arrival, departure, isPathCrossingIDL(departureAirport, arrivalAirport))
-
     const path = [departureAirport, ...route.path.map((item: any) => {
       const casted: FlightPathElement = {
         time: Number(item[0]),
@@ -258,29 +252,44 @@ const getLineFromRoute = ({
     path.push(arrivalAirport)
 
     const splitLines: FlightPathElement[][] = []
-    let line: FlightPathElement[] = []
-    for (let i = 0; i < path.length - 1; ++i) {
-      if (isPathCrossingIDL(path[i], path[i + 1])) {
-        const pointA: FlightPathElement = path[i]
-        const pointB: FlightPathElement = path[i + 1]
-        const latitude: number = (pointA.latitude + pointB.latitude) / 1.45
-        pointA.latitude = latitude
-        pointB.latitude = latitude
-        pointA.longitude = -180
-        pointB.longitude = 180
+    const pivotIndex = findSignChangeIndices(path)
+    splitLines.push(path.slice(0, pivotIndex))
 
-        line.push(pointA)
-        splitLines.push(line)
-        line = [pointB]
+    if (pivotIndex > -1) {
+      splitLines.push(path.slice(pivotIndex))
 
-      } else {
-        line.push(path[i])
+      splitLines[0][0].longitude = 0
+      splitLines[0][-1].longitude = 0
+      splitLines[-1][0].longitude = 0
+      splitLines[-1][-1].longitude = 0
 
-      }
+      // if() {
+
+      // 
+      // }
+
     }
 
-    splitLines.push(line)
-    splitLines[splitLines.length - 1].push(path[path.length - 1])
+    // if (isPathCrossingIDL(path[i], path[i + 1])) {
+    //   const pointA: FlightPathElement = path[i]
+    //   const pointB: FlightPathElement = path[i + 1]
+    //   const latitude: number = (pointA.latitude + pointB.latitude) / 1.45
+    //   pointA.latitude = latitude
+    //   pointB.latitude = latitude
+    //   pointA.longitude = -180
+    //   pointB.longitude = 180
+
+    //   line.push(pointA)
+    //   splitLines.push(line)
+    //   line = [pointB]
+
+    // } else {
+    //   line.push(path[i])
+
+    // }
+
+    console.log(splitLines, path, arrival, departure, isPathCrossingIDL(departureAirport, arrivalAirport))
+
     const lines: FeatureCollection[] = []
     splitLines.forEach(line => {
       interpolatedRawPath(
@@ -312,9 +321,23 @@ const getLineFromRoute = ({
 }
 
 const isPathCrossingIDL = (A: FlightPathElement, B: FlightPathElement): boolean => {
-  /* IDL: 국제 날자변경선 */
+  /* IDL: 국제 날짜변경선 */
   if (A.longitude < B.longitude && A.longitude < 0 && B.longitude > 0)
+    return true
+  if (A.longitude > B.longitude && A.longitude > 0 && B.longitude < 0)
     return true
 
   return false
+}
+
+const findSignChangeIndices = (arr: FlightPathElement[]): number => {
+  for (let i = 1; i < arr.length; i++) {
+    const A = arr[i - 1]
+    const B = arr[i]
+    if ((A.longitude >= 0 && B.longitude < 0) ||
+      (A.longitude < 0 && A.longitude >= 0)) {
+      return i
+    }
+  }
+  return -1
 }
