@@ -252,13 +252,19 @@ const getLineFromRoute = ({
     path.push(arrivalAirport)
 
     const splitLines: FlightPathElement[][] = []
-    const pivotIndex = findSignChangeIndices(path);
+    const pivotIndex = findSignChangeIndices(path)
     splitLines.push(path.slice(0, pivotIndex))
 
     if (pivotIndex > -1) {
       splitLines.push(path.slice(pivotIndex))
 
+      splitLines[0][0].longitude = 0
+      splitLines[0][-1].longitude = 0
+      splitLines[-1][0].longitude = 0
+      splitLines[-1][-1].longitude = 0
+
       // if() {
+
       // 
       // }
 
@@ -333,6 +339,5 @@ const findSignChangeIndices = (arr: FlightPathElement[]): number => {
       return i
     }
   }
-
   return -1
 }
