@@ -129,16 +129,42 @@ const FlightMap: React.FC = () => {
           ref={mapRef}
           style={StyleMap}
         />
-
         <ZoomIndicator>
           Zoom: {zoomLevel.toFixed(2)}
         </ZoomIndicator>
       </div>
+      <GraphContainer>
+        <header>
+          시간별 비행기 고도그래프
+        </header>
+        <section>
+
+        </section>
+      </GraphContainer>
     </Container>
   )
 }
 
 export default FlightMap
+
+const GraphContainer = styled('div', {
+  position: 'fixed',
+  bottom: '16px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  backgroundColor: '#f9f9f9',
+  borderRadius: '8px',
+  padding: '16px',
+  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+  width: '90%',
+  maxWidth: '600px',
+  height: '200px',
+  zIndex: 1000,
+  '& header': {
+    maxWidth: 'max-content',
+    margin: 'auto',
+  }
+})
 
 const AnimationControlWrapper = styled('div', {
   backgroundColor: 'skyblue',
