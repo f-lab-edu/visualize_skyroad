@@ -110,16 +110,23 @@ const FlightMap: React.FC = () => {
           <button disabled={isPlaying} onClick={play}>
             Play
           </button>
+
           <button disabled={isPaused || !isPlaying} onClick={pause}>
             Pause
           </button>
+
           <button onClick={stop}>Stop</button>
+
           <select onChange={handleChangeAniSpeed}>
             <option value={1}>x1</option>
             <option value={10}>x10</option>
             <option value={50}>x50</option>
           </select>
-          &nbsp;({currentFrame}/{totalFrames})
+
+          <div id='frame-indicator'>
+            <p>({currentFrame}/{totalFrames})</p>
+          </div>
+
         </AnimationControlWrapper>
 
         <Map
@@ -129,22 +136,95 @@ const FlightMap: React.FC = () => {
           ref={mapRef}
           style={StyleMap}
         />
-
         <ZoomIndicator>
           Zoom: {zoomLevel.toFixed(2)}
         </ZoomIndicator>
       </div>
+      <GraphContainer>
+        <header>
+          시간별 비행기 고도그래프
+        </header>
+        <section>
+
+        </section>
+      </GraphContainer>
     </Container>
   )
 }
 
 export default FlightMap
 
+const GraphContainer = styled('div', {
+  position: 'fixed',
+  bottom: '16px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  backgroundColor: '#f9f9f9',
+  borderRadius: '8px',
+  padding: '16px',
+  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+  width: '90%',
+  maxWidth: '600px',
+  height: '200px',
+  zIndex: 1000,
+  '& header': {
+    maxWidth: 'max-content',
+    margin: 'auto',
+  }
+})
+
 const AnimationControlWrapper = styled('div', {
   backgroundColor: 'skyblue',
   padding: '5px',
+  position: 'relative',
   display: 'flex',
   justifyItems: 'center',
+  justifyContent: 'center',
+  height: '30px',
+
+  'button': {
+    border: 'none',
+    color: 'white',
+    padding: '0 20px',
+    borderRadius: '15px',
+    margin: '0 5px',
+    background: '#005A9C',
+    fontSize: '0.95rem',
+    '&:disabled': {
+      background: '#b0b0b0', // 비활성화된 배경색 (회색 톤)
+      color: '#e0e0e0', // 비활성화된 텍스트 색상 (밝은 회색)
+      opacity: 0.6, // 흐리게
+      cursor: 'not-allowed', // 비활성화된 상태를 나타내는 커서
+    }
+  },
+
+  'select': {
+    border: '1px solid gray',
+    borderRadius: '5px',
+    padding: '5px',
+    fontSize: '16px',
+    backgroundColor: 'white',
+    color: 'black',
+    margin: '0 5px',
+    outline: 'none',
+    ':focus': {
+      borderColor: 'blue',
+      boxShadow: '0 0 5px rgba(0, 0, 255, 0.5)',
+    },
+  },
+
+  'p': {
+    color: 'SlateGray',
+    fontSize: '.8rem',
+    margin: 'auto',
+  },
+
+  '#frame-indicator': {
+    width: 'max-content',
+    display: 'flex',
+    justifyItems: 'center',
+    justifyContent: 'center',
+  }
 })
 
 const Container = styled('div', {
@@ -181,7 +261,8 @@ const Container = styled('div', {
 
 const ZoomIndicator = styled('div', {
   position: 'absolute',
-  top: 1,
+
+  top: 5,
   right: 10,
   background: 'rgba(0, 0, 0, 0.5)',
   color: 'white',
