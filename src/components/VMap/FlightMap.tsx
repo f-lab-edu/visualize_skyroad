@@ -110,16 +110,23 @@ const FlightMap: React.FC = () => {
           <button disabled={isPlaying} onClick={play}>
             Play
           </button>
+
           <button disabled={isPaused || !isPlaying} onClick={pause}>
             Pause
           </button>
+
           <button onClick={stop}>Stop</button>
+
           <select onChange={handleChangeAniSpeed}>
             <option value={1}>x1</option>
             <option value={10}>x10</option>
             <option value={50}>x50</option>
           </select>
-          &nbsp;({currentFrame}/{totalFrames})
+
+          <div id='frame-indicator'>
+            <p>({currentFrame}/{totalFrames})</p>
+          </div>
+
         </AnimationControlWrapper>
 
         <Map
@@ -169,8 +176,55 @@ const GraphContainer = styled('div', {
 const AnimationControlWrapper = styled('div', {
   backgroundColor: 'skyblue',
   padding: '5px',
+  position: 'relative',
   display: 'flex',
   justifyItems: 'center',
+  justifyContent: 'center',
+  height: '30px',
+
+  'button': {
+    border: 'none',
+    color: 'white',
+    padding: '0 20px',
+    borderRadius: '15px',
+    margin: '0 5px',
+    background: '#005A9C',
+    fontSize: '0.95rem',
+    '&:disabled': {
+      background: '#b0b0b0', // 비활성화된 배경색 (회색 톤)
+      color: '#e0e0e0', // 비활성화된 텍스트 색상 (밝은 회색)
+      opacity: 0.6, // 흐리게
+      cursor: 'not-allowed', // 비활성화된 상태를 나타내는 커서
+    }
+  },
+
+  'select': {
+    border: '1px solid gray',
+    borderRadius: '5px',
+    padding: '5px',
+    fontSize: '16px',
+    backgroundColor: 'white',
+    color: 'black',
+    margin: '0 5px',
+    outline: 'none',
+    ':focus': {
+      borderColor: 'blue',
+      boxShadow: '0 0 5px rgba(0, 0, 255, 0.5)',
+    },
+  },
+
+  'p': {
+    color: 'SlateGray',
+    fontSize: '.8rem',
+    margin: 'auto',
+  },
+
+  '#frame-indicator': {
+    width: 'max-content',
+    display: 'flex',
+    justifyItems: 'center',
+    justifyContent: 'center',
+  }
 })
 
 const Container = styled('div', {
@@ -207,7 +261,8 @@ const Container = styled('div', {
 
 const ZoomIndicator = styled('div', {
   position: 'absolute',
-  top: 1,
+
+  top: 5,
   right: 10,
   background: 'rgba(0, 0, 0, 0.5)',
   color: 'white',
