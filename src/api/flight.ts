@@ -109,16 +109,40 @@ export const getAllActiveFlights = async (): Promise<Aircraft[]> => {
     }))
 }
 
+// export const getDepartureAirport = async (airportICAO: string): Promise<any> => {
+//     const TIMESTAMP_END = Math.floor(new Date().getTime() / 1000)
+//     const url = `https://opensky-network.org/api/flights/departure?airport=${airportICAO}&begin=${TIMESTAMP_BEGIN}&end=${TIMESTAMP_END}`
+//     console.log(url)
+//     const response = await fetch(url)
+//     const data = await response.json()
+
+//     return data
+// }
 export const getDepartureAirport = async (airportICAO: string): Promise<any> => {
-    const TIMESTAMP_BEGIN = 1729589334
-    const TIMESTAMP_END = 1730194134
+    const TIMESTAMP_END = Math.floor(Date.now() / 1000)
+    const TIMESTAMP_BEGIN = Math.floor((Date.now() - 6 * 24 * 60 * 60 * 1000) / 1000)
+
+    if (TIMESTAMP_BEGIN >= TIMESTAMP_END) {
+        throw new Error("시간설정이 잘못되었습니다.")
+    }
+
     const url = `https://opensky-network.org/api/flights/departure?airport=${airportICAO}&begin=${TIMESTAMP_BEGIN}&end=${TIMESTAMP_END}`
     console.log(url)
-    const response = await fetch(url)
-    const data = await response.json()
 
-    return data
-}
+    try {
+        const response = await fetch(url)
+
+        if (!response.ok) {
+            throw new Error(`API 요청실패 ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json()
+        return data
+    } catch (error) {
+        console.error("Error 도착공항열람실패:", error)
+        throw error
+    }
+};
 // export const getArrivalAirport = async (airportICAO: string): Promise<any> => {
 //     const TIMESTAMP_BEGIN = 1729589334
 //     const TIMESTAMP_END = 1730194134
