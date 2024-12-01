@@ -66,11 +66,10 @@ const Graph: React.FC<GraphProps> = ({ altitude }) => {
       .attr('transform', `translate(${margin.left}, 0)`)
       .call(d3.axisLeft(yScale))
 
-    // Draw Line
     const line = d3
       .line<number>()
-      .x((d, i) => xScale(timeData[i]))
-      .y((d) => yScale(d))
+      .x((_: number, i: number) => xScale(timeData[i]))
+      .y((d: number) => yScale(d))
 
     svg
       .append('path')
