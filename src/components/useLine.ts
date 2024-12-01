@@ -18,6 +18,7 @@ const INTERPOLE_THRESHOLD = 500
 export function useLine({ map, flight, arrival, departure }: useLineProps) {
   const [line, setLine] = useState<FeatureCollection[] | null>(null)
   const [route, setRoute] = useState<any>(null)
+  const [altitude, setAltitude] = useState<number[]>([])
   const [totalFrames, setTotalFrames] = useState<number>(0)
 
   const getRoute = async () => {
@@ -28,16 +29,27 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
 
   useEffect(() => {
     console.log('---------getRoute', flight)
-    if (flight) getRoute()
+
+    if (flight)
+      getRoute()
+
   }, [flight])
 
   useEffect(() => {
+
     if (map && route) {
+
       getLineFromRoute({
         departure,
         arrival,
         route,
-      }).then(setLine)
+      })
+        .then(setLine)
+
+      getAltitudeFromRoute({
+        route,
+      }).then(setAltitude)
+
     }
   }, [map, route])
 
@@ -58,7 +70,7 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
   return {
     line,
     route,
-    totalFrames,
+    totalFrames, altitude,
   }
 }
 
@@ -207,6 +219,18 @@ const drawStraightLine = async (map: any, line: FeatureCollection, layerName: st
   const option = { name: layerName || 'straight-line', color: 'yellow', isDash: true }
   console.log('***LINE***', line)
   drawLineOnRouteLayer(map, line, option)
+}
+const getAltitudeFromRoute = ({
+  route,
+}: {
+  route: any
+}): Promise<number[]> => {
+
+  return new Promise((resolve, reject) => {
+    const altitude: number[] = [0, ...route.path.map((path: any) => path[4])]
+    resolve(altitude)
+  })
+
 }
 
 const getLineFromRoute = ({

@@ -1,7 +1,7 @@
 import { styled } from '@stitches/react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { ButtonHTMLAttributes, useEffect, useRef, useState } from 'react'
 import { Map, MapInstance, MapRef } from 'react-map-gl'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -28,8 +28,10 @@ const FlightMap: React.FC = () => {
   const navigate = useNavigate()
   const [zoomLevel, setZoomLevel] = useState<number>(0)
 
+  const [showAltitudeGraph, setShowAltitudeGraph] = useState<boolean>(true)
+
   // 1. 라인 획득
-  const { line, route, totalFrames } = useLine({
+  const { line, altitude, route, totalFrames } = useLine({
     arrival,
     departure,
     flight,
@@ -102,6 +104,9 @@ const FlightMap: React.FC = () => {
   const handleChangeAniSpeed = (e: React.ChangeEvent<HTMLSelectElement>) => {
     alert(e.target.value)
   }
+  const handleClickedGraphCloseButton = (e: React.MouseEvent<HTMLButtonElement>) => {
+    setShowAltitudeGraph(!showAltitudeGraph)
+  }
 
   return (
     <Container>
@@ -140,15 +145,22 @@ const FlightMap: React.FC = () => {
           Zoom: {zoomLevel.toFixed(2)}
         </ZoomIndicator>
       </div>
-      <GraphContainer>
-        <header>
-          시간별 비행기 고도그래프
-        </header>
-        <section>
 
-        </section>
-      </GraphContainer>
-    </Container>
+      {altitude.length > 0 && showAltitudeGraph &&
+        <GraphContainer>
+          <header>
+            <p>시간별 비행기 고도그래프</p>
+          </header>
+
+          <button style={{ height: '25px' }}
+            onClick={handleClickedGraphCloseButton}>x</button>
+
+          <section>
+
+          </section>
+        </GraphContainer>}
+
+    </Container >
   )
 }
 
