@@ -70,7 +70,8 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
   return {
     line,
     route,
-    totalFrames, altitude,
+    totalFrames,
+    altitude,
   }
 }
 
@@ -217,17 +218,18 @@ const drawLineOnRouteLayer = (
 
 const drawStraightLine = async (map: any, line: FeatureCollection, layerName: string) => {
   const option = { name: layerName || 'straight-line', color: 'yellow', isDash: true }
-  console.log('***LINE***', line)
+  console.log('***LINE***IN_drawStraightLine:', line)
   drawLineOnRouteLayer(map, line, option)
 }
+
 const getAltitudeFromRoute = ({
   route,
 }: {
   route: any
 }): Promise<number[]> => {
 
-  return new Promise((resolve, reject) => {
-    const altitude: number[] = [0, ...route.path.map((path: any) => path[4])]
+  return new Promise((resolve) => {
+    const altitude: number[] = [0, ...route.path.map((path: any) => path[3]), 0]
     resolve(altitude)
   })
 

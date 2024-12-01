@@ -9,6 +9,8 @@ import useMapAnimationController from '../../components/useAnimationController/u
 import VSkyButton from '../Button/VSKyButton'
 import { useLine } from '../useLine'
 
+import * as d3 from 'd3'
+
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
 
 const ERRORMESSAGE = {
@@ -16,6 +18,74 @@ const ERRORMESSAGE = {
 }
 const STRINGS = {
   HOME: '첫 페이지',
+}
+
+interface GraphProps {
+  altitude: number[]
+}
+const Graph: React.FC<GraphProps> = ({ altitude }) => {
+
+
+  const svgRef = useRef<SVGSVGElement | null>(null)
+
+  const timeData = altitude.map((_, index) => index)
+
+  useEffect(() => {
+    if (!svgRef.current)
+      return
+
+    const width = 600
+    const height = 200
+    const margin = { top: 20, right: 30, bottom: 30, left: 40 }
+
+    const svg = d3
+      .select(svgRef.current)
+      .attr('width', width)
+      .attr('height', height)
+      .style('background-color', '#f9f9f9')
+
+    svg.selectAll('*').remove()
+
+    const xScale = d3
+      .scaleLinear()
+      .domain([0, d3.max(timeData) || 1])
+      .range([margin.left, width - margin.right])
+
+    const yScale = d3
+      .scaleLinear()
+      .domain([0, d3.max(altitude) || 1])
+      .range([height - margin.bottom, margin.top])
+
+    svg
+      .append('g')
+      .attr('transform', `translate(0, ${height - margin.bottom})`)
+      .call(d3.axisBottom(xScale).ticks(timeData.length))
+
+    svg
+      .append('g')
+      .attr('transform', `translate(${margin.left}, 0)`)
+      .call(d3.axisLeft(yScale))
+
+    // Draw Line
+    const line = d3
+      .line<number>()
+      .x((d, i) => xScale(timeData[i]))
+      .y((d) => yScale(d))
+
+    svg
+      .append('path')
+      .datum(altitude)
+      .attr('fill', 'none')
+      .attr('stroke', 'steelblue')
+      .attr('stroke-width', 2)
+      .attr('d', line as any)
+
+  }, [altitude?.length > 0, timeData?.length > 0])
+
+
+  return <GraphContainer>
+    <svg ref={svgRef}></svg>
+  </GraphContainer>
 }
 
 const FlightMap: React.FC = () => {
@@ -147,18 +217,8 @@ const FlightMap: React.FC = () => {
       </div>
 
       {altitude.length > 0 && showAltitudeGraph &&
-        <GraphContainer>
-          <header>
-            <p>시간별 비행기 고도그래프</p>
-          </header>
-
-          <button style={{ height: '25px' }}
-            onClick={handleClickedGraphCloseButton}>x</button>
-
-          <section>
-
-          </section>
-        </GraphContainer>}
+        <Graph altitude={altitude} />
+      }
 
     </Container >
   )
@@ -179,9 +239,17 @@ const GraphContainer = styled('div', {
   maxWidth: '600px',
   height: '200px',
   zIndex: 1000,
+  '& section': {
+    border: '1px solid red',
+    overflow: 'auto',
+    height: '50px',
+  },
   '& header': {
     maxWidth: 'max-content',
     margin: 'auto',
+  },
+  '& ul': {
+    listStyle: 'none',
   }
 })
 
