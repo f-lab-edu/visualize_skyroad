@@ -1,13 +1,15 @@
 import { styled } from '@stitches/react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { ButtonHTMLAttributes, useEffect, useRef, useState } from 'react'
 import { Map, MapInstance, MapRef } from 'react-map-gl'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import useMapAnimationController from '../../components/useAnimationController/useAnimationController'
 import VSkyButton from '../Button/VSKyButton'
 import { useLine } from '../useLine'
+
+import * as d3 from 'd3'
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
 
@@ -16,6 +18,73 @@ const ERRORMESSAGE = {
 }
 const STRINGS = {
   HOME: '첫 페이지',
+}
+
+interface GraphProps {
+  altitude: number[]
+}
+const Graph: React.FC<GraphProps> = ({ altitude }) => {
+
+
+  const svgRef = useRef<SVGSVGElement | null>(null)
+
+  const timeData = altitude.map((_, index) => index)
+
+  useEffect(() => {
+    if (!svgRef.current)
+      return
+
+    const width = 600
+    const height = 200
+    const margin = { top: 20, right: 30, bottom: 30, left: 40 }
+
+    const svg = d3
+      .select(svgRef.current)
+      .attr('width', width)
+      .attr('height', height)
+      .style('background-color', '#f9f9f9')
+
+    svg.selectAll('*').remove()
+
+    const xScale = d3
+      .scaleLinear()
+      .domain([0, d3.max(timeData) || 1])
+      .range([margin.left, width - margin.right])
+
+    const yScale = d3
+      .scaleLinear()
+      .domain([0, d3.max(altitude) || 1])
+      .range([height - margin.bottom, margin.top])
+
+    svg
+      .append('g')
+      .attr('transform', `translate(0, ${height - margin.bottom})`)
+      .call(d3.axisBottom(xScale).ticks(timeData.length))
+
+    svg
+      .append('g')
+      .attr('transform', `translate(${margin.left}, 0)`)
+      .call(d3.axisLeft(yScale))
+
+    const line = d3
+      .line<number>()
+      .x((_: number, i: number) => xScale(timeData[i]))
+      .y((d: number) => yScale(d))
+
+    svg
+      .append('path')
+      .datum(altitude)
+      .attr('fill', 'none')
+      .attr('stroke', 'steelblue')
+      .attr('stroke-width', 2)
+      .attr('d', line as any)
+
+  }, [altitude?.length > 0, timeData?.length > 0])
+
+
+  return <GraphContainer>
+    <svg ref={svgRef}></svg>
+  </GraphContainer>
 }
 
 const FlightMap: React.FC = () => {
@@ -28,8 +97,10 @@ const FlightMap: React.FC = () => {
   const navigate = useNavigate()
   const [zoomLevel, setZoomLevel] = useState<number>(0)
 
+  const [showAltitudeGraph, setShowAltitudeGraph] = useState<boolean>(true)
+
   // 1. 라인 획득
-  const { line, route, totalFrames } = useLine({
+  const { line, altitude, route, totalFrames } = useLine({
     arrival,
     departure,
     flight,
@@ -102,6 +173,9 @@ const FlightMap: React.FC = () => {
   const handleChangeAniSpeed = (e: React.ChangeEvent<HTMLSelectElement>) => {
     alert(e.target.value)
   }
+  const handleClickedGraphCloseButton = (e: React.MouseEvent<HTMLButtonElement>) => {
+    setShowAltitudeGraph(!showAltitudeGraph)
+  }
 
   return (
     <Container>
@@ -140,15 +214,12 @@ const FlightMap: React.FC = () => {
           Zoom: {zoomLevel.toFixed(2)}
         </ZoomIndicator>
       </div>
-      <GraphContainer>
-        <header>
-          시간별 비행기 고도그래프
-        </header>
-        <section>
 
-        </section>
-      </GraphContainer>
-    </Container>
+      {altitude.length > 0 && showAltitudeGraph &&
+        <Graph altitude={altitude} />
+      }
+
+    </Container >
   )
 }
 
@@ -167,9 +238,17 @@ const GraphContainer = styled('div', {
   maxWidth: '600px',
   height: '200px',
   zIndex: 1000,
+  '& section': {
+    border: '1px solid red',
+    overflow: 'auto',
+    height: '50px',
+  },
   '& header': {
     maxWidth: 'max-content',
     margin: 'auto',
+  },
+  '& ul': {
+    listStyle: 'none',
   }
 })
 
