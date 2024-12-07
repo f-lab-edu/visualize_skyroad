@@ -8,6 +8,7 @@ import './App.css'
 import LoadingScreen from './components/Loading/Loading'
 
 const Home = lazy(() => import('./pages/Home'))
+import A380test from './pages/A380test'; // 상대 경로 확인
 const FlightOnMap = lazy(() => import('./pages/FlightOnMap'))
 
 const queryClient = new QueryClient()
@@ -20,6 +21,7 @@ function App() {
           <SuspenseWithLoadingScreen>
             <Routes>
               <Route element={<Home />} path="/" />
+              <Route element={<A380test />} path="/a380" />
               <Route element={<FlightOnMap />} path="flight" />
             </Routes>
           </SuspenseWithLoadingScreen>

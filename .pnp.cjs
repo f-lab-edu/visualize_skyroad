@@ -63,7 +63,7 @@ const RAW_RUNTIME_STATE =
           ["react-flagkit", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:2.0.4"],\
           ["react-map-gl", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:7.1.7"],\
           ["react-router-dom", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:6.27.0"],\
-          ["three", "npm:0.171.0"],\
+          ["three", "npm:0.147.0"],\
           ["typescript", "patch:typescript@npm%3A5.6.3#optional!builtin<compat/typescript>::version=5.6.3&hash=8c6c40"],\
           ["vite", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:5.4.10"]\
         ],\
@@ -8603,10 +8603,10 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["three", [\
-      ["npm:0.171.0", {\
-        "packageLocation": "./.yarn/cache/three-npm-0.171.0-823e995751-33a36861c8.zip/node_modules/three/",\
+      ["npm:0.147.0", {\
+        "packageLocation": "./.yarn/cache/three-npm-0.147.0-49da8c040c-292dabf63b.zip/node_modules/three/",\
         "packageDependencies": [\
-          ["three", "npm:0.171.0"]\
+          ["three", "npm:0.147.0"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -8963,7 +8963,7 @@ const RAW_RUNTIME_STATE =
           ["react-flagkit", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:2.0.4"],\
           ["react-map-gl", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:7.1.7"],\
           ["react-router-dom", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:6.27.0"],\
-          ["three", "npm:0.171.0"],\
+          ["three", "npm:0.147.0"],\
           ["typescript", "patch:typescript@npm%3A5.6.3#optional!builtin<compat/typescript>::version=5.6.3&hash=8c6c40"],\
           ["vite", "virtual:cbd78babffaaca8e3abde1bb609e6a929dfbfb94fbfae4827617a3914ce465af350e66e24872e39faf057fd07fab4a1d820890a1cb5e4c5ff86fcce94f274773#npm:5.4.10"]\
         ],\

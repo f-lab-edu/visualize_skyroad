@@ -7389,10 +7389,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"three@npm:^0.171.0":
-  version: 0.171.0
-  resolution: "three@npm:0.171.0"
-  checksum: 10c0/33a36861c815b914f79dc8546ac30610af40e3f16acc85be851933e6fcab2d90d4227a62c1d3d86bddab672c908103298daaf592615147721e3dbd719619952a
+"three@npm:0.147.0":
+  version: 0.147.0
+  resolution: "three@npm:0.147.0"
+  checksum: 10c0/292dabf63b66d17ffd7c1088093a8c1b79cf36a5f50e04a9d211ce6763fc47c8d635ec4e69af5188943b220b30360752c2846aff9e940c5483b588fe43470f08
   languageName: node
   linkType: hard
 
@@ -7700,7 +7700,7 @@ __metadata:
     react-flagkit: "npm:^2.0.4"
     react-map-gl: "npm:^7.1.7"
     react-router-dom: "npm:^6.26.1"
-    three: "npm:^0.171.0"
+    three: "npm:0.147.0"
     typescript: "npm:^5.6.2"
     vite: "npm:^5.4.6"
   languageName: unknown

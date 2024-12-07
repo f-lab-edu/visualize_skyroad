@@ -8,8 +8,10 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import useMapAnimationController from '../../components/useAnimationController/useAnimationController'
 import VSkyButton from '../Button/VSKyButton'
 import { useLine } from '../useLine'
-
+import * as THREE from 'three'
 import * as d3 from 'd3'
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
+
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
 
@@ -25,9 +27,7 @@ interface GraphProps {
 }
 const Graph: React.FC<GraphProps> = ({ altitude }) => {
 
-
   const svgRef = useRef<SVGSVGElement | null>(null)
-
   const timeData = altitude.map((_, index) => index)
 
   useEffect(() => {
@@ -121,7 +121,29 @@ const FlightMap: React.FC = () => {
       setMap(map)
     }
   }, [mapRef.current])
+  // useEffect(() => {
+  //   if (!map) return
 
+  //   const customLayer = {
+  //     id: '3d-model',
+  //     type: 'custom',
+  //     camera: new THREE.Camera(),
+  //     scene: new THREE.Scene(),
+  //     onAdd(map: MapInstance, gl: any) {
+  //       const directionalLight = new THREE.DirectionalLight(0xffffff)
+  //       directionalLight.position.set(0, -70, 100).normalize()
+  //       this.scene.add(directionalLight)
+  //       const directionalLight2 = new THREE.DirectionalLight(0xffffff)
+  //       directionalLight2.position.set(0, 70, 100).normalize()
+  //       this.scene.add(directionalLight2)
+  //       const loader = new THREE.S
+
+  //     }
+  //   }
+  //   map.on('style.load', () => {
+  //     map.addLayer(customLayer)
+  //   })
+  // }, [map])
   const backHome = () => {
     navigate('/')
   }
