@@ -8,9 +8,9 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import useMapAnimationController from '../../components/useAnimationController/useAnimationController'
 import VSkyButton from '../Button/VSKyButton'
 import { useLine } from '../useLine'
-import * as THREE from 'three'
+// import * as THREE from 'three'
 import * as d3 from 'd3'
-import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
+// import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
