@@ -5,6 +5,9 @@ import { MapInstance } from 'react-map-gl'
 import { FlightPathElement, FeatureCollection, FlightPosition } from '../api/flight'
 import { requestFlightTrack } from '../data/dataProcessingLayer'
 // import { FeatureCollection } from '@turf/turf'
+type East2West = "-->"
+type West2East = "<--"
+type RouteDirection = East2West | West2East | false
 
 interface useLineProps {
   arrival: any
@@ -23,12 +26,12 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
 
   const getRoute = async () => {
     const flightRoute = await requestFlightTrack(flight)
-    console.log(flightRoute)
+    // console.log(flightRoute)
     setRoute(flightRoute)
   }
 
   useEffect(() => {
-    console.log('---------getRoute', flight)
+    // console.log('---------getRoute', flight)
 
     if (flight)
       getRoute()
@@ -55,9 +58,9 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
 
   useEffect(() => {
     if (map && line) {
-      console.log(line)
+      // console.log(line)
       line.forEach((item: any, index: number) => {
-        console.log(item.features[0].geometry.coordinates.length)
+        // console.log(item.features[0].geometry.coordinates.length)
         // setTotalFrames(item.features[0].geometry)
         drawStraightLine(map, item, `line-${index}`)
       })
@@ -185,7 +188,7 @@ const drawLineOnRouteLayer = (
   option = { name: 'route', color: 'blue', isDash: false }
 ) => {
   const { name = 'route', color = 'blue', isDash = false } = option
-  console.log('***RouteOnMap***', routeOnMap)
+  // console.log('***RouteOnMap***', routeOnMap)
 
   if (map.getSource(name)) {
     map.getSource(name).setData(routeOnMap)
@@ -218,7 +221,7 @@ const drawLineOnRouteLayer = (
 
 const drawStraightLine = async (map: any, line: FeatureCollection, layerName: string) => {
   const option = { name: layerName || 'straight-line', color: 'yellow', isDash: true }
-  console.log('***LINE***IN_drawStraightLine:', line)
+  // console.log('***LINE***IN_drawStraightLine:', line)
   drawLineOnRouteLayer(map, line, option)
 }
 
@@ -268,7 +271,7 @@ const getLineFromRoute = ({
       on_ground: true,
     }
 
-    console.log(arrival, departure, isPathCrossingIDL(departureAirport, arrivalAirport))
+    // console.log(arrival, departure, isPathCrossingIDL(departureAirport, arrivalAirport))
 
     const path = [departureAirport, ...route.path.map((item: any) => {
       const casted: FlightPathElement = {
@@ -285,23 +288,40 @@ const getLineFromRoute = ({
 
     const splitLines: FlightPathElement[][] = []
     let line: FlightPathElement[] = []
+
+    function adjustCrossingPoints(
+      pointA: FlightPathElement,
+      pointB: FlightPathElement,
+      direction: East2West | West2East
+    ) {
+      const latitude = (pointA.latitude + pointB.latitude) / 1.45;
+      pointA.latitude = latitude;
+      pointB.latitude = latitude;
+
+      if (direction === "-->") {
+        pointA.longitude = 180;
+        pointB.longitude = -180;
+      } else if (direction === "<--") {
+        pointA.longitude = -180;
+        pointB.longitude = 180;
+      }
+    }
+
     for (let i = 0; i < path.length - 1; ++i) {
-      if (isPathCrossingIDL(path[i], path[i + 1])) {
-        const pointA: FlightPathElement = path[i]
-        const pointB: FlightPathElement = path[i + 1]
-        const latitude: number = (pointA.latitude + pointB.latitude) / 1.45
-        pointA.latitude = latitude
-        pointB.latitude = latitude
-        pointA.longitude = -180
-        pointB.longitude = 180
+      line.push(path[i]);
 
-        line.push(pointA)
-        splitLines.push(line)
-        line = [pointB]
+      const crossed = isPathCrossingIDL(path[i], path[i + 1]);
+      if (crossed === "-->" || crossed === "<--") {
+        const pointA: FlightPathElement = path[i];
+        const pointB: FlightPathElement = path[i + 1];
 
+        adjustCrossingPoints(pointA, pointB, crossed);
+
+        line.push(pointA);
+        splitLines.push(line);
+        line = [pointB];
       } else {
-        line.push(path[i])
-
+        line.push(path[i]);
       }
     }
 
@@ -333,14 +353,22 @@ const getLineFromRoute = ({
         })
         .catch(reject)
     })
+
+    // // console.log(lines)
     resolve(lines)
   })
 }
 
-const isPathCrossingIDL = (A: FlightPathElement, B: FlightPathElement): boolean => {
+const isPathCrossingIDL = (A: FlightPathElement, B: FlightPathElement): RouteDirection => {
   /* IDL: 국제 날자변경선 */
-  if (A.longitude < B.longitude && A.longitude < 0 && B.longitude > 0)
-    return true
-
+  // 부호가 바뀌는 경우로 시도
+  if (A.longitude > 0 && B.longitude < 0) {
+    // console.log("---->")
+    return "-->"
+  }
+  if (A.longitude < 0 && B.longitude > 0) {
+    // console.log("<----")
+    return "<--"
+  }
   return false
 }
