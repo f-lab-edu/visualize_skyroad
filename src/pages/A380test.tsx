@@ -121,16 +121,43 @@ const MapWithThreeLayer: React.FC = () => {
 
                 // STL 모델 로드
                 const loader = new STLLoader();
-                loader.load('/cube.stl', (geometry) => {
-                    const material = new THREE.MeshStandardMaterial({ color: 0xff5533 });
-                    mesh = new THREE.Mesh(geometry, material);
-                    // mesh.scale.set(0.01, 0.01, 0.01); // 크기 조정
+                loader.load('/plane.stl', (geometry) => {
+                    renderer.clear(); // Three.js의 배경 초기화
+
+
+                    geometry.computeVertexNormals(); // 노말 강제 재계산
+
+
+
+                    const material = new THREE.MeshStandardMaterial({ color: 0x555533 });
+                    mesh = new THREE.Mesh(
+                        // new THREE.BoxGeometry(1, 1, 1),
+                        geometry,
+                        material);
+                    mesh.scale.set(0.1, 0.1, 0.1); // 크기를 작게 설정
+                    mesh.position.set(1, 1, 1)
                     scene.add(mesh);
 
                     // 초기 모델 위치 설정 (서울 중심)
                     const center = map.getCenter();
                     const position = map.project([center.lng, center.lat]);
-                    mesh.position.set(position.x, position.y, 0);
+                    // mesh.position.set(position.x, position.y, 0);
+                    console.log(center, position, map.getCenter())
+                    // const tempCube = new THREE.Mesh(
+                    // new THREE.BoxGeometry(1, 1, 1),
+                    // material // new THREE.MeshStandardMaterial({ color: 0x00ff00 })
+                    // );
+                    // tempCube.position.set(0, 0, 0);
+                    // scene.add(tempCube);
+                    camera.position.set(0, 0, 20); // 카메라를 모델 앞쪽에 배치
+                    camera.lookAt(0, 0, 0);        // 모델 중심을 바라보게 설정
+                    console.log('Camera Position:', camera.position);
+                    console.log('Mesh Position:', mesh.position);
+
+                    renderer.render(scene, camera);
+                    const axesHelper = new THREE.AxesHelper(5); // 크기 5의 축 헬퍼 추가
+                    scene.add(axesHelper);
+
                 });
 
                 // 조명 추가
@@ -144,7 +171,7 @@ const MapWithThreeLayer: React.FC = () => {
 
             render: (gl: WebGLRenderingContext, matrix: number[]) => {
                 if (!scene || !camera || !renderer || !mesh) return;
-
+                console.log("test")
                 renderer.state.reset(); // WebGL 상태 리셋
                 renderer.render(scene, camera);
             },
@@ -153,16 +180,20 @@ const MapWithThreeLayer: React.FC = () => {
         map.on('load', () => {
             map.addLayer(customLayer);
 
-            // 지도 이동 이벤트 처리
             map.on('move', () => {
                 if (!mesh) return;
 
                 const center = map.getCenter();
                 const position = map.project([center.lng, center.lat]);
-                mesh.position.set(position.x, position.y, 0);
-                // 카메라가 STL 모델을 바라보도록 업데이트
-                camera.position.set(position.x, position.y, position.z + 10); // 적절한 Z축 거리 유지
-                camera.lookAt(position.x, position.y, position.z)
+
+                // STL 모델이 지도 중심에 따라 움직이도록 설정
+                const x = position.x - map.getCanvas().width / 2;
+                const y = -(position.y - map.getCanvas().height / 2); // Y축 반전
+                mesh.position.set(x, y, 0);
+
+                // 카메라가 항상 모델을 바라보도록 설정
+                camera.position.set(x, y, 20);
+                camera.lookAt(x, y, 0);
             });
         });
 
