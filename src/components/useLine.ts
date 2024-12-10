@@ -16,7 +16,7 @@ interface useLineProps {
   map: MapInstance | null
 }
 
-const INTERPOLE_THRESHOLD = 500
+const INTERPOLE_THRESHOLD = 100
 
 export function useLine({ map, flight, arrival, departure }: useLineProps) {
   const [line, setLine] = useState<FeatureCollection[] | null>(null)
@@ -160,7 +160,7 @@ const interpolatedRawPath = (
       if (timeDif > threshold) {
         const numNewPoints = Math.ceil(timeDif / threshold)
 
-        if (numNewPoints > 1) {
+        if (numNewPoints > 10) {
           for (let step = 0; step <= numNewPoints; step++) {
             const newpoint: FlightPosition = linearInterpFn(
               current,
@@ -248,6 +248,7 @@ const getLineFromRoute = ({
   route: any
 }): Promise<FeatureCollection[]> => {
   return new Promise((resolve, reject) => {
+
     const timestampStarted = route.path.at(0)[0] // [0]
     const timestampTerminated = route.path.at(-1)[0]
     const unitTime =
@@ -271,6 +272,7 @@ const getLineFromRoute = ({
       on_ground: true,
     }
 
+
     // console.log(arrival, departure, isPathCrossingIDL(departureAirport, arrivalAirport))
 
     const path = [departureAirport, ...route.path.map((item: any) => {
@@ -286,47 +288,42 @@ const getLineFromRoute = ({
     })]
     path.push(arrivalAirport)
 
+    const avgTime = path
+      .slice(1)
+      .reduce((sum: number, item: FlightPathElement, index: number) => sum + (item.time - path[index].time), 0) / (path.length - 1)
+    const difTime = path.slice(1).map((item: FlightPathElement, index: number) => (item.time - path[index].time))
+    console.log("!!!!!!", difTime, path, avgTime, path.at(-1).time - path.at(0).time)
+
     const splitLines: FlightPathElement[][] = []
     let line: FlightPathElement[] = []
-
-    function adjustCrossingPoints(
-      pointA: FlightPathElement,
-      pointB: FlightPathElement,
-      direction: East2West | West2East
-    ) {
-      const latitude = (pointA.latitude + pointB.latitude) / 1.45;
-      pointA.latitude = latitude;
-      pointB.latitude = latitude;
-
-      if (direction === "-->") {
-        pointA.longitude = 180;
-        pointB.longitude = -180;
-      } else if (direction === "<--") {
-        pointA.longitude = -180;
-        pointB.longitude = 180;
-      }
-    }
 
     for (let i = 0; i < path.length - 1; ++i) {
       line.push(path[i]);
 
-      const crossed = isPathCrossingIDL(path[i], path[i + 1]);
+      const crossed = isPathCrossingIDL(path[i], path[i + 1])
       if (crossed === "-->" || crossed === "<--") {
-        const pointA: FlightPathElement = path[i];
-        const pointB: FlightPathElement = path[i + 1];
+        const pointA: FlightPathElement = { ...path[i] }
+        const pointB: FlightPathElement = path[i + 1]
 
-        adjustCrossingPoints(pointA, pointB, crossed);
+        adjustCrossingPoints(pointA, pointB, crossed)
 
         line.push(pointA);
         splitLines.push(line);
         line = [pointB];
       } else {
-        line.push(path[i]);
+        // line.push(path[i]);
       }
     }
 
     splitLines.push(line)
     splitLines[splitLines.length - 1].push(path[path.length - 1])
+
+    console.log(splitLines)
+
+    splitLines.forEach(line => {
+      line.forEach((pt: FlightPathElement) => console.log(pt))
+    })
+
     const lines: FeatureCollection[] = []
     splitLines.forEach(line => {
       interpolatedRawPath(
@@ -354,7 +351,7 @@ const getLineFromRoute = ({
         .catch(reject)
     })
 
-    // // console.log(lines)
+    console.log(lines)
     resolve(lines)
   })
 }
@@ -371,4 +368,21 @@ const isPathCrossingIDL = (A: FlightPathElement, B: FlightPathElement): RouteDir
     return "<--"
   }
   return false
+}
+const adjustCrossingPoints = (
+  pointA: FlightPathElement,
+  pointB: FlightPathElement,
+  direction: East2West | West2East
+) => {
+  const latitude = (pointA.latitude + pointB.latitude) / 1.45
+  pointA.latitude = latitude
+  pointB.latitude = latitude
+
+  if (direction === "-->") {
+    pointA.longitude = 180
+    pointB.longitude = -180
+  } else if (direction === "<--") {
+    pointA.longitude = -180
+    pointB.longitude = 180
+  }
 }
