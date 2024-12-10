@@ -8,9 +8,9 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import useMapAnimationController from '../../components/useAnimationController/useAnimationController'
 import VSkyButton from '../Button/VSKyButton'
 import { useLine } from '../useLine'
-// import * as THREE from 'three'
+import * as THREE from 'three'
 import * as d3 from 'd3'
-// import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
@@ -24,8 +24,9 @@ const STRINGS = {
 
 interface GraphProps {
   altitude: number[]
+  onCloseBtnClicked: () => void
 }
-const Graph: React.FC<GraphProps> = ({ altitude }) => {
+const Graph: React.FC<GraphProps> = ({ altitude, onCloseBtnClicked }) => {
 
   const svgRef = useRef<SVGSVGElement | null>(null)
   const timeData = altitude.map((_, index) => index)
@@ -83,6 +84,7 @@ const Graph: React.FC<GraphProps> = ({ altitude }) => {
 
 
   return <GraphContainer>
+    <a onClick={onCloseBtnClicked}><div>X</div></a>
     <svg ref={svgRef}></svg>
   </GraphContainer>
 }
@@ -223,6 +225,10 @@ const FlightMap: React.FC = () => {
             <p>({currentFrame}/{totalFrames})</p>
           </div>
 
+          <div>
+            {showAltitudeGraph
+              ? <a onClick={() => setShowAltitudeGraph(false)}>그래프끄기</a> : <a onClick={() => setShowAltitudeGraph(true)}>그래프켜기</a>}
+          </div>
         </AnimationControlWrapper>
 
         <Map
@@ -238,7 +244,7 @@ const FlightMap: React.FC = () => {
       </div>
 
       {altitude.length > 0 && showAltitudeGraph &&
-        <Graph altitude={altitude} />
+        <Graph altitude={altitude} onCloseBtnClicked={() => setShowAltitudeGraph(false)} />
       }
 
     </Container >
