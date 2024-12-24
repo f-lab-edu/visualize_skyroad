@@ -384,7 +384,11 @@ const InitialViewStateKR = {
   // // RKIS
   // longitude: 126.3967,
   // latitude: 37.4895,
-  zoom: 3.5,
+  // zoom: 3.5,
+
+  // zoom: 10, // 초기 줌 레벨Í
+  minZoom: 2, // 최소 줌 레벨
+  maxZoom: 10, // 최대 줌 레벨
 }
 
 const StyleMap = { width: '100%', height: '100vh' }

@@ -8,8 +8,9 @@ import './App.css'
 import LoadingScreen from './components/Loading/Loading'
 
 const Home = lazy(() => import('./pages/Home'))
-import A380test from './pages/A380test'; // 상대 경로 확인
+const A380test = lazy(() => import('./pages/A380test'))
 const FlightOnMap = lazy(() => import('./pages/FlightOnMap'))
+// import A380test from './pages/A380test'; // 상대 경로 확인
 
 const queryClient = new QueryClient()
 
@@ -45,7 +46,7 @@ const ErrorFallback = ({ error }: { error: Error }) => {
 
 const ErrorBoundaryWithFallback: React.FC<{ children: React.ReactNode }> = ({
   children,
-}) => {
+}: { children: any }) => {
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>{children}</ErrorBoundary>
   )
@@ -53,6 +54,6 @@ const ErrorBoundaryWithFallback: React.FC<{ children: React.ReactNode }> = ({
 
 const SuspenseWithLoadingScreen: React.FC<{ children: React.ReactNode }> = ({
   children,
-}) => {
+}: { children: any }) => {
   return <Suspense fallback={<LoadingScreen />}>{children}</Suspense>
 }
