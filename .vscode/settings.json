@@ -1,12 +1,7 @@
 {
-  "search.exclude": {
-    "**/.yarn": true,
-    "**/.pnp.*": true
-  },
-  "eslint.nodePath": ".yarn/sdks",
   "typescript.tsdk": ".yarn/sdks/typescript/lib",
+  "eslint.nodePath": ".yarn/sdks",
   "typescript.enablePromptUseWorkspaceTsdk": true,
-  "typescript.tsserver.experimental.useVsCodeWatcher": false,
   "eslint.validate": [
     "javascript",
     "javascriptreact",
@@ -18,4 +13,5 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
+  "prettier.prettierPath": ".yarn/sdks/prettier/index.cjs"
 }
