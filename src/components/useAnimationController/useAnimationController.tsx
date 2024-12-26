@@ -5,20 +5,24 @@ import { FeatureCollection } from '../../api/flight'
 const useMapAnimationController = ({
   duration,
   line,
-  map,
+  map, zoomLevel
 }: {
   map: MapInstance | null
   duration: number
   line: FeatureCollection[] | null
+  zoomLevel: number
 }) => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
   const [isPaused, setIsPaused] = useState<boolean>(false)
+  const [mergedLine, setMergedLine] = useState<FeatureCollection | null>(null)
   const requestRef = useRef<null | number>(null)
   const previousTimeRef = useRef<null | number>(null)
   const [currentFrame, setCurrentFrame] = useState<number>(0)
 
   const draw = (mapInstance: any, position: any) => {
+    // console.log("---- draw ----", position)
     if (mapInstance?.getSource('point')) {
+      // console.log(position)
       const point = {
         type: 'FeatureCollection',
         features: [
@@ -77,7 +81,7 @@ const useMapAnimationController = ({
           source: 'point',
           layout: {
             'icon-image': 'airplane-icon',
-            'icon-size': 0.25
+            'icon-size': .75// * zoomLevel
           },
         })
       }
@@ -85,26 +89,63 @@ const useMapAnimationController = ({
   }
 
   const handleUpdate = (deltaTime: number) => {
+    // console.log(deltaTime)
     setCurrentFrame((prevFrame) => {
-      const nextFrame = prevFrame + 1
-      if (line?.[0].features[0]?.geometry.coordinates[nextFrame]) {
-        draw(map, line[0].features[0].geometry.coordinates[nextFrame])
+
+      const nextFrame = Math.floor(prevFrame + deltaTime)
+
+      if (mergedLine?.features[0]?.geometry.coordinates[nextFrame]) {
+        draw(map, mergedLine.features[0].geometry.coordinates[nextFrame])
       }
+
       return nextFrame
+
     })
+  }
+  const mergeFeatureCollectionCoordinates = (
+    featureA: FeatureCollection,
+    featureB: FeatureCollection | null
+  ): FeatureCollection => {
+
+    if (featureB === null)
+      return featureA
+    const mergedFeatures = featureA.features.map((feature, index) => {
+      const featureBFeature = featureB.features[index]
+
+      if (feature.geometry.type === featureBFeature?.geometry.type) {
+        return {
+          ...feature,
+          geometry: {
+            ...feature.geometry,
+            coordinates: Array.isArray(feature.geometry.coordinates)
+              ? [...feature.geometry.coordinates, ...featureBFeature.geometry.coordinates]
+              : feature.geometry.coordinates,
+          },
+        }
+      } else {
+        return feature
+      }
+    })
+
+    return {
+      type: 'FeatureCollection',
+      features: mergedFeatures,
+    }
   }
 
   const handleStart = () => {
     if (map && line) {
-      animateAtoB(map, line[0])
+      const merged: FeatureCollection = mergeFeatureCollectionCoordinates(line[0], line[1])
+      setMergedLine(merged)
+      animateAtoB(map, merged)
     }
   }
 
   const handleStop = () => {
     setCurrentFrame(0)
-    if (line?.[0]?.features[0]?.geometry.coordinates[0]) {
-      draw(map, line[0].features[0].geometry.coordinates[0])
-    }
+    // if (line?.[0]?.features[0]?.geometry.coordinates[0]) {
+    // draw(map, line[0].features[0].geometry.coordinates[0])
+    // }
   }
 
   const play = () => {

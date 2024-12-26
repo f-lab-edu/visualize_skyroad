@@ -84,12 +84,15 @@ const Graph: React.FC<GraphProps> = ({ altitude, onCloseBtnClicked }) => {
 
 
   return <GraphContainer>
-    <a onClick={onCloseBtnClicked}><div>X</div></a>
+    <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-center" }}>
+      <p>고도그래프</p>
+      <a style={{ maxHeight: "max-content", cursor: "pointer" }} onClick={onCloseBtnClicked}><div>X</div></a>
+    </div>
     <svg ref={svgRef}></svg>
   </GraphContainer>
 }
 
-const FlightMap: React.FC = () => {
+const FlightMap: React.FC = ({ }) => {
   const mapRef = useRef<MapRef>(null)
   const [map, setMap] = useState<MapInstance | null>(null)
 
@@ -114,7 +117,7 @@ const FlightMap: React.FC = () => {
     useMapAnimationController({
       duration: 1000,
       line,
-      map,
+      map, zoomLevel
     })
 
   useEffect(() => {
@@ -123,29 +126,7 @@ const FlightMap: React.FC = () => {
       setMap(map)
     }
   }, [mapRef.current])
-  // useEffect(() => {
-  //   if (!map) return
 
-  //   const customLayer = {
-  //     id: '3d-model',
-  //     type: 'custom',
-  //     camera: new THREE.Camera(),
-  //     scene: new THREE.Scene(),
-  //     onAdd(map: MapInstance, gl: any) {
-  //       const directionalLight = new THREE.DirectionalLight(0xffffff)
-  //       directionalLight.position.set(0, -70, 100).normalize()
-  //       this.scene.add(directionalLight)
-  //       const directionalLight2 = new THREE.DirectionalLight(0xffffff)
-  //       directionalLight2.position.set(0, 70, 100).normalize()
-  //       this.scene.add(directionalLight2)
-  //       const loader = new THREE.S
-
-  //     }
-  //   }
-  //   map.on('style.load', () => {
-  //     map.addLayer(customLayer)
-  //   })
-  // }, [map])
   const backHome = () => {
     navigate('/')
   }
@@ -237,10 +218,13 @@ const FlightMap: React.FC = () => {
           mapStyle={`https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_KEY}`}
           ref={mapRef}
           style={StyleMap}
+
         />
+
         <ZoomIndicator>
           Zoom: {zoomLevel.toFixed(2)}
         </ZoomIndicator>
+
       </div>
 
       {altitude.length > 0 && showAltitudeGraph &&
@@ -254,6 +238,7 @@ const FlightMap: React.FC = () => {
 export default FlightMap
 
 const GraphContainer = styled('div', {
+  '*': { border: '1px solid red' },
   position: 'fixed',
   bottom: '16px',
   left: '50%',
@@ -386,9 +371,11 @@ const InitialViewStateKR = {
   // latitude: 37.4895,
   // zoom: 3.5,
 
-  // zoom: 10, // 초기 줌 레벨Í
-  minZoom: 2, // 최소 줌 레벨
-  maxZoom: 10, // 최대 줌 레벨
+  zoom: 10,
+  // minZoom: 2,
+  // maxZoom: 10,
+  wrapLongitude: true, // 날짜 변경선 넘는 좌표를 연결
+
 }
 
 const StyleMap = { width: '100%', height: '100vh' }
