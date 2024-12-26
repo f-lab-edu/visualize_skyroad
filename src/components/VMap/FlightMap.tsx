@@ -12,6 +12,8 @@ import * as THREE from 'three'
 import * as d3 from 'd3'
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 
+import { Marker } from 'react-map-gl';
+import { FeatureCollection } from '../../api/flight'
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
 
@@ -117,7 +119,8 @@ const FlightMap: React.FC = ({ }) => {
     useMapAnimationController({
       duration: 1000,
       line,
-      map, zoomLevel
+      map,
+      zoomLevel
     })
 
   useEffect(() => {
@@ -181,7 +184,6 @@ const FlightMap: React.FC = ({ }) => {
   const handleClickedGraphCloseButton = (e: React.MouseEvent<HTMLButtonElement>) => {
     setShowAltitudeGraph(!showAltitudeGraph)
   }
-
   return (
     <Container>
       <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
@@ -219,7 +221,25 @@ const FlightMap: React.FC = ({ }) => {
           ref={mapRef}
           style={StyleMap}
 
-        />
+        >
+
+          {route?.path.map((pt: number[]) =>
+            // [1735039517, 37.4855, 126.4002, 304, 308, false] */}
+            <Marker key={`ut-${pt[0]}`} latitude={pt[1]} longitude={pt[2]}>
+              <div style={{ backgroundColor: 'red', borderRadius: '50%', width: 10, height: 10 }} />
+            </Marker>)
+          }
+
+          <Marker latitude={departure.latitude} longitude={departure.longitude}>
+            <div style={{ backgroundColor: 'blue', borderRadius: '50%', width: 10, height: 10 }} />
+          </Marker>
+
+          <Marker latitude={arrival.latitude} longitude={arrival.longitude}>
+            <div style={{ backgroundColor: 'blue', borderRadius: '50%', width: 10, height: 10 }} />
+          </Marker>
+
+
+        </Map>
 
         <ZoomIndicator>
           Zoom: {zoomLevel.toFixed(2)}
@@ -228,7 +248,7 @@ const FlightMap: React.FC = ({ }) => {
       </div>
 
       {altitude.length > 0 && showAltitudeGraph &&
-        <Graph altitude={altitude} onCloseBtnClicked={() => setShowAltitudeGraph(false)} />
+        <Graph altitude={altitude} onCloseBtnClicked={handleClickedGraphCloseButton} />
       }
 
     </Container >

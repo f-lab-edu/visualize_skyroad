@@ -2,10 +2,25 @@ import { useEffect, useRef, useState } from 'react'
 import { MapInstance } from 'react-map-gl'
 import { FeatureCollection } from '../../api/flight'
 
+
+const calculateBearing = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const rad = Math.PI / 180
+  const deltaLon = (lon2 - lon1) * rad
+  const lat1Rad = lat1 * rad
+  const lat2Rad = lat2 * rad
+
+  const y = Math.sin(deltaLon) * Math.cos(lat2Rad)
+  const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(deltaLon)
+
+  const bearing = Math.atan2(y, x)
+  return (bearing * 180 / Math.PI + 360) % 360
+}
+
 const useMapAnimationController = ({
   duration,
   line,
-  map, zoomLevel
+  map,
+  zoomLevel
 }: {
   map: MapInstance | null
   duration: number
@@ -19,10 +34,8 @@ const useMapAnimationController = ({
   const previousTimeRef = useRef<null | number>(null)
   const [currentFrame, setCurrentFrame] = useState<number>(0)
 
-  const draw = (mapInstance: any, position: any) => {
-    // console.log("---- draw ----", position)
+  const draw = (mapInstance: any, position: any, bearing: number) => {
     if (mapInstance?.getSource('point')) {
-      // console.log(position)
       const point = {
         type: 'FeatureCollection',
         features: [
@@ -37,6 +50,20 @@ const useMapAnimationController = ({
         ],
       }
       mapInstance.getSource('point').setData(point)
+
+      if (!mapInstance.getLayer('points')) {
+        mapInstance.addLayer({
+          id: 'points',
+          type: 'symbol',
+          source: 'point',
+          layout: {
+            'icon-image': 'airplane-icon',
+            'icon-size': 0.75,
+          },
+        })
+      } else {
+        mapInstance.setLayoutProperty('points', 'icon-rotate', bearing)
+      }
     }
   }
 
@@ -81,7 +108,7 @@ const useMapAnimationController = ({
           source: 'point',
           layout: {
             'icon-image': 'airplane-icon',
-            'icon-size': .75// * zoomLevel
+            'icon-size': .75 * 1 / zoomLevel
           },
         })
       }
@@ -89,13 +116,19 @@ const useMapAnimationController = ({
   }
 
   const handleUpdate = (deltaTime: number) => {
-    // console.log(deltaTime)
     setCurrentFrame((prevFrame) => {
 
       const nextFrame = Math.floor(prevFrame + deltaTime)
 
       if (mergedLine?.features[0]?.geometry.coordinates[nextFrame]) {
-        draw(map, mergedLine.features[0].geometry.coordinates[nextFrame])
+        const currentPosition = mergedLine.features[0].geometry.coordinates[nextFrame]
+        const nextPosition = mergedLine.features[0].geometry.coordinates[nextFrame + 1] || currentPosition
+        const bearing = calculateBearing(
+          currentPosition[1], currentPosition[0],
+          nextPosition[1], nextPosition[0]
+        )
+
+        draw(map, mergedLine.features[0].geometry.coordinates[nextFrame], bearing)
       }
 
       return nextFrame
@@ -109,6 +142,7 @@ const useMapAnimationController = ({
 
     if (featureB === null)
       return featureA
+
     const mergedFeatures = featureA.features.map((feature, index) => {
       const featureBFeature = featureB.features[index]
 
@@ -135,7 +169,8 @@ const useMapAnimationController = ({
 
   const handleStart = () => {
     if (map && line) {
-      const merged: FeatureCollection = mergeFeatureCollectionCoordinates(line[0], line[1])
+      console.log(line[0], line[1])
+      const merged: FeatureCollection = line.length > 1 ? mergeFeatureCollectionCoordinates(line[0], line[1]) : line[0]
       setMergedLine(merged)
       animateAtoB(map, merged)
     }
@@ -184,7 +219,7 @@ const useMapAnimationController = ({
       requestRef.current = requestAnimationFrame(animate)
     }
 
-    if (currentFrame >= duration) {
+    if (currentFrame >= mergedLine.length) {
       stop()
     }
   }

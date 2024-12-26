@@ -56,9 +56,14 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
   useEffect(() => {
     if (map && line) {
       line.forEach((item: any, index: number) => {
-        // setTotalFrames(item.features[0].geometry)
         drawStraightLine(map, item, `line-${index}`)
       })
+
+      setTotalFrames(
+        line.length > 1
+          ? line[0].features[0].geometry.coordinates.length
+          + line[1].features[0].geometry.coordinates.length
+          : line[0].features[0].geometry.coordinates.length)
     }
   }, [line])
 
@@ -193,9 +198,9 @@ const drawLineOnRouteLayer = (
     'line-opacity': 0.8,
   }
 
-  // if (isDash) {
-  //   paintOptions['line-dasharray'] = [2, 2]
-  // }
+  if (isDash) {
+    paintOptions['line-dasharray'] = [2, 2]
+  }
 
   map.addLayer({
     id: name,
@@ -235,11 +240,12 @@ const getLineFromRoute = ({
 }): Promise<FeatureCollection[]> => {
   return new Promise((resolve, reject) => {
 
-    const timestampStarted = route.path.at(0)[0] // [0]
+    const timestampStarted = route.path.at(0)[0]
     const timestampTerminated = route.path.at(-1)[0]
     const unitTime =
       (timestampTerminated - timestampStarted) / INTERPOLE_THRESHOLD
 
+    // Departure and arrival airports as starting and ending points
     const departureAirport: FlightPathElement = {
       time: timestampStarted - unitTime,
       latitude: departure.latitude,
@@ -258,6 +264,7 @@ const getLineFromRoute = ({
       on_ground: true,
     }
 
+    // Build path with all the points including departure and arrival
     const path = [departureAirport, ...route.path.map((item: any) => {
       const casted: FlightPathElement = {
         time: Number(item[0]),
@@ -274,8 +281,6 @@ const getLineFromRoute = ({
     const avgTime = path
       .slice(1)
       .reduce((sum: number, item: FlightPathElement, index: number) => sum + (item.time - path[index].time), 0) / (path.length - 1)
-    // const difTime = path.slice(1).map((item: FlightPathElement, index: number) => (item.time - path[index].time))
-    // console.log("!!!!!!", difTime, path, avgTime, path.at(-1).time - path.at(0).time)
 
     const splitLines: FlightPathElement[][] = []
     let line: FlightPathElement[] = []
@@ -324,6 +329,8 @@ const getLineFromRoute = ({
     ).then(() => resolve(lines)).catch(reject)
   })
 }
+
+
 
 const isPathCrossingIDL = (A: FlightPathElement, B: FlightPathElement): RouteDirection => {
   if (A.longitude > 0 && B.longitude < 0) {
