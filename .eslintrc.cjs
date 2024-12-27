@@ -29,6 +29,6 @@ module.exports = {
   rules: {
     'prettier/prettier': ['error', prettierConfig, { usePrettierrc: false }],
     semi: ['error', 'never'],
-    // '@typescript-eslint/semi': ['error', 'never'],
+    '@typescript-eslint/semi': ['error', 'never'],
   },
 }

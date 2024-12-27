@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { MapInstance } from 'react-map-gl'
 import { FeatureCollection } from '../../api/flight'
 
-
 const calculateBearing = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const rad = Math.PI / 180
   const deltaLon = (lon2 - lon1) * rad
@@ -17,28 +16,31 @@ const calculateBearing = (lat1: number, lon1: number, lat2: number, lon2: number
 }
 
 const useMapAnimationController = ({
-  duration,
-  line,
   map,
-  zoomLevel
+  line,
+  zoomLevel,
+  duration,
 }: {
+
   map: MapInstance | null
-  duration: number
   line: FeatureCollection[] | null
   zoomLevel: number
+  duration: number
 }) => {
+
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
   const [isPaused, setIsPaused] = useState<boolean>(false)
   const [mergedLine, setMergedLine] = useState<FeatureCollection | null>(null)
-  const requestRef = useRef<null | number>(null)
-  const previousTimeRef = useRef<null | number>(null)
   const [currentFrame, setCurrentFrame] = useState<number>(0)
   const [bearing, setBearing] = useState<number>(999)
   const [prevBearing, setPrevBearing] = useState<number>(999)
+  const requestRef = useRef<null | number>(null)
+  const previousTimeRef = useRef<null | number>(null)
 
   const handleUpdate = (deltaTime: number) => {
+
     setCurrentFrame((prevFrame) => {
-      const nextFrame = Math.floor(prevFrame + deltaTime * 10)
+      const nextFrame = Math.floor(prevFrame + deltaTime * 1)
 
       if (mergedLine?.features[0]?.geometry.coordinates[nextFrame]) {
         const currentPosition = mergedLine.features[0].geometry.coordinates[nextFrame]
@@ -65,6 +67,7 @@ const useMapAnimationController = ({
   }
 
   const animate = (time: number) => {
+
     if (previousTimeRef.current !== null) {
       handleUpdate(time - previousTimeRef.current)
     }
@@ -112,6 +115,7 @@ const useMapAnimationController = ({
   }
 
   const handleStart = () => {
+
     if (map && line) {
       const merged: FeatureCollection =
         line.length > 1
@@ -154,7 +158,6 @@ const useMapAnimationController = ({
     handleStop()
   }
 
-
   useEffect(() => {
     if (isPlaying && !isPaused) {
       requestRef.current = requestAnimationFrame(animate)
@@ -165,14 +168,15 @@ const useMapAnimationController = ({
         cancelAnimationFrame(requestRef.current)
       }
     }
+
   }, [isPlaying, isPaused])
+
+  console.log(map, line, zoomLevel, duration)
 
   return { bearing, mergedLine, play, pause, stop, isPlaying, isPaused, currentFrame }
 }
 
 export default useMapAnimationController
-
-
 
 // const [bearingList, setBearingList] = useState<number[]>(Array(5).fill(999))
 
