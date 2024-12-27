@@ -25,7 +25,7 @@ const prettierConfig = {
 }
 module.exports = {
   root: true,
-  extends: ['tonyfromundefined'],
+  extends: ['tonyfromundefined', 'plugin:react/recommended'],
   rules: {
     'prettier/prettier': ['error', prettierConfig, { usePrettierrc: false }],
     semi: ['error', 'never'],

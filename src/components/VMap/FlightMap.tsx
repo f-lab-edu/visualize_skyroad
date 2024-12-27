@@ -8,9 +8,9 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import useMapAnimationController from '../../components/useAnimationController/useAnimationController'
 import VSkyButton from '../Button/VSKyButton'
 import { useLine } from '../useLine'
-import * as THREE from 'three'
+// import * as THREE from 'three'
 import * as d3 from 'd3'
-import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
+// import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 
 import { Marker } from 'react-map-gl';
 import { FeatureCollection } from '../../api/flight'
@@ -181,7 +181,7 @@ const FlightMap: React.FC = ({ }) => {
   const handleChangeAniSpeed = (e: React.ChangeEvent<HTMLSelectElement>) => {
     alert(e.target.value)
   }
-  const handleClickedGraphCloseButton = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClickedGraphCloseButton = (_: React.MouseEvent<HTMLButtonElement>) => {
     setShowAltitudeGraph(!showAltitudeGraph)
   }
   return (
@@ -248,7 +248,7 @@ const FlightMap: React.FC = ({ }) => {
       </div>
 
       {altitude.length > 0 && showAltitudeGraph &&
-        <Graph altitude={altitude} onCloseBtnClicked={handleClickedGraphCloseButton} />
+        <Graph altitude={altitude} onCloseBtnClicked={() => handleClickedGraphCloseButton} />
       }
 
     </Container >
