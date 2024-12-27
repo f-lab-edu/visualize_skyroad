@@ -1,16 +1,17 @@
 import React, { useEffect, useRef, } from 'react'
 import { styled } from '@stitches/react'
 import * as d3 from 'd3'
+import { AltitudeGraphData } from './useLine'
 
 interface GraphProps {
-    altitude: number[]
+    altitude: AltitudeGraphData[]
     onCloseBtnClicked: () => void
 }
 
 const Graph: React.FC<GraphProps> = ({ altitude, onCloseBtnClicked }) => {
     const svgRef = useRef<SVGSVGElement | null>(null)
     const timeData = altitude.map((item: any) => new Date(item.time * 1000))
-    const altitudeData = altitude.map((item: any) => item.altitude)
+    const altitudeData = altitude.map((item: AltitudeGraphData) => item.altitude)
 
     useEffect(() => {
         if (!svgRef.current) return

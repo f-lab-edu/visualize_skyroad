@@ -21,7 +21,7 @@ const INTERPOLE_THRESHOLD = 100
 export function useLine({ map, flight, arrival, departure }: useLineProps) {
   const [line, setLine] = useState<FeatureCollection[] | null>(null)
   const [route, setRoute] = useState<any>(null)
-  const [altitude, setAltitude] = useState<number[]>([])
+  const [altitude, setAltitude] = useState<AltitudeGraphData[]>([])
   const [totalFrames, setTotalFrames] = useState<number>(0)
 
   const getRoute = async () => {
@@ -216,24 +216,27 @@ const drawStraightLine = async (map: any, line: FeatureCollection, layerName: st
   const option = { name: layerName || 'straight-line', color: 'yellow', isDash: true }
   drawLineOnRouteLayer(map, line, option)
 }
-
+export type AltitudeGraphData = {
+  time: number
+  altitude: number
+}
 const getAltitudeFromRoute = async ({
   route,
 }: {
   route: any;
-}): Promise<{ time: number; altitude: number }[]> => {
+}): Promise<AltitudeGraphData[]> => {
 
   const rawData = route.path.map((path: any) => ({
     time: path[0], // UNIX timestamp
     altitude: path[3], // Altitude value
   }))
 
-  const sortedData = rawData.sort((a: any, b: any) => a.time - b.time);
+  const sortedData = rawData.sort((a: any, b: any) => a.time - b.time)
 
   const startTime = (d3.min(sortedData, (d: any) => d.time) ?? 0) as number
   const endTime = (d3.max(sortedData, (d: any) => d.time) ?? 0) as number
   const interval = 60 * 1
-  const uniformTimeRange = d3.range(startTime, endTime + interval, interval);
+  const uniformTimeRange = d3.range(startTime, endTime + interval, interval)
 
   const timeToAltitude = d3
     .scaleLinear()
@@ -242,7 +245,7 @@ const getAltitudeFromRoute = async ({
     .clamp(true)
 
   const result = uniformTimeRange.map(time => ({
-    time: time,//new Date(time * 1000).toISOString().substr(11, 5),
+    time: time,
     altitude: timeToAltitude(time),
   }))
 
@@ -265,7 +268,6 @@ const getLineFromRoute = ({
     const unitTime =
       (timestampTerminated - timestampStarted) / INTERPOLE_THRESHOLD
 
-    // Departure and arrival airports as starting and ending points
     const departureAirport: FlightPathElement = {
       time: timestampStarted - unitTime,
       latitude: departure.latitude,
@@ -284,7 +286,6 @@ const getLineFromRoute = ({
       on_ground: true,
     }
 
-    // Build path with all the points including departure and arrival
     const path = [departureAirport, ...route.path.map((item: any) => {
       const casted: FlightPathElement = {
         time: Number(item[0]),
