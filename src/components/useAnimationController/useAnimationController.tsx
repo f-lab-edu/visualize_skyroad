@@ -219,7 +219,7 @@ const useMapAnimationController = ({
       requestRef.current = requestAnimationFrame(animate)
     }
 
-    if (currentFrame >= mergedLine.length) {
+    if (mergedLine && currentFrame >= mergedLine.features[0]?.geometry.coordinates.length) {
       stop()
     }
   }

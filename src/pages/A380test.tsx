@@ -83,6 +83,7 @@ import maplibregl, { Map, CustomLayerInterface } from 'maplibre-gl';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 import * as THREE from 'three';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { mat4 } from 'gl-matrix';
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
 
 const MapWithThreeLayer: React.FC = () => {
@@ -169,7 +170,7 @@ const MapWithThreeLayer: React.FC = () => {
                 scene.add(ambientLight);
             },
 
-            render: (gl: WebGLRenderingContext, matrix: number[]) => {
+            render: (gl: WebGLRenderingContext, matrix: mat4) => {
                 if (!scene || !camera || !renderer || !mesh) return;
                 console.log("test")
                 renderer.state.reset(); // WebGL 상태 리셋

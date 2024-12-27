@@ -363,7 +363,7 @@ const adjustCrossingPoints = (
 const handleFindCrossing = (A: any, B: any): number => {
   const start = turf.point([A.longitude, A.latitude])
   const end = turf.point([B.longitude, B.latitude])
-  const greatCircleLine = turf.greatCircle(start, end, { steps: 100 })
+  const greatCircleLine = turf.greatCircle(start, end, { npoints: 100 })
   if (greatCircleLine.geometry.type === "MultiLineString") {
     return greatCircleLine.geometry.coordinates[0][greatCircleLine.geometry.coordinates[0].length - 1][1]
   }
