@@ -26,7 +26,7 @@ const STRINGS = {
 
 interface GraphProps {
   altitude: number[]
-  onCloseBtnClicked: () => void
+  onCloseBtnClicked: (e?: React.MouseEvent<HTMLAnchorElement>) => void
 }
 const Graph: React.FC<GraphProps> = ({ altitude, onCloseBtnClicked }) => {
 
@@ -88,7 +88,7 @@ const Graph: React.FC<GraphProps> = ({ altitude, onCloseBtnClicked }) => {
   return <GraphContainer>
     <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-center" }}>
       <p>고도그래프</p>
-      <a style={{ maxHeight: "max-content", cursor: "pointer" }} onClick={onCloseBtnClicked}><div>X</div></a>
+      <a style={{ maxHeight: "max-content", cursor: "pointer" }} onClick={(e) => onCloseBtnClicked(e)}><div>X</div></a>
     </div>
     <svg ref={svgRef}></svg>
   </GraphContainer>
@@ -181,7 +181,7 @@ const FlightMap: React.FC = ({ }) => {
   const handleChangeAniSpeed = (e: React.ChangeEvent<HTMLSelectElement>) => {
     alert(e.target.value)
   }
-  const handleClickedGraphCloseButton = (_: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClickedGraphCloseButton = (_?: React.MouseEvent<HTMLAnchorElement>) => {
     setShowAltitudeGraph(!showAltitudeGraph)
   }
   return (
@@ -226,16 +226,16 @@ const FlightMap: React.FC = ({ }) => {
           {route?.path.map((pt: number[]) =>
             // [1735039517, 37.4855, 126.4002, 304, 308, false] */}
             <Marker key={`ut-${pt[0]}`} latitude={pt[1]} longitude={pt[2]}>
-              <div style={{ backgroundColor: 'red', borderRadius: '50%', width: 10, height: 10 }} />
+              <div style={{ backgroundColor: 'red', borderRadius: '50%', width: 3, height: 3 }} />
             </Marker>)
           }
 
           <Marker latitude={departure.latitude} longitude={departure.longitude}>
-            <div style={{ backgroundColor: 'blue', borderRadius: '50%', width: 10, height: 10 }} />
+            <div style={{ backgroundColor: 'blue', borderRadius: '50%', width: 3, height: 3 }} />
           </Marker>
 
           <Marker latitude={arrival.latitude} longitude={arrival.longitude}>
-            <div style={{ backgroundColor: 'blue', borderRadius: '50%', width: 10, height: 10 }} />
+            <div style={{ backgroundColor: 'blue', borderRadius: '50%', width: 3, height: 3 }} />
           </Marker>
 
 
@@ -248,7 +248,7 @@ const FlightMap: React.FC = ({ }) => {
       </div>
 
       {altitude.length > 0 && showAltitudeGraph &&
-        <Graph altitude={altitude} onCloseBtnClicked={() => handleClickedGraphCloseButton} />
+        <Graph altitude={altitude} onCloseBtnClicked={(e) => handleClickedGraphCloseButton(e)} />
       }
 
     </Container >
