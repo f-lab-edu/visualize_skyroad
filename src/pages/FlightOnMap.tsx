@@ -1,8 +1,8 @@
-import React from 'react'
+import * as React from 'react'
 
 import FlightMap from '../components/VMap/FlightMap'
 
-const FlightOnMap: React.FC = ({}) => {
+const FlightOnMap: React.FC = ({ }) => {
   return <FlightMap />
 }
 
