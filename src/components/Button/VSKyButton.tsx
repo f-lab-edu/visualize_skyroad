@@ -2,7 +2,7 @@ import { styled } from '@stitches/react'
 import React from 'react'
 
 const Button = styled('button', {
-  backgroundColor: '#18B2FF', // todo - blue로 정의하고 바꾸기
+  backgroundColor: '#18B2FF',
   color: 'white',
   minWidth: '120px',
   fontSize: '16px',
@@ -11,17 +11,21 @@ const Button = styled('button', {
   border: 'none',
   cursor: 'pointer',
   '&:hover': {
-    backgroundColor: 'darkblue', // todo - hex변경하기
+    backgroundColor: 'darkblue',
   },
+  '&.toggled': {
+    backgroundColor: '#28a745',
+  }
 })
 
 type ButtonProps = {
   children: React.ReactNode
   onClick?: () => void
+  toggled?: boolean
 }
 
-function VSkyButton({ children, onClick }: ButtonProps) {
-  return <Button onClick={onClick}>{children}</Button>
+function VSkyButton({ children, onClick, toggled }: ButtonProps) {
+  return <Button className={toggled ? "toggled" : ""} onClick={onClick}>{children}</Button>
 }
 
 export default VSkyButton

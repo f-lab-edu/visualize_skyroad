@@ -1,19 +1,15 @@
 import { styled } from '@stitches/react'
 import maplibregl from 'maplibre-gl'
+import { Marker } from 'react-map-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import React, { ButtonHTMLAttributes, useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Map, MapInstance, MapRef } from 'react-map-gl'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import useMapAnimationController from '../../components/useAnimationController/useAnimationController'
 import VSkyButton from '../Button/VSKyButton'
 import { useLine } from '../useLine'
-// import * as THREE from 'three'
-import * as d3 from 'd3'
-// import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
-
-import { Marker } from 'react-map-gl';
-import { FeatureCollection } from '../../api/flight'
+import Graph from '../Graph'
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
 
@@ -24,75 +20,6 @@ const STRINGS = {
   HOME: '첫 페이지',
 }
 
-interface GraphProps {
-  altitude: number[]
-  onCloseBtnClicked: (e?: React.MouseEvent<HTMLAnchorElement>) => void
-}
-const Graph: React.FC<GraphProps> = ({ altitude, onCloseBtnClicked }) => {
-
-  const svgRef = useRef<SVGSVGElement | null>(null)
-  const timeData = altitude.map((_, index) => index)
-
-  useEffect(() => {
-    if (!svgRef.current)
-      return
-
-    const width = 600
-    const height = 200
-    const margin = { top: 20, right: 30, bottom: 30, left: 40 }
-
-    const svg = d3
-      .select(svgRef.current)
-      .attr('width', width)
-      .attr('height', height)
-      .style('background-color', '#f9f9f9')
-
-    svg.selectAll('*').remove()
-
-    const xScale = d3
-      .scaleLinear()
-      .domain([0, d3.max(timeData) || 1])
-      .range([margin.left, width - margin.right])
-
-    const yScale = d3
-      .scaleLinear()
-      .domain([0, d3.max(altitude) || 1])
-      .range([height - margin.bottom, margin.top])
-
-    svg
-      .append('g')
-      .attr('transform', `translate(0, ${height - margin.bottom})`)
-      .call(d3.axisBottom(xScale).ticks(timeData.length))
-
-    svg
-      .append('g')
-      .attr('transform', `translate(${margin.left}, 0)`)
-      .call(d3.axisLeft(yScale))
-
-    const line = d3
-      .line<number>()
-      .x((_: number, i: number) => xScale(timeData[i]))
-      .y((d: number) => yScale(d))
-
-    svg
-      .append('path')
-      .datum(altitude)
-      .attr('fill', 'none')
-      .attr('stroke', 'steelblue')
-      .attr('stroke-width', 2)
-      .attr('d', line as any)
-
-  }, [altitude?.length > 0, timeData?.length > 0])
-
-
-  return <GraphContainer>
-    <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-center" }}>
-      <p>고도그래프</p>
-      <a style={{ maxHeight: "max-content", cursor: "pointer" }} onClick={(e) => onCloseBtnClicked(e)}><div>X</div></a>
-    </div>
-    <svg ref={svgRef}></svg>
-  </GraphContainer>
-}
 
 const FlightMap: React.FC = ({ }) => {
   const mapRef = useRef<MapRef>(null)
@@ -106,6 +33,12 @@ const FlightMap: React.FC = ({ }) => {
 
   const [showAltitudeGraph, setShowAltitudeGraph] = useState<boolean>(true)
 
+  const [lockOn, setLockon] = useState<boolean>(false)
+
+  const handleToggleLockOn = () => {
+    setLockon(!lockOn)
+  }
+
   // 1. 라인 획득
   const { line, altitude, route, totalFrames } = useLine({
     arrival,
@@ -115,7 +48,7 @@ const FlightMap: React.FC = ({ }) => {
   })
 
   // 2. 라인을 애니메이션으로 그리기
-  const { play, pause, stop, isPlaying, isPaused, currentFrame } =
+  const { bearing, mergedLine, play, pause, stop, isPlaying, isPaused, currentFrame } =
     useMapAnimationController({
       duration: 1000,
       line,
@@ -135,9 +68,12 @@ const FlightMap: React.FC = ({ }) => {
   }
   if (!departure || !arrival || !flight) {
     return (
-      <div style={{ textAlign: 'center', margin: 'auto' }}>
-        <p>{ERRORMESSAGE.NOFLIGHTDETAIL}</p>
-        <VSkyButton onClick={backHome}>{STRINGS.HOME}</VSkyButton>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'linear-gradient(135deg, #bfafff, #d0e8f2, #87cefa)' }}>
+        <div style={{ padding: '50px', margin: 'auto', border: '1px solid black', borderRadius: '15px', backgroundColor: 'white', boxShadow: '10px 6px 12px 1px rgba(50, 50, 255, .2)', textAlign: 'center', }}>
+          <p style={{ fontSize: '3rem' }}>😿</p>
+          <p>{ERRORMESSAGE.NOFLIGHTDETAIL}</p>
+          <VSkyButton onClick={backHome}>{STRINGS.HOME}</VSkyButton>
+        </div>
       </div>
     )
   }
@@ -178,16 +114,40 @@ const FlightMap: React.FC = ({ }) => {
     }
   }, [mapRef.current])
 
-  const handleChangeAniSpeed = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    alert(e.target.value)
+  useEffect(() => {
+    if (lockOn) {
+      const mapInstance = mapRef.current?.getMap()
+
+      if (mapInstance) {
+        const [longitude, latitude] = mergedLine?.features[0].geometry.coordinates[currentFrame] || [0, 0]
+        mapInstance.easeTo({
+          center: [longitude, latitude],
+          duration: 200,
+        })
+      }
+    }
+  }, [lockOn === true, currentFrame])
+
+  const getMarkerSize = (zoom: number): number => {
+    if (zoom < 5) return 10
+    if (zoom < 10) return 20
+    return 30
   }
-  const handleClickedGraphCloseButton = (_?: React.MouseEvent<HTMLAnchorElement>) => {
+
+  const handleChangeAniSpeed = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    alert(`[TODO]${e.target.value}배속으로 변경되었습니다.`)
+  }
+
+  const handleToggleGraph = () => {
     setShowAltitudeGraph(!showAltitudeGraph)
   }
+
   return (
     <Container>
       <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
         <AnimationControlWrapper>
+          <VSkyButton toggled={lockOn} onClick={handleToggleLockOn}>📌 {lockOn ? "Locked On" : "Locked Off"} </VSkyButton>
+
           <button disabled={isPlaying} onClick={play}>
             Play
           </button>
@@ -198,24 +158,24 @@ const FlightMap: React.FC = ({ }) => {
 
           <button onClick={stop}>Stop</button>
 
-          <select onChange={handleChangeAniSpeed}>
-            <option value={1}>x1</option>
+          <select disabled onChange={handleChangeAniSpeed}>
             <option value={10}>x10</option>
             <option value={50}>x50</option>
+            <option value={1}>x1</option>
           </select>
 
           <div id='frame-indicator'>
             <p>({currentFrame}/{totalFrames})</p>
           </div>
 
-          <div>
-            {showAltitudeGraph
-              ? <a onClick={() => setShowAltitudeGraph(false)}>그래프끄기</a> : <a onClick={() => setShowAltitudeGraph(true)}>그래프켜기</a>}
-          </div>
         </AnimationControlWrapper>
 
         <Map
-          initialViewState={InitialViewStateKR}
+          initialViewState={{
+            longitude: departure?.longitude || 0,
+            latitude: departure?.latitude || 0,
+            zoom: 4,
+          }}
           mapLib={maplibregl as any}
           mapStyle={`https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_KEY}`}
           ref={mapRef}
@@ -223,21 +183,34 @@ const FlightMap: React.FC = ({ }) => {
 
         >
 
-          {route?.path.map((pt: number[]) =>
-            // [1735039517, 37.4855, 126.4002, 304, 308, false] */}
-            <Marker key={`ut-${pt[0]}`} latitude={pt[1]} longitude={pt[2]}>
-              <div style={{ backgroundColor: 'red', borderRadius: '50%', width: 3, height: 3 }} />
+          {route?.path.map((pt: number[], index: number) =>
+            <Marker key={`ut-${pt[0]}-${index}`} latitude={pt[1]} longitude={pt[2]}>
+              <div style={{ backgroundColor: 'red', borderRadius: '50%', width: 3, height: 3, zIndex: 1 }} />
             </Marker>)
           }
 
+          {mergedLine && mergedLine?.features[0]?.geometry?.coordinates.length >= currentFrame && <Marker
+            longitude={mergedLine?.features[0]?.geometry?.coordinates[currentFrame][0]}
+            latitude={mergedLine?.features[0]?.geometry?.coordinates[currentFrame][1]}
+          >
+            <img
+              src="/airbus.svg"
+              alt="Airplane"
+              style={{
+                width: `${10 * getMarkerSize(zoomLevel)}px`,
+                height: `${10 * getMarkerSize(zoomLevel)}px`,
+                transform: `rotate(${bearing}deg)`,
+              }}
+            />
+          </Marker>}
+
           <Marker latitude={departure.latitude} longitude={departure.longitude}>
-            <div style={{ backgroundColor: 'blue', borderRadius: '50%', width: 3, height: 3 }} />
+            <img src="/airport-1.png" alt="airport" style={{ backgroundColor: 'blue', borderRadius: '50%', width: 3, height: 3, zIndex: 1 }} />
           </Marker>
 
           <Marker latitude={arrival.latitude} longitude={arrival.longitude}>
-            <div style={{ backgroundColor: 'blue', borderRadius: '50%', width: 3, height: 3 }} />
+            <img src="/airport-1.png" alt="airport" style={{ backgroundColor: 'blue', borderRadius: '50%', width: 3, height: 3, zIndex: 1 }} />
           </Marker>
-
 
         </Map>
 
@@ -247,42 +220,30 @@ const FlightMap: React.FC = ({ }) => {
 
       </div>
 
-      {altitude.length > 0 && showAltitudeGraph &&
-        <Graph altitude={altitude} onCloseBtnClicked={(e) => handleClickedGraphCloseButton(e)} />
-      }
+      <GraphWrapper>
+        {!showAltitudeGraph && (
+          <ToggleButton onClick={handleToggleGraph}>Expand Graph ▲</ToggleButton>
+        )}
+        {showAltitudeGraph && (
+          <Graph
+            altitude={altitude}
+            onCloseBtnClicked={handleToggleGraph}
+          />
+        )}
+      </GraphWrapper>
 
-    </Container >
+    </Container>
   )
 }
 
 export default FlightMap
 
-const GraphContainer = styled('div', {
-  '*': { border: '1px solid red' },
+const GraphWrapper = styled('div', {
   position: 'fixed',
-  bottom: '16px',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  backgroundColor: '#f9f9f9',
-  borderRadius: '8px',
-  padding: '16px',
-  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-  width: '90%',
-  maxWidth: '600px',
-  height: '200px',
-  zIndex: 1000,
-  '& section': {
-    border: '1px solid red',
-    overflow: 'auto',
-    height: '50px',
-  },
-  '& header': {
-    maxWidth: 'max-content',
-    margin: 'auto',
-  },
-  '& ul': {
-    listStyle: 'none',
-  }
+  bottom: '0',
+  left: '0',
+  width: '100%',
+  transition: 'transform 0.3s ease-in-out',
 })
 
 const AnimationControlWrapper = styled('div', {
@@ -382,20 +343,21 @@ const ZoomIndicator = styled('div', {
   borderRadius: '5px',
 })
 
-const InitialViewStateKR = {
-  // IDL
-  longitude: -180,
-  latitude: 0,
-  // // RKIS
-  // longitude: 126.3967,
-  // latitude: 37.4895,
-  // zoom: 3.5,
-
-  zoom: 10,
-  // minZoom: 2,
-  // maxZoom: 10,
-  wrapLongitude: true, // 날짜 변경선 넘는 좌표를 연결
-
-}
-
 const StyleMap = { width: '100%', height: '100vh' }
+
+const ToggleButton = styled('button', {
+  position: 'fixed',
+  bottom: '8px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  backgroundColor: '#4A90E2',
+  color: 'white',
+  border: 'none',
+  borderRadius: '8px',
+  padding: '8px 16px',
+  cursor: 'pointer',
+  zIndex: 1000,
+  ':hover': {
+    backgroundColor: '#357ABD',
+  },
+})
