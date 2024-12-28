@@ -1,14 +1,14 @@
 import { styled } from '@stitches/react'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import React, { Suspense, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Airport, useAirports } from '../api/airports'
 import { Flight, FlightForDisplay, FlightList } from '../api/flight'
 import backgroundImage from '../assets/sky1.jpg'
-import SkyButton from '../components/Button/VSKyButton'
 import AirportComboBox from '../components/AirportComboBox/AirportComboBox'
+import SkyButton from '../components/Button/VSKyButton'
 import { requestFlightList } from '../data/dataProcessingLayer'
-import { useSuspenseQuery } from '@tanstack/react-query'
 
 const STINGS = {
   Header: 'Explore the World!',
@@ -27,7 +27,12 @@ const Home = () => {
   const [departureAirport, setDepartureAirport] = useState<Airport | null>(null)
   const [arrivalAirport, setArrivalAirport] = useState<Airport | null>(null)
 
-  const { data: flightList, isLoading, error, refetch } = useSuspenseQuery<FlightList>({
+  const {
+    data: flightList,
+    isLoading,
+    error,
+    refetch,
+  } = useSuspenseQuery<FlightList>({
     queryKey: ['flightList', departureAirport, arrivalAirport],
     queryFn: () => requestFlightList({ departureAirport, arrivalAirport }),
   })
@@ -39,7 +44,6 @@ const Home = () => {
     }
 
     refetch()
-
   }
 
   const handleFlight = (index: number) => {
@@ -52,46 +56,55 @@ const Home = () => {
     })
   }
 
-  return (<HomeLayoutSytle>
-    <HomeHeaderText>
-      <div className='title'>{STINGS.Header}</div>
-      {/* <p>{STINGS.Greeting}</p> */}
-      <p>{STINGS.Description}</p>
-    </HomeHeaderText>
+  return (
+    <HomeLayoutSytle>
+      <HomeHeaderText>
+        <div className="title">{STINGS.Header}</div>
+        {/* <p>{STINGS.Greeting}</p> */}
+        <p>{STINGS.Description}</p>
+      </HomeHeaderText>
 
-    <RouteComboxBoxContainer>
-      <div>
-        <AirportComboBox
-          airports={airports}
-          blacklist={arrivalAirport}
-          onSelectAirport={setDepartureAirport}
-        />
-        <AirportComboBox
-          airports={airports}
-          blacklist={departureAirport}
-          onSelectAirport={setArrivalAirport}
-        />
-      </div>
-      <div>
-        <SkyButton onClick={handleSearch}>{STINGS.buttonText}</SkyButton>
-      </div>
-    </RouteComboxBoxContainer>
+      <RouteComboxBoxContainer>
+        <div>
+          <AirportComboBox
+            airports={airports}
+            blacklist={arrivalAirport}
+            onSelectAirport={setDepartureAirport}
+          />
+          <AirportComboBox
+            airports={airports}
+            blacklist={departureAirport}
+            onSelectAirport={setArrivalAirport}
+          />
+        </div>
+        <div>
+          <SkyButton onClick={handleSearch}>{STINGS.buttonText}</SkyButton>
+        </div>
+      </RouteComboxBoxContainer>
 
-    <Suspense fallback={<div>로딩중...</div>}>
-      {flightList && flightList.length > 0
-        && (<FlightListContainer>
-          {flightList && flightList.map((flight: Flight & FlightForDisplay, index: number) => (
-            <li key={flight.icao24 + flight.firstSeen}>
-              `항공편: {flight.callsign} | 출발: [공항이름] {flight.estDepartureAirport} | 도착: [공항이름] {flight.estArrivalAirport} | `
-              <SkyButton onClick={() => handleFlight(index)}>Flight</SkyButton>
-            </li>
-          ))}
-        </FlightListContainer>)}
-    </Suspense>
+      <Suspense fallback={<div>로딩중...</div>}>
+        {flightList && flightList.length > 0 && (
+          <FlightListContainer>
+            {flightList &&
+              flightList.map(
+                (flight: Flight & FlightForDisplay, index: number) => (
+                  <li key={flight.icao24 + flight.firstSeen}>
+                    `항공편: {flight.callsign} | 출발: [공항이름]{' '}
+                    {flight.estDepartureAirport} | 도착: [공항이름]{' '}
+                    {flight.estArrivalAirport} | `
+                    <SkyButton onClick={() => handleFlight(index)}>
+                      Flight
+                    </SkyButton>
+                  </li>
+                )
+              )}
+          </FlightListContainer>
+        )}
+      </Suspense>
 
-    <p className='app'>{STINGS.appversion}</p>
-
-  </HomeLayoutSytle>)
+      <p className="app">{STINGS.appversion}</p>
+    </HomeLayoutSytle>
+  )
 }
 
 export default Home
@@ -124,7 +137,7 @@ const HomeLayoutSytle = styled('div', {
     fontSize: '1rem',
     fontWeight: 'bold',
     color: 'rgba(255, 255, 255, 0.75)',
-  }
+  },
 })
 
 const HomeHeaderText = styled('header', {
@@ -144,7 +157,7 @@ const HomeHeaderText = styled('header', {
     fontSize: '4rem',
   },
 
-  'div': {
+  div: {
     position: 'relative',
     color: 'SmokeWhite',
     textDecoration: 'none',
@@ -165,7 +178,7 @@ const HomeHeaderText = styled('header', {
     },
   },
 
-  'p': {
+  p: {
     fontSize: '1.2rem',
     color: 'rgba(255, 255, 255, 0.80)',
     fontWeight: 'bold',

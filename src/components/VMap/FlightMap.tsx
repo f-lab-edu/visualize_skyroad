@@ -20,7 +20,7 @@ const STRINGS = {
   HOME: '첫 페이지',
 }
 
-const FlightMap: React.FC = ({ }) => {
+const FlightMap: React.FC = ({}) => {
   const mapRef = useRef<MapRef>(null)
   const [map, setMap] = useState<MapInstance | null>(null)
 
@@ -205,7 +205,7 @@ const FlightMap: React.FC = ({ }) => {
           initialViewState={{
             longitude: departure?.longitude || 0,
             latitude: departure?.latitude || 0,
-            zoom: 4,
+            zoom: 4.5,
           }}
           mapLib={maplibregl as any}
           mapStyle={`https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_KEY}`}
@@ -232,16 +232,16 @@ const FlightMap: React.FC = ({ }) => {
 
           {mergedLine &&
             mergedLine?.features[0]?.geometry?.coordinates.length >=
-            currentFrame && (
+              currentFrame && (
               <Marker
                 latitude={
                   mergedLine?.features[0]?.geometry?.coordinates[
-                  currentFrame
+                    currentFrame
                   ][1]
                 }
                 longitude={
                   mergedLine?.features[0]?.geometry?.coordinates[
-                  currentFrame
+                    currentFrame
                   ][0]
                 }
               >

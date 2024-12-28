@@ -1,13 +1,18 @@
 import * as turf from '@turf/turf'
+import * as d3 from 'd3'
 import { useEffect, useState } from 'react'
 import { MapInstance } from 'react-map-gl'
-import { FlightPathElement, FeatureCollection, FlightPosition } from '../api/flight'
-import { requestFlightTrack } from '../data/dataProcessingLayer'
-import * as d3 from 'd3'
 
-type East2West = "-->"
-type West2East = "<--"
-type RouteDirection = East2West | West2East | false
+import {
+  FeatureCollection,
+  FlightPathElement,
+  FlightPosition,
+} from '../api/flight'
+import { requestFlightTrack } from '../data/dataProcessingLayer'
+
+type East2West = '-->'
+type West2East = '<--'
+type RouteDirection = East2West | false | West2East
 
 interface useLineProps {
   arrival: any
@@ -30,27 +35,20 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
   }
 
   useEffect(() => {
-
-    if (flight)
-      getRoute()
-
+    if (flight) getRoute()
   }, [flight])
 
   useEffect(() => {
-
     if (map && route) {
-
       getLineFromRoute({
         departure,
         arrival,
         route,
-      })
-        .then(setLine)
+      }).then(setLine)
 
       getAltitudeFromRoute({
         route,
       }).then(setAltitude)
-
     }
   }, [map, route])
 
@@ -62,9 +60,10 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
 
       setTotalFrames(
         line.length > 1
-          ? line[0].features[0].geometry.coordinates.length
-          + line[1].features[0].geometry.coordinates.length
-          : line[0].features[0].geometry.coordinates.length)
+          ? line[0].features[0].geometry.coordinates.length +
+              line[1].features[0].geometry.coordinates.length
+          : line[0].features[0].geometry.coordinates.length
+      )
     }
   }, [line])
 
@@ -86,7 +85,6 @@ const getLineFromRoute = ({
   route: any
 }): Promise<FeatureCollection[]> => {
   return new Promise((resolve, reject) => {
-
     const timestampStarted = route.path.at(0)[0]
     const timestampTerminated = route.path.at(-1)[0]
     const unitTime =
@@ -110,39 +108,51 @@ const getLineFromRoute = ({
       on_ground: true,
     }
 
-    const path = [departureAirport, ...route.path.map((item: any) => {
-      const casted: FlightPathElement = {
-        time: Number(item[0]),
-        latitude: Number(item[1]),
-        longitude: Number(item[2]),
-        baro_altitude: Number(item[3]),
-        true_track: Number(item[4]),
-        on_ground: Boolean(item[5]),
-      }
-      return casted
-    })]
+    const path = [
+      departureAirport,
+      ...route.path.map((item: any) => {
+        const casted: FlightPathElement = {
+          time: Number(item[0]),
+          latitude: Number(item[1]),
+          longitude: Number(item[2]),
+          baro_altitude: Number(item[3]),
+          true_track: Number(item[4]),
+          on_ground: Boolean(item[5]),
+        }
+        return casted
+      }),
+    ]
     path.push(arrivalAirport)
 
-    const avgTime = path
-      .slice(1)
-      .reduce((sum: number, item: FlightPathElement, index: number) => sum + (item.time - path[index].time), 0) / (path.length - 1)
+    const avgTime =
+      path
+        .slice(1)
+        .reduce(
+          (sum: number, item: FlightPathElement, index: number) =>
+            sum + (item.time - path[index].time),
+          0
+        ) /
+      (path.length - 1)
 
     const splitLines: FlightPathElement[][] = []
     let line: FlightPathElement[] = []
 
     for (let i = 0; i < path.length - 1; ++i) {
-      line.push(path[i]);
+      line.push(path[i])
 
       const crossed = isPathCrossingIDL(path[i], path[i + 1])
-      if (crossed === "-->" || crossed === "<--") {
+      if (crossed === '-->' || crossed === '<--') {
         const pointA: FlightPathElement = { ...path[i] }
         const pointB: FlightPathElement = path[i + 1]
 
-        adjustCrossingPoints(pointA, pointB, crossed, { A: departure, B: arrival })
+        adjustCrossingPoints(pointA, pointB, crossed, {
+          A: departure,
+          B: arrival,
+        })
 
-        line.push(pointA);
-        splitLines.push(line);
-        line = [pointB];
+        line.push(pointA)
+        splitLines.push(line)
+        line = [pointB]
       } else {
         // line.push(path[i])
       }
@@ -152,6 +162,8 @@ const getLineFromRoute = ({
     splitLines[splitLines.length - 1].push(path[path.length - 1])
 
     const lines: FeatureCollection[] = []
+
+    console.log(lines)
 
     Promise.all(
       splitLines.map((line) =>
@@ -164,14 +176,19 @@ const getLineFromRoute = ({
               features: [
                 {
                   type: 'Feature',
-                  geometry: { type: 'LineString', coordinates: interpolatedPath },
+                  geometry: {
+                    type: 'LineString',
+                    coordinates: interpolatedPath,
+                  },
                 },
               ],
             }
             lines.push(lineFC)
           })
       )
-    ).then(() => resolve(lines)).catch(reject)
+    )
+      .then(() => resolve(lines))
+      .catch(reject)
   })
 }
 
@@ -224,14 +241,12 @@ const linearInterpFn = (
   totalSteps: number
 ): FlightPosition => {
   const lat: number =
-    current.latitude +
-    (next.latitude - current.latitude) * (step / totalSteps)
+    current.latitude + (next.latitude - current.latitude) * (step / totalSteps)
 
   const lon: number =
     current.longitude +
     (next.longitude - current.longitude) * (step / totalSteps)
   return { lat: lat, lon: lon }
-
 }
 
 const interpolatedRawPath = (
@@ -311,8 +326,16 @@ const drawLineOnRouteLayer = (
   })
 }
 
-const drawStraightLine = async (map: any, line: FeatureCollection, layerName: string) => {
-  const option = { name: layerName || 'straight-line', color: 'yellow', isDash: true }
+const drawStraightLine = async (
+  map: any,
+  line: FeatureCollection,
+  layerName: string
+) => {
+  const option = {
+    name: layerName || 'straight-line',
+    color: 'yellow',
+    isDash: true,
+  }
   drawLineOnRouteLayer(map, line, option)
 }
 
@@ -324,9 +347,8 @@ export type AltitudeGraphData = {
 const getAltitudeFromRoute = async ({
   route,
 }: {
-  route: any;
+  route: any
 }): Promise<AltitudeGraphData[]> => {
-
   const rawData = route.path.map((path: any) => ({
     time: path[0], // UNIX timestamp
     altitude: path[3], // Altitude value
@@ -345,7 +367,7 @@ const getAltitudeFromRoute = async ({
     .range(sortedData.map((d: any) => d.altitude))
     .clamp(true)
 
-  const result = uniformTimeRange.map(time => ({
+  const result = uniformTimeRange.map((time) => ({
     time: time,
     altitude: timeToAltitude(time),
   }))
@@ -353,12 +375,15 @@ const getAltitudeFromRoute = async ({
   return result
 }
 
-const isPathCrossingIDL = (A: FlightPathElement, B: FlightPathElement): RouteDirection => {
+const isPathCrossingIDL = (
+  A: FlightPathElement,
+  B: FlightPathElement
+): RouteDirection => {
   if (A.longitude > 0 && B.longitude < 0) {
-    return "-->"
+    return '-->'
   }
   if (A.longitude < 0 && B.longitude > 0) {
-    return "<--"
+    return '<--'
   }
   return false
 }
@@ -367,16 +392,16 @@ const adjustCrossingPoints = (
   pointA: FlightPathElement,
   pointB: FlightPathElement,
   direction: East2West | West2East,
-  airports: { A: any, B: any }
+  airports: { A: any; B: any }
 ) => {
   const latitude = handleFindCrossing(airports.A, airports.B)
   pointA.latitude = latitude
   pointB.latitude = latitude
 
-  if (direction === "-->") {
+  if (direction === '-->') {
     pointA.longitude = 180
     pointB.longitude = -180
-  } else if (direction === "<--") {
+  } else if (direction === '<--') {
     pointA.longitude = -180
     pointB.longitude = 180
   }
@@ -386,8 +411,10 @@ const handleFindCrossing = (A: any, B: any): number => {
   const start = turf.point([A.longitude, A.latitude])
   const end = turf.point([B.longitude, B.latitude])
   const greatCircleLine = turf.greatCircle(start, end, { npoints: 100 })
-  if (greatCircleLine.geometry.type === "MultiLineString") {
-    return greatCircleLine.geometry.coordinates[0][greatCircleLine.geometry.coordinates[0].length - 1][1]
+  if (greatCircleLine.geometry.type === 'MultiLineString') {
+    return greatCircleLine.geometry.coordinates[0][
+      greatCircleLine.geometry.coordinates[0].length - 1
+    ][1]
   }
   return (A.latitude + B.latitude) / 2
 }

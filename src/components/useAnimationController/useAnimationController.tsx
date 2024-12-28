@@ -1,18 +1,26 @@
 import { useEffect, useRef, useState } from 'react'
 import { MapInstance } from 'react-map-gl'
+
 import { FeatureCollection } from '../../api/flight'
 
-const calculateBearing = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+const calculateBearing = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number => {
   const rad = Math.PI / 180
   const deltaLon = (lon2 - lon1) * rad
   const lat1Rad = lat1 * rad
   const lat2Rad = lat2 * rad
 
   const y = Math.sin(deltaLon) * Math.cos(lat2Rad)
-  const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(deltaLon)
+  const x =
+    Math.cos(lat1Rad) * Math.sin(lat2Rad) -
+    Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(deltaLon)
 
   const bearing = Math.atan2(y, x)
-  return (bearing * 180 / Math.PI + 360) % 360
+  return ((bearing * 180) / Math.PI + 360) % 360
 }
 
 const useMapAnimationController = ({
@@ -21,13 +29,11 @@ const useMapAnimationController = ({
   zoomLevel,
   duration,
 }: {
-
   map: MapInstance | null
   line: FeatureCollection[] | null
   zoomLevel: number
   duration: number
 }) => {
-
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
   const [isPaused, setIsPaused] = useState<boolean>(false)
   const [mergedLine, setMergedLine] = useState<FeatureCollection | null>(null)
@@ -38,28 +44,33 @@ const useMapAnimationController = ({
   const previousTimeRef = useRef<null | number>(null)
 
   const handleUpdate = (deltaTime: number) => {
-
     setCurrentFrame((prevFrame) => {
       const nextFrame = Math.floor(prevFrame + deltaTime * 1)
 
       if (mergedLine?.features[0]?.geometry.coordinates[nextFrame]) {
-        const currentPosition = mergedLine.features[0].geometry.coordinates[nextFrame]
-        const nextPosition = mergedLine.features[0].geometry.coordinates[nextFrame + 1] || currentPosition
+        const currentPosition =
+          mergedLine.features[0].geometry.coordinates[nextFrame]
+        const nextPosition =
+          mergedLine.features[0].geometry.coordinates[nextFrame + 1] ||
+          currentPosition
         const bearing = calculateBearing(
-          currentPosition[1], currentPosition[0],
-          nextPosition[1], nextPosition[0]
+          currentPosition[1],
+          currentPosition[0],
+          nextPosition[1],
+          nextPosition[0]
         )
 
-        if (currentFrame !== 0 && bearing === 0 /*&& Math.abs(bearing - prevBearing) > 45*/) {
+        if (
+          currentFrame !== 0 &&
+          bearing === 0 /*&& Math.abs(bearing - prevBearing) > 45*/
+        ) {
           setBearing(prevBearing)
         } else {
           setBearing(bearing)
           setPrevBearing(bearing)
         }
-
       } else {
         stop()
-
       }
 
       return nextFrame
@@ -67,7 +78,6 @@ const useMapAnimationController = ({
   }
 
   const animate = (time: number) => {
-
     if (previousTimeRef.current !== null) {
       handleUpdate(time - previousTimeRef.current)
     }
@@ -77,7 +87,10 @@ const useMapAnimationController = ({
       requestRef.current = requestAnimationFrame(animate)
     }
 
-    if (mergedLine && currentFrame >= mergedLine.features[0]?.geometry.coordinates.length) {
+    if (
+      mergedLine &&
+      currentFrame >= mergedLine.features[0]?.geometry.coordinates.length
+    ) {
       stop()
     }
   }
@@ -86,9 +99,7 @@ const useMapAnimationController = ({
     featureA: FeatureCollection,
     featureB: FeatureCollection | null
   ): FeatureCollection => {
-
-    if (featureB === null)
-      return featureA
+    if (featureB === null) return featureA
 
     const mergedFeatures = featureA.features.map((feature, index) => {
       const featureBFeature = featureB.features[index]
@@ -99,7 +110,10 @@ const useMapAnimationController = ({
           geometry: {
             ...feature.geometry,
             coordinates: Array.isArray(feature.geometry.coordinates)
-              ? [...feature.geometry.coordinates, ...featureBFeature.geometry.coordinates]
+              ? [
+                  ...feature.geometry.coordinates,
+                  ...featureBFeature.geometry.coordinates,
+                ]
               : feature.geometry.coordinates,
           },
         }
@@ -115,7 +129,6 @@ const useMapAnimationController = ({
   }
 
   const handleStart = () => {
-
     if (map && line) {
       const merged: FeatureCollection =
         line.length > 1
@@ -123,7 +136,6 @@ const useMapAnimationController = ({
           : line[0]
 
       setMergedLine(merged)
-
     }
   }
 
@@ -168,12 +180,20 @@ const useMapAnimationController = ({
         cancelAnimationFrame(requestRef.current)
       }
     }
-
   }, [isPlaying, isPaused])
 
   console.log(map, line, zoomLevel, duration)
 
-  return { bearing, mergedLine, play, pause, stop, isPlaying, isPaused, currentFrame }
+  return {
+    bearing,
+    mergedLine,
+    play,
+    pause,
+    stop,
+    isPlaying,
+    isPaused,
+    currentFrame,
+  }
 }
 
 export default useMapAnimationController

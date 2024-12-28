@@ -1,7 +1,8 @@
 import { styled } from '@stitches/react'
 import React, { useEffect, useState } from 'react'
-import FlagIcon from 'react-flagkit';
-import { AirportList } from '../../api/airports';
+import FlagIcon from 'react-flagkit'
+
+import { AirportList } from '../../api/airports'
 
 const ComboBoxContainer = styled('div', {
   display: 'flex',
@@ -44,12 +45,12 @@ const Option = styled('li', {
     backgroundColor: '#DDD',
   },
 
-  'p': {
+  p: {
     fontWeight: 'bold',
     fontSize: '.8rem',
     margin: '0',
     padding: '0',
-  }
+  },
 })
 
 const ComboBox = ({ airports, onSelectAirport, blacklist }: any) => {
@@ -62,7 +63,6 @@ const ComboBox = ({ airports, onSelectAirport, blacklist }: any) => {
   }
 
   useEffect(() => {
-
     if (searchTerm === '' || searchTerm.length < 2) {
       setFilteredAirports([])
       return
@@ -70,8 +70,14 @@ const ComboBox = ({ airports, onSelectAirport, blacklist }: any) => {
 
     const filtered = airports.filter(
       (airport: any) =>
-        airport.city.replaceAll(' ', '').toLowerCase().indexOf(searchTerm.toLocaleLowerCase()) > -1
-        || airport.country.replaceAll(' ', '').toLowerCase().indexOf(searchTerm.toLocaleLowerCase()) > -1
+        airport.city
+          .replaceAll(' ', '')
+          .toLowerCase()
+          .indexOf(searchTerm.toLocaleLowerCase()) > -1 ||
+        airport.country
+          .replaceAll(' ', '')
+          .toLowerCase()
+          .indexOf(searchTerm.toLocaleLowerCase()) > -1
     )
     setFilteredAirports(filtered)
   }, [searchTerm])
@@ -81,7 +87,6 @@ const ComboBox = ({ airports, onSelectAirport, blacklist }: any) => {
     setSearchTerm(airport.name)
     setFilteredAirports([])
   }
-
 
   return (
     <ComboBoxContainer>
@@ -100,7 +105,11 @@ const ComboBox = ({ airports, onSelectAirport, blacklist }: any) => {
                 key={airport.id}
                 onClick={() => handleOptionClick(airport)}
               >
-                {airport.flag === '-' ? '🌏' : <FlagIcon alt={airport.country} country={airport.flag} />}
+                {airport.flag === '-' ? (
+                  '🌏'
+                ) : (
+                  <FlagIcon alt={airport.country} country={airport.flag} />
+                )}
                 &nbsp;<p>{airport.city}</p>&nbsp;{airport.name}
               </Option>
             ))}

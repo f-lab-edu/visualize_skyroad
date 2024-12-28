@@ -15,7 +15,7 @@ const Button = styled('button', {
   },
   '&.toggled': {
     backgroundColor: '#28a745',
-  }
+  },
 })
 
 type ButtonProps = {
@@ -25,7 +25,11 @@ type ButtonProps = {
 }
 
 function VSkyButton({ children, onClick, toggled }: ButtonProps) {
-  return <Button className={toggled ? "toggled" : ""} onClick={onClick}>{children}</Button>
+  return (
+    <Button className={toggled ? 'toggled' : ''} onClick={onClick}>
+      {children}
+    </Button>
+  )
 }
 
 export default VSkyButton
