@@ -33,46 +33,20 @@ const requestFlightTrack = async (flight: any) => {
 
 const requestFlightList = async ({ departureAirport, arrivalAirport, }
     : { departureAirport: Airport | null, arrivalAirport: Airport | null })
-    : Promise<FlightList> => {
+    : Promise<FlightList | void> => {
 
-    console.log("****", departureAirport, arrivalAirport)
     if (!departureAirport || !arrivalAirport)
         return []
+
     return await getDepartureAirport(departureAirport["icao"])
         .then(flights => {
             const flightList: FlightList = flights
                 .filter((flight: Flight) => flight.estArrivalAirport === arrivalAirport['icao'])
-            // .map((flight: Flight) => ({
-            //     ...flight,
-            //     text: `항공편:${flight.callsign}`,
-            //     dep: `출발:[공항이름](${flight.estDepartureAirport})`,
-            //     arr: `도착:[공항이름](${flight.estArrivalAirport})`
-            // }))
             console.log('******depart', flightList)
             return flightList
+        }).catch(_ => {
+            alert('API서버와 연결이 원할하지 않습니다.')
         })
-
-    // const FlightList = flightsDepartureAirport
-    //     .filter(flight => flight.estDepartureAirport === departureAirport.icao &&
-    //         flight.estArrivalAirport === arrivalAirport.icao)
-    //     .map(flight => (
-    //         {
-    //             ...flight,
-    //             text: `항공편:${flight.callsign}`,
-    //             dep: `출발:[공항이름](${flight.estDepartureAirport})`,
-    //             arr: `도착:[공항이름](${flight.estArrivalAirport})`
-    //         }));
-
-    // 
-    /*
-        "icao24": "4d00f3",
-        "firstSeen": 1725186940,
-        "estDepartureAirport": "ELLX",
-        "lastSeen": 1725195565,
-        "estArrivalAirport": "LEMG",
-        "callsign": "LGL663  ",
-    */
-    // return FlightList;
 }
 
 export { requestFlightList, requestFlightTrack, }

@@ -52,47 +52,46 @@ const Home = () => {
     })
   }
 
-  return (
-    <HomeLayoutSytle>
-      <HomeHeaderText>
-        <div className='title'>{STINGS.Header}</div>
-        {/* <p>{STINGS.Greeting}</p> */}
-        <p>{STINGS.Description}</p>
-      </HomeHeaderText>
+  return (<HomeLayoutSytle>
+    <HomeHeaderText>
+      <div className='title'>{STINGS.Header}</div>
+      {/* <p>{STINGS.Greeting}</p> */}
+      <p>{STINGS.Description}</p>
+    </HomeHeaderText>
 
-      <RouteComboxBoxContainer>
-        <div>
-          <AirportComboBox
-            airports={airports}
-            blacklist={arrivalAirport}
-            onSelectAirport={setDepartureAirport}
-          />
-          <AirportComboBox
-            airports={airports}
-            blacklist={departureAirport}
-            onSelectAirport={setArrivalAirport}
-          />
-        </div>
-        <div>
-          <SkyButton onClick={handleSearch}>{STINGS.buttonText}</SkyButton>
-        </div>
-      </RouteComboxBoxContainer>
+    <RouteComboxBoxContainer>
+      <div>
+        <AirportComboBox
+          airports={airports}
+          blacklist={arrivalAirport}
+          onSelectAirport={setDepartureAirport}
+        />
+        <AirportComboBox
+          airports={airports}
+          blacklist={departureAirport}
+          onSelectAirport={setArrivalAirport}
+        />
+      </div>
+      <div>
+        <SkyButton onClick={handleSearch}>{STINGS.buttonText}</SkyButton>
+      </div>
+    </RouteComboxBoxContainer>
 
-      <Suspense fallback={<div>로딩중...</div>}>
-        {flightList && flightList.length > 0
-          && (<FlightListContainer>
-            {flightList && flightList.map((flight: Flight & FlightForDisplay, index: number) => (
-              <li key={flight.icao24 + flight.firstSeen}>
-                `항공편: {flight.callsign} | 출발: [공항이름] {flight.estDepartureAirport} | 도착: [공항이름] {flight.estArrivalAirport} | `
-                <SkyButton onClick={() => handleFlight(index)}>Flight</SkyButton>
-              </li>
-            ))}
-          </FlightListContainer>)}
-      </Suspense>
+    <Suspense fallback={<div>로딩중...</div>}>
+      {flightList && flightList.length > 0
+        && (<FlightListContainer>
+          {flightList && flightList.map((flight: Flight & FlightForDisplay, index: number) => (
+            <li key={flight.icao24 + flight.firstSeen}>
+              `항공편: {flight.callsign} | 출발: [공항이름] {flight.estDepartureAirport} | 도착: [공항이름] {flight.estArrivalAirport} | `
+              <SkyButton onClick={() => handleFlight(index)}>Flight</SkyButton>
+            </li>
+          ))}
+        </FlightListContainer>)}
+    </Suspense>
 
-      <p className='app'>{STINGS.appversion}</p>
-    </HomeLayoutSytle>
-  )
+    <p className='app'>{STINGS.appversion}</p>
+
+  </HomeLayoutSytle>)
 }
 
 export default Home

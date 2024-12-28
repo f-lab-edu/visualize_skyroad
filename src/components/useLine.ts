@@ -76,6 +76,105 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
   }
 }
 
+const getLineFromRoute = ({
+  departure,
+  arrival,
+  route,
+}: {
+  departure: any
+  arrival: any
+  route: any
+}): Promise<FeatureCollection[]> => {
+  return new Promise((resolve, reject) => {
+
+    const timestampStarted = route.path.at(0)[0]
+    const timestampTerminated = route.path.at(-1)[0]
+    const unitTime =
+      (timestampTerminated - timestampStarted) / INTERPOLE_THRESHOLD
+
+    const departureAirport: FlightPathElement = {
+      time: timestampStarted - unitTime,
+      latitude: departure.latitude,
+      longitude: departure.longitude,
+      baro_altitude: 0,
+      true_track: 0,
+      on_ground: true,
+    }
+
+    const arrivalAirport: FlightPathElement = {
+      time: timestampTerminated + unitTime,
+      latitude: arrival.latitude,
+      longitude: arrival.longitude,
+      baro_altitude: 0,
+      true_track: 0,
+      on_ground: true,
+    }
+
+    const path = [departureAirport, ...route.path.map((item: any) => {
+      const casted: FlightPathElement = {
+        time: Number(item[0]),
+        latitude: Number(item[1]),
+        longitude: Number(item[2]),
+        baro_altitude: Number(item[3]),
+        true_track: Number(item[4]),
+        on_ground: Boolean(item[5]),
+      }
+      return casted
+    })]
+    path.push(arrivalAirport)
+
+    const avgTime = path
+      .slice(1)
+      .reduce((sum: number, item: FlightPathElement, index: number) => sum + (item.time - path[index].time), 0) / (path.length - 1)
+
+    const splitLines: FlightPathElement[][] = []
+    let line: FlightPathElement[] = []
+
+    for (let i = 0; i < path.length - 1; ++i) {
+      line.push(path[i]);
+
+      const crossed = isPathCrossingIDL(path[i], path[i + 1])
+      if (crossed === "-->" || crossed === "<--") {
+        const pointA: FlightPathElement = { ...path[i] }
+        const pointB: FlightPathElement = path[i + 1]
+
+        adjustCrossingPoints(pointA, pointB, crossed, { A: departure, B: arrival })
+
+        line.push(pointA);
+        splitLines.push(line);
+        line = [pointB];
+      } else {
+        // line.push(path[i])
+      }
+    }
+
+    splitLines.push(line)
+    splitLines[splitLines.length - 1].push(path[path.length - 1])
+
+    const lines: FeatureCollection[] = []
+
+    Promise.all(
+      splitLines.map((line) =>
+        interpolatedRawPath(line, INTERPOLE_THRESHOLD)
+          .then(removeDuplicateCoordinates)
+          .then(interpolateGreatCirclePath)
+          .then((interpolatedPath) => {
+            const lineFC: FeatureCollection = {
+              type: 'FeatureCollection',
+              features: [
+                {
+                  type: 'Feature',
+                  geometry: { type: 'LineString', coordinates: interpolatedPath },
+                },
+              ],
+            }
+            lines.push(lineFC)
+          })
+      )
+    ).then(() => resolve(lines)).catch(reject)
+  })
+}
+
 const removeDuplicateCoordinates = (
   coordinates: FlightPosition[]
 ): Promise<FlightPosition[]> => {
@@ -216,10 +315,12 @@ const drawStraightLine = async (map: any, line: FeatureCollection, layerName: st
   const option = { name: layerName || 'straight-line', color: 'yellow', isDash: true }
   drawLineOnRouteLayer(map, line, option)
 }
+
 export type AltitudeGraphData = {
   time: number
   altitude: number
 }
+
 const getAltitudeFromRoute = async ({
   route,
 }: {
@@ -252,107 +353,6 @@ const getAltitudeFromRoute = async ({
   return result
 }
 
-const getLineFromRoute = ({
-  departure,
-  arrival,
-  route,
-}: {
-  departure: any
-  arrival: any
-  route: any
-}): Promise<FeatureCollection[]> => {
-  return new Promise((resolve, reject) => {
-
-    const timestampStarted = route.path.at(0)[0]
-    const timestampTerminated = route.path.at(-1)[0]
-    const unitTime =
-      (timestampTerminated - timestampStarted) / INTERPOLE_THRESHOLD
-
-    const departureAirport: FlightPathElement = {
-      time: timestampStarted - unitTime,
-      latitude: departure.latitude,
-      longitude: departure.longitude,
-      baro_altitude: 0,
-      true_track: 0,
-      on_ground: true,
-    }
-
-    const arrivalAirport: FlightPathElement = {
-      time: timestampTerminated + unitTime,
-      latitude: arrival.latitude,
-      longitude: arrival.longitude,
-      baro_altitude: 0,
-      true_track: 0,
-      on_ground: true,
-    }
-
-    const path = [departureAirport, ...route.path.map((item: any) => {
-      const casted: FlightPathElement = {
-        time: Number(item[0]),
-        latitude: Number(item[1]),
-        longitude: Number(item[2]),
-        baro_altitude: Number(item[3]),
-        true_track: Number(item[4]),
-        on_ground: Boolean(item[5]),
-      }
-      return casted
-    })]
-    path.push(arrivalAirport)
-
-    const avgTime = path
-      .slice(1)
-      .reduce((sum: number, item: FlightPathElement, index: number) => sum + (item.time - path[index].time), 0) / (path.length - 1)
-
-    const splitLines: FlightPathElement[][] = []
-    let line: FlightPathElement[] = []
-
-    for (let i = 0; i < path.length - 1; ++i) {
-      line.push(path[i]);
-
-      const crossed = isPathCrossingIDL(path[i], path[i + 1])
-      if (crossed === "-->" || crossed === "<--") {
-        const pointA: FlightPathElement = { ...path[i] }
-        const pointB: FlightPathElement = path[i + 1]
-
-        adjustCrossingPoints(pointA, pointB, crossed, { A: departure, B: arrival })
-
-        line.push(pointA);
-        splitLines.push(line);
-        line = [pointB];
-      } else {
-        // line.push(path[i])
-      }
-    }
-
-    splitLines.push(line)
-    splitLines[splitLines.length - 1].push(path[path.length - 1])
-
-    const lines: FeatureCollection[] = []
-
-    Promise.all(
-      splitLines.map((line) =>
-        interpolatedRawPath(line, INTERPOLE_THRESHOLD)
-          .then(removeDuplicateCoordinates)
-          .then(interpolateGreatCirclePath)
-          .then((interpolatedPath) => {
-            const lineFC: FeatureCollection = {
-              type: 'FeatureCollection',
-              features: [
-                {
-                  type: 'Feature',
-                  geometry: { type: 'LineString', coordinates: interpolatedPath },
-                },
-              ],
-            }
-            lines.push(lineFC)
-          })
-      )
-    ).then(() => resolve(lines)).catch(reject)
-  })
-}
-
-
-
 const isPathCrossingIDL = (A: FlightPathElement, B: FlightPathElement): RouteDirection => {
   if (A.longitude > 0 && B.longitude < 0) {
     return "-->"
@@ -362,6 +362,7 @@ const isPathCrossingIDL = (A: FlightPathElement, B: FlightPathElement): RouteDir
   }
   return false
 }
+
 const adjustCrossingPoints = (
   pointA: FlightPathElement,
   pointB: FlightPathElement,
