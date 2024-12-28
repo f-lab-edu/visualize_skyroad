@@ -11,8 +11,13 @@ import { Airport } from "../api/airports";
 
 //     return data
 // }
+
+
+// console.log(getUnixTime30DaysAgo());
+
 const getAircraftTracks = async (flight: Flight): Promise<any> => {
-    const TIMESTAMP_BEGIN = 1729589334
+    // const days: number = 30
+    // const TIMESTAMP_BEGIN: number = Math.floor((Date.now() - days * 24 * 60 * 60 * 1000) / 1000)
     const url = `https://opensky-network.org/api/tracks/all?icao24=${flight.icao24}&time=${flight.lastSeen}`
     console.log(url)
     const response = await fetch(url)
@@ -44,6 +49,5 @@ const requestFlightList = async ({ departureAirport, arrivalAirport, }
         })
 }
 
-export { requestFlightList, requestFlightTrack, };
-
+export { requestFlightList, requestFlightTrack, }
 

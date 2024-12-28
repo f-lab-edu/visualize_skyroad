@@ -7,11 +7,18 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependency directories
 node_modules
+
+# Distribution files
 dist
 dist-ssr
-*.local
 
+# Local files
+*.local
+.env
+
+# IDE files
 .idea
 .DS_Store
 *.suo
@@ -20,15 +27,11 @@ dist-ssr
 *.sln
 *.sw?
 
-# 추가
-TODO
-.env
-
-#zero install
+# Zero-install
 .yarn/*
 !.yarn/cache
 !.yarn/patches
 !.yarn/plugins
-!.yarn/releases
+# !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
