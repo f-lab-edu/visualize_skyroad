@@ -7,18 +7,18 @@ import { Airport, useAirports } from '../api/airports'
 import { Flight, FlightForDisplay, FlightList } from '../api/flight'
 import backgroundImage from '../assets/sky1.jpg'
 import AirportComboBox from '../components/AirportComboBox/AirportComboBox'
+import AppVersion from '../components/AppVersion'
 import SkyButton from '../components/Button/VSKyButton'
 import { requestFlightList } from '../data/dataProcessingLayer'
 
 const STINGS = {
   Header: 'Explore the World!',
-  Greeting: `🎒우리 또 떠나요~!!!`,
+  Greeting: `🎒떠나요~!!!`,
   LoadingText: `···✈️`,
   Description: `✈️ 출발지와 도착지의 공항을 검색 및 선택해주세요.(도시이름으로 검색 🏙️)`,
   Departure: 'Departure(출발지)',
   Arrival: 'Arrival(도착지)',
   buttonText: 'Search',
-  appversion: 'AppVersion: VSky v0.5',
 }
 
 const Home = () => {
@@ -60,10 +60,9 @@ const Home = () => {
     <HomeLayoutSytle>
       <HomeHeaderText>
         <div className="title">{STINGS.Header}</div>
-        {/* <p>{STINGS.Greeting}</p> */}
+        <p>{STINGS.Greeting}</p>
         <p>{STINGS.Description}</p>
       </HomeHeaderText>
-
       <RouteComboxBoxContainer>
         <div>
           <AirportComboBox
@@ -82,27 +81,27 @@ const Home = () => {
         </div>
       </RouteComboxBoxContainer>
 
-      <Suspense fallback={<div>로딩중...</div>}>
-        {flightList && flightList.length > 0 && (
-          <FlightListContainer>
-            {flightList &&
-              flightList.map(
+      {/* <Suspense fallback={<div>로딩중...</div>}> */}
+      {isLoading
+        ? STINGS.LoadingText
+        : flightList.length > 0 && (
+            <FlightListContainer>
+              {flightList.map(
                 (flight: Flight & FlightForDisplay, index: number) => (
                   <li key={flight.icao24 + flight.firstSeen}>
-                    `항공편: {flight.callsign} | 출발: [공항이름]{' '}
-                    {flight.estDepartureAirport} | 도착: [공항이름]{' '}
-                    {flight.estArrivalAirport} | `
+                    {`항공편: ${flight.callsign} | 출발: [공항이름]{' '}
+                  ${flight.estDepartureAirport} | 도착: [공항이름]{' '}
+                  ${flight.estArrivalAirport} | `}
                     <SkyButton onClick={() => handleFlight(index)}>
                       Flight
                     </SkyButton>
                   </li>
                 )
               )}
-          </FlightListContainer>
-        )}
-      </Suspense>
-
-      <p className="app">{STINGS.appversion}</p>
+            </FlightListContainer>
+          )}
+      {/* </Suspense> */}
+      <AppVersion />
     </HomeLayoutSytle>
   )
 }
@@ -134,7 +133,7 @@ const HomeLayoutSytle = styled('div', {
   },
   '.app': {
     marginLeft: 'auto',
-    fontSize: '1rem',
+    fontSize: '.75rem',
     fontWeight: 'bold',
     color: 'rgba(255, 255, 255, 0.75)',
   },
