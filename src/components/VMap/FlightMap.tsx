@@ -179,144 +179,139 @@ const FlightMap: React.FC = ({}) => {
   }
 
   return (
-    <>
-      <Container>
-        {isLoading && !mergedLine && (
-          <LoadingOverlay>
-            <div className="modal">
-              <p className="loadingText">경로데이터를 가져오 있습니다...</p>
-            </div>
-          </LoadingOverlay>
-        )}
+    <Container>
+      {isLoading && !mergedLine && (
+        <LoadingOverlay>
+          <div className="modal">
+            <p className="loadingText">경로데이터를 가져오 있습니다...</p>
+          </div>
+        </LoadingOverlay>
+      )}
 
-        <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
-          <AnimationControlWrapper>
-            <VSkyButton onClick={handleToggleLockOn} toggled={lockOn}>
-              📌 {lockOn ? 'Locked On' : 'Locked Off'}{' '}
-            </VSkyButton>
+      <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
+        <AnimationControlWrapper>
+          <VSkyButton onClick={handleToggleLockOn} toggled={lockOn}>
+            📌 {lockOn ? 'Locked On' : 'Locked Off'}{' '}
+          </VSkyButton>
 
-            <button disabled={isPlaying} onClick={play}>
-              Play
-            </button>
+          <button disabled={isPlaying} onClick={play}>
+            Play
+          </button>
 
-            <button disabled={isPaused || !isPlaying} onClick={pause}>
-              Pause
-            </button>
+          <button disabled={isPaused || !isPlaying} onClick={pause}>
+            Pause
+          </button>
 
-            <button onClick={stop}>Stop</button>
+          <button onClick={stop}>Stop</button>
 
-            <select disabled onChange={handleChangeAniSpeed}>
-              <option value={10}>x10</option>
-              <option value={50}>x50</option>
-              <option value={1}>x1</option>
-            </select>
+          <select disabled onChange={handleChangeAniSpeed}>
+            <option value={10}>x10</option>
+            <option value={50}>x50</option>
+            <option value={1}>x1</option>
+          </select>
 
-            <div id="frame-indicator">
-              <p>
-                ({currentFrame}/{totalFrames})
-              </p>
-            </div>
-          </AnimationControlWrapper>
+          <div id="frame-indicator">
+            <p>
+              ({currentFrame}/{totalFrames})
+            </p>
+          </div>
+        </AnimationControlWrapper>
 
-          <Map
-            initialViewState={{
-              longitude: departure?.longitude || 0,
-              latitude: departure?.latitude || 0,
-              zoom: 4.5,
-            }}
-            mapLib={maplibregl as any}
-            mapStyle={`https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_KEY}`}
-            ref={mapRef}
-            style={StyleMap}
-          >
-            {route?.path.map((pt: number[], index: number) => (
+        <Map
+          initialViewState={{
+            longitude: departure?.longitude || 0,
+            latitude: departure?.latitude || 0,
+            zoom: 4.5,
+          }}
+          mapLib={maplibregl as any}
+          mapStyle={`https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_KEY}`}
+          ref={mapRef}
+          style={StyleMap}
+        >
+          {route?.path.map((pt: number[], index: number) => (
+            <Marker
+              key={`ut-${pt[0]}-${index}`}
+              latitude={pt[1]}
+              longitude={pt[2]}
+            >
+              <div
+                style={{
+                  backgroundColor: 'red',
+                  borderRadius: '50%',
+                  width: 3,
+                  height: 3,
+                  zIndex: 1,
+                }}
+              />
+            </Marker>
+          ))}
+
+          {mergedLine &&
+            mergedLine?.features[0]?.geometry?.coordinates.length >=
+              currentFrame && (
               <Marker
-                key={`ut-${pt[0]}-${index}`}
-                latitude={pt[1]}
-                longitude={pt[2]}
+                latitude={
+                  mergedLine?.features[0]?.geometry?.coordinates[
+                    currentFrame
+                  ][1]
+                }
+                longitude={
+                  mergedLine?.features[0]?.geometry?.coordinates[
+                    currentFrame
+                  ][0]
+                }
               >
-                <div
+                <img
+                  alt="Airplane"
+                  src="/airbus.svg"
                   style={{
-                    backgroundColor: 'red',
-                    borderRadius: '50%',
-                    width: 3,
-                    height: 3,
-                    zIndex: 1,
+                    width: `${5 * getMarkerSize(zoomLevel)}px`,
+                    height: `${5 * getMarkerSize(zoomLevel)}px`,
+                    transform: `rotate(${bearing}deg)`,
                   }}
                 />
               </Marker>
-            ))}
+            )}
 
-            {mergedLine &&
-              mergedLine?.features[0]?.geometry?.coordinates.length >=
-                currentFrame && (
-                <Marker
-                  latitude={
-                    mergedLine?.features[0]?.geometry?.coordinates[
-                      currentFrame
-                    ][1]
-                  }
-                  longitude={
-                    mergedLine?.features[0]?.geometry?.coordinates[
-                      currentFrame
-                    ][0]
-                  }
-                >
-                  <img
-                    alt="Airplane"
-                    src="/airbus.svg"
-                    style={{
-                      width: `${5 * getMarkerSize(zoomLevel)}px`,
-                      height: `${5 * getMarkerSize(zoomLevel)}px`,
-                      transform: `rotate(${bearing}deg)`,
-                    }}
-                  />
-                </Marker>
-              )}
+          <Marker latitude={departure.latitude} longitude={departure.longitude}>
+            <img
+              alt="airport"
+              src="/airport-1.png"
+              style={{
+                /*backgroundColor: 'blue', borderRadius: '50%',*/ width: `${2 * getMarkerSize(zoomLevel)}px`,
+                height: `${2 * getMarkerSize(zoomLevel)}px`,
+                zIndex: 1,
+              }}
+            />
+          </Marker>
 
-            <Marker
-              latitude={departure.latitude}
-              longitude={departure.longitude}
-            >
-              <img
-                alt="airport"
-                src="/airport-1.png"
-                style={{
-                  /*backgroundColor: 'blue', borderRadius: '50%',*/ width: `${2 * getMarkerSize(zoomLevel)}px`,
-                  height: `${2 * getMarkerSize(zoomLevel)}px`,
-                  zIndex: 1,
-                }}
-              />
-            </Marker>
+          <Marker latitude={arrival.latitude} longitude={arrival.longitude}>
+            <img
+              alt="airport"
+              src="/airport-1.png"
+              style={{
+                /*backgroundColor: 'blue', borderRadius: '50%',*/ width: `${2 * getMarkerSize(zoomLevel)}px`,
+                height: `${2 * getMarkerSize(zoomLevel)}px`,
+                zIndex: 1,
+              }}
+            />
+          </Marker>
+        </Map>
 
-            <Marker latitude={arrival.latitude} longitude={arrival.longitude}>
-              <img
-                alt="airport"
-                src="/airport-1.png"
-                style={{
-                  /*backgroundColor: 'blue', borderRadius: '50%',*/ width: `${2 * getMarkerSize(zoomLevel)}px`,
-                  height: `${2 * getMarkerSize(zoomLevel)}px`,
-                  zIndex: 1,
-                }}
-              />
-            </Marker>
-          </Map>
+        <ZoomIndicator>Zoom: {zoomLevel.toFixed(2)}</ZoomIndicator>
+      </div>
 
-          <ZoomIndicator>Zoom: {zoomLevel.toFixed(2)}</ZoomIndicator>
-        </div>
-
-        <GraphWrapper>
-          {!showAltitudeGraph && (
-            <ToggleButton onClick={handleToggleGraph}>
-              Expand Graph ▲
-            </ToggleButton>
-          )}
-          {showAltitudeGraph && (
-            <Graph altitude={altitude} onCloseBtnClicked={handleToggleGraph} />
-          )}
-        </GraphWrapper>
-      </Container>
-    </>
+      <GraphWrapper>
+        {!showAltitudeGraph && (
+          <ToggleButton onClick={handleToggleGraph}>
+            Expand Graph ▲
+          </ToggleButton>
+        )}
+        {showAltitudeGraph && (
+          <Graph altitude={altitude} onCloseBtnClicked={handleToggleGraph} />
+        )}
+      </GraphWrapper>
+    </Container>
   )
 }
 
