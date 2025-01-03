@@ -9,6 +9,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import useMapAnimationController from '../../components/useAnimationController/useAnimationController'
 import VSkyButton from '../Button/VSKyButton'
 import Graph from '../Graph'
+import { useAltitude } from '../useAltitude'
 import { useLine } from '../useLine'
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY
@@ -40,12 +41,13 @@ const FlightMap: React.FC = ({}) => {
   }
 
   // 1. 라인 획득
-  const { line, altitude, route, totalFrames } = useLine({
+  const { line, route, totalFrames } = useLine({
     arrival,
     departure,
     flight,
     map,
   })
+  const { altitude } = useAltitude({ route })
 
   // 2. 라인을 애니메이션으로 그리기
   const {

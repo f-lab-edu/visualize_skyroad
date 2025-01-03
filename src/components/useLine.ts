@@ -26,7 +26,6 @@ const INTERPOLE_THRESHOLD = 100
 export function useLine({ map, flight, arrival, departure }: useLineProps) {
   const [line, setLine] = useState<FeatureCollection[] | null>(null)
   const [route, setRoute] = useState<any>(null)
-  const [altitude, setAltitude] = useState<AltitudeGraphData[]>([])
   const [totalFrames, setTotalFrames] = useState<number>(0)
 
   const getRoute = async () => {
@@ -47,10 +46,6 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
         arrival,
         route,
       }).then(setLine)
-
-      getAltitudeFromRoute({
-        route,
-      }).then(setAltitude)
     }
   }, [map, route])
 
@@ -73,7 +68,6 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
     line,
     route,
     totalFrames,
-    altitude,
   }
 }
 
@@ -339,42 +333,6 @@ const drawStraightLine = async (
     isDash: true,
   }
   drawLineOnRouteLayer(map, line, option)
-}
-
-export type AltitudeGraphData = {
-  time: number
-  altitude: number
-}
-
-const getAltitudeFromRoute = async ({
-  route,
-}: {
-  route: any
-}): Promise<AltitudeGraphData[]> => {
-  const rawData = route.path.map((path: any) => ({
-    time: path[0], // UNIX timestamp
-    altitude: path[3], // Altitude value
-  }))
-
-  const sortedData = rawData.sort((a: any, b: any) => a.time - b.time)
-
-  const startTime = (d3.min(sortedData, (d: any) => d.time) ?? 0) as number
-  const endTime = (d3.max(sortedData, (d: any) => d.time) ?? 0) as number
-  const interval = 60 * 1
-  const uniformTimeRange = d3.range(startTime, endTime + interval, interval)
-
-  const timeToAltitude = d3
-    .scaleLinear()
-    .domain(sortedData.map((d: any) => d.time))
-    .range(sortedData.map((d: any) => d.altitude))
-    .clamp(true)
-
-  const result = uniformTimeRange.map((time) => ({
-    time: time,
-    altitude: timeToAltitude(time),
-  }))
-
-  return result
 }
 
 const isPathCrossingIDL = (
