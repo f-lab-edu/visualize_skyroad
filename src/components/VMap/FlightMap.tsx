@@ -33,27 +33,11 @@ const FlightMap: React.FC = ({}) => {
   const [showAltitudeGraph, setShowAltitudeGraph] = useState<boolean>(true)
 
   const [lockOn, setLockon] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
 
   const handleToggleLockOn = () => {
     setLockon(!lockOn)
   }
-
-  /*
-
-  투두1. 항공데이터을 요청하는 동안에 로딩처리해야함.
-
-  투두2. useLine으로부터 고도데이터추출논리 분리시켜야함.(useAltitude)
-  
-  투두3. "빨간 점" 균일하도록 데이터 보간 더 이루어져야함. 
-  이후 시도할 수 있는 방법으로 시간데이터를 이용하여 애니메이션 속도조절하는 방식으로 시도해볼것.
-  
-  투두4. 맵 고정 시 줌 인/아웃 '자연스럽지' 않음
-  
-  투두5. 맵 회전 시 비행기도 같이 회전시킬 것.
-
-  투두6. 비행기 방향 0되는 값 아직 남아있음.
-  
-  */
 
   // 1. 라인 획득
   const { line, altitude, route, totalFrames } = useLine({
@@ -81,6 +65,10 @@ const FlightMap: React.FC = ({}) => {
   })
 
   useEffect(() => {
+    setIsLoading(false)
+  }, [route, line])
+
+  useEffect(() => {
     if (mapRef.current) {
       const map = mapRef.current?.getMap() as MapInstance
       setMap(map)
@@ -90,6 +78,7 @@ const FlightMap: React.FC = ({}) => {
   const backHome = () => {
     navigate('/')
   }
+
   if (!departure || !arrival || !flight) {
     return (
       <div
@@ -162,7 +151,9 @@ const FlightMap: React.FC = ({}) => {
 
       if (mapInstance) {
         const [longitude, latitude] = mergedLine?.features[0].geometry
-          .coordinates[currentFrame] || [0, 0]
+          .coordinates[currentFrame] ||
+          mergedLine?.features[0].geometry.coordinates[0] || [0, 0]
+
         mapInstance.easeTo({
           center: [longitude, latitude],
           duration: 200,
@@ -185,134 +176,145 @@ const FlightMap: React.FC = ({}) => {
     setShowAltitudeGraph(!showAltitudeGraph)
   }
 
-  console.log('mergedLine', mergedLine)
-
   return (
-    <Container>
-      <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
-        <AnimationControlWrapper>
-          <VSkyButton onClick={handleToggleLockOn} toggled={lockOn}>
-            📌 {lockOn ? 'Locked On' : 'Locked Off'}{' '}
-          </VSkyButton>
+    <>
+      <Container>
+        {isLoading && !mergedLine && (
+          <LoadingOverlay>
+            <div className="modal">
+              <p className="loadingText">경로데이터를 가져오 있습니다...</p>
+            </div>
+          </LoadingOverlay>
+        )}
 
-          <button disabled={isPlaying} onClick={play}>
-            Play
-          </button>
+        <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
+          <AnimationControlWrapper>
+            <VSkyButton onClick={handleToggleLockOn} toggled={lockOn}>
+              📌 {lockOn ? 'Locked On' : 'Locked Off'}{' '}
+            </VSkyButton>
 
-          <button disabled={isPaused || !isPlaying} onClick={pause}>
-            Pause
-          </button>
+            <button disabled={isPlaying} onClick={play}>
+              Play
+            </button>
 
-          <button onClick={stop}>Stop</button>
+            <button disabled={isPaused || !isPlaying} onClick={pause}>
+              Pause
+            </button>
 
-          <select disabled onChange={handleChangeAniSpeed}>
-            <option value={10}>x10</option>
-            <option value={50}>x50</option>
-            <option value={1}>x1</option>
-          </select>
+            <button onClick={stop}>Stop</button>
 
-          <div id="frame-indicator">
-            <p>
-              ({currentFrame}/{totalFrames})
-            </p>
-          </div>
-        </AnimationControlWrapper>
+            <select disabled onChange={handleChangeAniSpeed}>
+              <option value={10}>x10</option>
+              <option value={50}>x50</option>
+              <option value={1}>x1</option>
+            </select>
 
-        <Map
-          initialViewState={{
-            longitude: departure?.longitude || 0,
-            latitude: departure?.latitude || 0,
-            zoom: 4.5,
-          }}
-          mapLib={maplibregl as any}
-          mapStyle={`https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_KEY}`}
-          ref={mapRef}
-          style={StyleMap}
-        >
-          {route?.path.map((pt: number[], index: number) => (
+            <div id="frame-indicator">
+              <p>
+                ({currentFrame}/{totalFrames})
+              </p>
+            </div>
+          </AnimationControlWrapper>
+
+          <Map
+            initialViewState={{
+              longitude: departure?.longitude || 0,
+              latitude: departure?.latitude || 0,
+              zoom: 4.5,
+            }}
+            mapLib={maplibregl as any}
+            mapStyle={`https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_KEY}`}
+            ref={mapRef}
+            style={StyleMap}
+          >
+            {route?.path.map((pt: number[], index: number) => (
+              <Marker
+                key={`ut-${pt[0]}-${index}`}
+                latitude={pt[1]}
+                longitude={pt[2]}
+              >
+                <div
+                  style={{
+                    backgroundColor: 'red',
+                    borderRadius: '50%',
+                    width: 3,
+                    height: 3,
+                    zIndex: 1,
+                  }}
+                />
+              </Marker>
+            ))}
+
+            {mergedLine &&
+              mergedLine?.features[0]?.geometry?.coordinates.length >=
+                currentFrame && (
+                <Marker
+                  latitude={
+                    mergedLine?.features[0]?.geometry?.coordinates[
+                      currentFrame
+                    ][1]
+                  }
+                  longitude={
+                    mergedLine?.features[0]?.geometry?.coordinates[
+                      currentFrame
+                    ][0]
+                  }
+                >
+                  <img
+                    alt="Airplane"
+                    src="/airbus.svg"
+                    style={{
+                      width: `${5 * getMarkerSize(zoomLevel)}px`,
+                      height: `${5 * getMarkerSize(zoomLevel)}px`,
+                      transform: `rotate(${bearing}deg)`,
+                    }}
+                  />
+                </Marker>
+              )}
+
             <Marker
-              key={`ut-${pt[0]}-${index}`}
-              latitude={pt[1]}
-              longitude={pt[2]}
+              latitude={departure.latitude}
+              longitude={departure.longitude}
             >
-              <div
+              <img
+                alt="airport"
+                src="/airport-1.png"
                 style={{
-                  backgroundColor: 'red',
-                  borderRadius: '50%',
-                  width: 3,
-                  height: 3,
+                  /*backgroundColor: 'blue', borderRadius: '50%',*/ width: `${2 * getMarkerSize(zoomLevel)}px`,
+                  height: `${2 * getMarkerSize(zoomLevel)}px`,
                   zIndex: 1,
                 }}
               />
             </Marker>
-          ))}
 
-          {mergedLine &&
-            mergedLine?.features[0]?.geometry?.coordinates.length >=
-              currentFrame && (
-              <Marker
-                latitude={
-                  mergedLine?.features[0]?.geometry?.coordinates[
-                    currentFrame
-                  ][1]
-                }
-                longitude={
-                  mergedLine?.features[0]?.geometry?.coordinates[
-                    currentFrame
-                  ][0]
-                }
-              >
-                <img
-                  alt="Airplane"
-                  src="/airbus.svg"
-                  style={{
-                    width: `${5 * getMarkerSize(zoomLevel)}px`,
-                    height: `${5 * getMarkerSize(zoomLevel)}px`,
-                    transform: `rotate(${bearing}deg)`,
-                  }}
-                />
-              </Marker>
-            )}
+            <Marker latitude={arrival.latitude} longitude={arrival.longitude}>
+              <img
+                alt="airport"
+                src="/airport-1.png"
+                style={{
+                  /*backgroundColor: 'blue', borderRadius: '50%',*/ width: `${2 * getMarkerSize(zoomLevel)}px`,
+                  height: `${2 * getMarkerSize(zoomLevel)}px`,
+                  zIndex: 1,
+                }}
+              />
+            </Marker>
+          </Map>
 
-          <Marker latitude={departure.latitude} longitude={departure.longitude}>
-            <img
-              alt="airport"
-              src="/airport-1.png"
-              style={{
-                /*backgroundColor: 'blue', borderRadius: '50%',*/ width: `${2 * getMarkerSize(zoomLevel)}px`,
-                height: `${2 * getMarkerSize(zoomLevel)}px`,
-                zIndex: 1,
-              }}
-            />
-          </Marker>
+          <ZoomIndicator>Zoom: {zoomLevel.toFixed(2)}</ZoomIndicator>
+        </div>
 
-          <Marker latitude={arrival.latitude} longitude={arrival.longitude}>
-            <img
-              alt="airport"
-              src="/airport-1.png"
-              style={{
-                /*backgroundColor: 'blue', borderRadius: '50%',*/ width: `${2 * getMarkerSize(zoomLevel)}px`,
-                height: `${2 * getMarkerSize(zoomLevel)}px`,
-                zIndex: 1,
-              }}
-            />
-          </Marker>
-        </Map>
-
-        <ZoomIndicator>Zoom: {zoomLevel.toFixed(2)}</ZoomIndicator>
-      </div>
-
-      <GraphWrapper>
-        {!showAltitudeGraph && (
-          <ToggleButton onClick={handleToggleGraph}>
-            Expand Graph ▲
-          </ToggleButton>
-        )}
-        {showAltitudeGraph && (
-          <Graph altitude={altitude} onCloseBtnClicked={handleToggleGraph} />
-        )}
-      </GraphWrapper>
-    </Container>
+        <GraphWrapper>
+          {!showAltitudeGraph && (
+            <ToggleButton onClick={handleToggleGraph}>
+              Expand Graph ▲
+            </ToggleButton>
+          )}
+          {showAltitudeGraph && (
+            <Graph altitude={altitude} onCloseBtnClicked={handleToggleGraph} />
+          )}
+        </GraphWrapper>
+      </Container>
+    </>
   )
 }
 
@@ -344,10 +346,10 @@ const AnimationControlWrapper = styled('div', {
     background: '#005A9C',
     fontSize: '0.95rem',
     '&:disabled': {
-      background: '#b0b0b0', // 비활성화된 배경색 (회색 톤)
-      color: '#e0e0e0', // 비활성화된 텍스트 색상 (밝은 회색)
-      opacity: 0.6, // 흐리게
-      cursor: 'not-allowed', // 비활성화된 상태를 나타내는 커서
+      background: '#b0b0b0',
+      color: '#e0e0e0',
+      opacity: 0.6,
+      cursor: 'not-allowed',
     },
   },
 
@@ -439,5 +441,27 @@ const ToggleButton = styled('button', {
   zIndex: 1000,
   ':hover': {
     backgroundColor: '#357ABD',
+  },
+})
+
+const LoadingOverlay = styled('div', {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  zIndex: 1000,
+  '.modal': {
+    background: 'white',
+    padding: '20px 40px',
+    borderRadius: '10px',
+    boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.3)',
+    textAlign: 'center',
+    fontSize: '1.5rem',
+    color: '#333',
   },
 })

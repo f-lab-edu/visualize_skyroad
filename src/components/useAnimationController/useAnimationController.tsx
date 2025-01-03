@@ -182,7 +182,7 @@ const useMapAnimationController = ({
     }
   }, [isPlaying, isPaused])
 
-  console.log(map, line, zoomLevel, duration)
+  // console.log(map, line, zoomLevel, duration)
 
   return {
     bearing,

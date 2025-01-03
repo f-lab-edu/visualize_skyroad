@@ -30,8 +30,10 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
   const [totalFrames, setTotalFrames] = useState<number>(0)
 
   const getRoute = async () => {
+    console.log('getRoute')
     const flightRoute = await requestFlightTrack(flight)
     setRoute(flightRoute)
+    console.log('getRoute', flightRoute)
   }
 
   useEffect(() => {

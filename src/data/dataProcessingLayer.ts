@@ -18,7 +18,7 @@ const getAircraftTracks = async (flight: Flight): Promise<any> => {
   // const days: number = 30
   // const TIMESTAMP_BEGIN: number = Math.floor((Date.now() - days * 24 * 60 * 60 * 1000) / 1000)
   const url = `https://opensky-network.org/api/tracks/all?icao24=${flight.icao24}&time=${flight.lastSeen}`
-  console.log(url)
+  console.log('::::getAircraftTracks:::::', url)
   const response = await fetch(url)
   const data = await response.json()
   return data
