@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { MapInstance } from 'react-map-gl'
 
 import { FeatureCollection } from '../../api/flight'
+import useBearingWithMovingAverage from './useBearingWithMovingAverage'
 
 const calculateBearing = (
   lat1: number,
@@ -38,10 +39,9 @@ const useMapAnimationController = ({
   const [isPaused, setIsPaused] = useState<boolean>(false)
   const [mergedLine, setMergedLine] = useState<FeatureCollection | null>(null)
   const [currentFrame, setCurrentFrame] = useState<number>(0)
-  const [bearing, setBearing] = useState<number>(999)
-  const [prevBearing, setPrevBearing] = useState<number>(999)
   const requestRef = useRef<null | number>(null)
   const previousTimeRef = useRef<null | number>(null)
+  const { bearing, addBearing } = useBearingWithMovingAverage(5)
 
   const handleUpdate = (deltaTime: number) => {
     setCurrentFrame((prevFrame) => {
@@ -53,22 +53,15 @@ const useMapAnimationController = ({
         const nextPosition =
           mergedLine.features[0].geometry.coordinates[nextFrame + 1] ||
           currentPosition
-        const bearing = calculateBearing(
+
+        const calculatedBearing = calculateBearing(
           currentPosition[1],
           currentPosition[0],
           nextPosition[1],
           nextPosition[0]
         )
 
-        if (
-          currentFrame !== 0 &&
-          bearing === 0 /*&& Math.abs(bearing - prevBearing) > 45*/
-        ) {
-          setBearing(prevBearing)
-        } else {
-          setBearing(bearing)
-          setPrevBearing(bearing)
-        }
+        addBearing(calculatedBearing)
       } else {
         stop()
       }
@@ -199,7 +192,6 @@ const useMapAnimationController = ({
 export default useMapAnimationController
 
 // const [bearingList, setBearingList] = useState<number[]>(Array(5).fill(999))
-
 // const addBearing = (bearing: number) => {
 //   setBearingList((prevList) => {
 //     return [...prevList.slice(1), bearing]
@@ -221,7 +213,6 @@ export default useMapAnimationController
 //       ],
 //     }
 //     mapInstance.getSource('point').setData(point)
-
 //     if (!mapInstance.getLayer('points')) {
 //       mapInstance.addLayer({
 //         id: 'points',
@@ -242,7 +233,6 @@ export default useMapAnimationController
 //   if (!lineData) {
 //     return
 //   }
-
 //   // const origin = lineData?.features[0].geometry.coordinates[0]
 //   // const point = {
 //   //   type: 'FeatureCollection',
@@ -257,21 +247,17 @@ export default useMapAnimationController
 //   //     },
 //   //   ],
 //   // }
-
 //   // mapInstance.loadImage('/airplane.png', (error: Error, image: HTMLIFrameElement) => {
 //   //   if (error) {
 //   //     console.error('**에러: ', error)
 //   //     throw error
 //   //   }
-
 //   //   if (!mapInstance.hasImage('airplane-icon')) {
 //   //     mapInstance.addImage('airplane-icon', image)
 //   //   }
-
 //   //   if (!mapInstance.getSource('point')) {
 //   //     mapInstance.addSource('point', { type: 'geojson', data: point })
 //   //   }
-
 //   //   if (!mapInstance.getLayer('points')) {
 //   //     mapInstance.addLayer({
 //   //       id: 'points',
@@ -288,9 +274,7 @@ export default useMapAnimationController
 // }
 // const handleUpdate = (deltaTime: number) => {
 //   setCurrentFrame((prevFrame) => {
-
 //     const nextFrame = Math.floor(prevFrame + deltaTime * 100)
-
 //     if (mergedLine?.features[0]?.geometry.coordinates[nextFrame]) {
 //       const currentPosition = mergedLine.features[0].geometry.coordinates[nextFrame]
 //       const nextPosition = mergedLine.features[0].geometry.coordinates[nextFrame + 1] || currentPosition
@@ -298,11 +282,8 @@ export default useMapAnimationController
 //       // currentPosition[1], currentPosition[0],
 //       // nextPosition[1], nextPosition[0]
 //       // )
-
 //       // draw(map, mergedLine.features[0].geometry.coordinates[nextFrame], bearing)
 //     }
-
 //     return nextFrame
-
 //   })
 // }

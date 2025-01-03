@@ -177,7 +177,7 @@ const FlightMap: React.FC = ({}) => {
   const handleToggleGraph = () => {
     setShowAltitudeGraph(!showAltitudeGraph)
   }
-
+  currentFrame > 0 && console.log(currentFrame, bearing)
   return (
     <Container>
       {isLoading && !mergedLine && (
