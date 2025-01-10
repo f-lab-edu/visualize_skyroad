@@ -4,25 +4,7 @@ import { MapInstance } from 'react-map-gl'
 import { FeatureCollection } from '../../api/flight'
 import useBearingWithMovingAverage from './useBearingWithMovingAverage'
 
-const calculateBearing = (
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number => {
-  const rad = Math.PI / 180
-  const deltaLon = (lon2 - lon1) * rad
-  const lat1Rad = lat1 * rad
-  const lat2Rad = lat2 * rad
-
-  const y = Math.sin(deltaLon) * Math.cos(lat2Rad)
-  const x =
-    Math.cos(lat1Rad) * Math.sin(lat2Rad) -
-    Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(deltaLon)
-
-  const bearing = Math.atan2(y, x)
-  return ((bearing * 180) / Math.PI + 360) % 360
-}
+const BEARING_LIST_LENGTH = 5
 
 const useMapAnimationController = ({
   map,
@@ -41,7 +23,8 @@ const useMapAnimationController = ({
   const [currentFrame, setCurrentFrame] = useState<number>(0)
   const requestRef = useRef<null | number>(null)
   const previousTimeRef = useRef<null | number>(null)
-  const { bearing, addBearing } = useBearingWithMovingAverage(5)
+  const { bearing, addBearing, calculateBearing } =
+    useBearingWithMovingAverage(BEARING_LIST_LENGTH)
 
   const handleUpdate = (deltaTime: number) => {
     setCurrentFrame((prevFrame) => {
@@ -130,6 +113,7 @@ const useMapAnimationController = ({
 
       setMergedLine(merged)
     }
+    setCurrentFrame(0)
   }
 
   const handleStop = () => {
@@ -160,7 +144,7 @@ const useMapAnimationController = ({
     }
 
     previousTimeRef.current = null
-    handleStop()
+    // handleStop()
   }
 
   useEffect(() => {

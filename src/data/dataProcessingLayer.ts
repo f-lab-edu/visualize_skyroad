@@ -51,7 +51,7 @@ const requestFlightList = async ({
     //     dep: `출발:[공항이름](${flight.estDepartureAirport})`,
     //     arr: `도착:[공항이름](${flight.estArrivalAirport})`
     // }))
-    console.log('******depart', flightList)
+    console.log('******depart', flightList, flights)
     return flightList
   })
 

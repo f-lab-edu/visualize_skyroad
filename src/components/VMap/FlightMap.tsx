@@ -36,6 +36,8 @@ const FlightMap: React.FC = ({}) => {
   const [lockOn, setLockon] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(true)
 
+  const [showIDL, setShowIDL] = useState<boolean>(false)
+
   const handleToggleLockOn = () => {
     setLockon(!lockOn)
   }
@@ -70,10 +72,16 @@ const FlightMap: React.FC = ({}) => {
     setIsLoading(false)
   }, [route, line])
 
+  // useEffect(() => {
+  //   if (mapRef.current) {
+  //     const map = mapRef.current?.getMap() as MapInstance
+  //     setMap(map)
+  //   }
+  // }, [mapRef.current])
   useEffect(() => {
     if (mapRef.current) {
-      const map = mapRef.current?.getMap() as MapInstance
-      setMap(map)
+      const mapInstance = mapRef.current.getMap()
+      setMap(mapInstance)
     }
   }, [mapRef.current])
 
@@ -156,7 +164,8 @@ const FlightMap: React.FC = ({}) => {
           .coordinates[currentFrame] ||
           mergedLine?.features[0].geometry.coordinates[0] || [0, 0]
 
-        mapInstance.easeTo({
+        mapInstance.flyTo({
+          // mapInstance.easeTo({
           center: [longitude, latitude],
           duration: 200,
         })
@@ -177,7 +186,94 @@ const FlightMap: React.FC = ({}) => {
   const handleToggleGraph = () => {
     setShowAltitudeGraph(!showAltitudeGraph)
   }
+
+  useEffect(() => {
+    const map = mapRef.current?.getMap()
+
+    if (!map) return
+
+    if (showIDL) {
+      if (!map.isStyleLoaded()) {
+        map.on('load', () => {
+          addIDLAndMeridian(map)
+        })
+      } else {
+        addIDLAndMeridian(map)
+      }
+    } else {
+      removeIDL(map)
+    }
+  }, [showIDL])
+
+  const handleShowIDLToggle = () => {
+    setShowIDL(!showIDL)
+  }
+
+  const addIDLAndMeridian = (map: MapInstance) => {
+    map.addSource('dateLine', {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [180, 90],
+            [180, -90],
+          ],
+        },
+        properties: {},
+      },
+    })
+
+    map.addLayer({
+      id: 'dateLine',
+      type: 'line',
+      source: 'dateLine',
+      layout: {},
+      paint: {
+        'line-color': 'red',
+        'line-width': 2,
+        'line-dasharray': [2, 2],
+      },
+    })
+
+    map.addSource('primeMeridian', {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [0, 90],
+            [0, -90],
+          ],
+        },
+        properties: {},
+      },
+    })
+
+    map.addLayer({
+      id: 'primeMeridian',
+      type: 'line',
+      source: 'primeMeridian',
+      layout: {},
+      paint: {
+        'line-color': 'blue',
+        'line-width': 2,
+        'line-dasharray': [2, 2],
+      },
+    })
+  }
+
+  const removeIDL = (map: MapInstance) => {
+    map?.getLayer('primeMeridian') && map.removeLayer('primeMeridian')
+    map?.getSource('primeMeridian') && map.removeSource('primeMeridian')
+    map?.getLayer('dateLine') && map.removeLayer('dateLine')
+    map?.getSource('dateLine') && map.removeSource('dateLine')
+  }
+
   currentFrame > 0 && console.log(currentFrame, bearing)
+
   return (
     <Container>
       {isLoading && !mergedLine && (
@@ -190,6 +286,11 @@ const FlightMap: React.FC = ({}) => {
 
       <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
         <AnimationControlWrapper>
+          <div>
+            <button onClick={handleShowIDLToggle}>
+              날짜변경선&nbsp;{showIDL ? 'OFF' : 'ON'}
+            </button>
+          </div>
           <VSkyButton onClick={handleToggleLockOn} toggled={lockOn}>
             📌 {lockOn ? 'Locked On' : 'Locked Off'}{' '}
           </VSkyButton>
@@ -268,6 +369,7 @@ const FlightMap: React.FC = ({}) => {
                     width: `${5 * getMarkerSize(zoomLevel)}px`,
                     height: `${5 * getMarkerSize(zoomLevel)}px`,
                     transform: `rotate(${bearing}deg)`,
+                    filter: `drop-shadow(2px 25px 1px rgba(0,0,0,.4))`,
                   }}
                 />
               </Marker>

@@ -29,7 +29,6 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
   const [totalFrames, setTotalFrames] = useState<number>(0)
 
   const getRoute = async () => {
-    console.log('getRoute')
     const flightRoute = await requestFlightTrack(flight)
     setRoute(flightRoute)
     console.log('getRoute', flightRoute)
@@ -54,7 +53,6 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
       line.forEach((item: any, index: number) => {
         drawStraightLine(map, item, `line-${index}`)
       })
-
       setTotalFrames(
         line.length > 1
           ? line[0].features[0].geometry.coordinates.length +
@@ -120,15 +118,15 @@ const getLineFromRoute = ({
     ]
     path.push(arrivalAirport)
 
-    const avgTime =
-      path
-        .slice(1)
-        .reduce(
-          (sum: number, item: FlightPathElement, index: number) =>
-            sum + (item.time - path[index].time),
-          0
-        ) /
-      (path.length - 1)
+    // const avgTime =
+    //   path
+    //     .slice(1)
+    //     .reduce(
+    //       (sum: number, item: FlightPathElement, index: number) =>
+    //         sum + (item.time - path[index].time),
+    //       0
+    //     ) /
+    //   (path.length - 1)
 
     const splitLines: FlightPathElement[][] = []
     let line: FlightPathElement[] = []
@@ -137,6 +135,7 @@ const getLineFromRoute = ({
       line.push(path[i])
 
       const crossed = isPathCrossingIDL(path[i], path[i + 1])
+      crossed && console.log(crossed)
       if (crossed === '-->' || crossed === '<--') {
         const pointA: FlightPathElement = { ...path[i] }
         const pointB: FlightPathElement = path[i + 1]
@@ -148,9 +147,7 @@ const getLineFromRoute = ({
 
         line.push(pointA)
         splitLines.push(line)
-        line = [pointB]
-      } else {
-        // line.push(path[i])
+        line = [pointB] // * important!!!
       }
     }
 
@@ -339,11 +336,28 @@ const isPathCrossingIDL = (
   A: FlightPathElement,
   B: FlightPathElement
 ): RouteDirection => {
-  if (A.longitude > 0 && B.longitude < 0) {
-    return '-->'
-  }
-  if (A.longitude < 0 && B.longitude > 0) {
+  const Ax = A.longitude
+  const Bx = B.longitude
+  // -0>= W >=-180, 0 <= E <= 180
+  // case1 A:W B:W A < B then -->
+  // case2 A:W B:W A > B then  <--
+  // case3 A:W B:E  then -->
+  // case4 A:E B:W  then -->
+  // case5 A:E B:E A < B  then -->
+  // case6 A:E B:E A > B  then <--
+  // case7 A:E B:W  then -->
+  // case8 A:W B:E <--
+  if (-0 >= Ax && Ax >= -180 && 0 <= Bx && Bx <= 180) {
+    if (1 > Math.abs(Ax) && Math.abs(Ax) > 0) {
+      return '-->'
+    }
     return '<--'
+  }
+  if (-0 >= Bx && Bx >= -180 && 0 <= Ax && Ax <= 180) {
+    if (1 > Math.abs(Ax) && Math.abs(Ax) > 0) {
+      return '<--'
+    }
+    return '-->'
   }
   return false
 }
@@ -354,17 +368,25 @@ const adjustCrossingPoints = (
   direction: East2West | West2East,
   airports: { A: any; B: any }
 ) => {
-  const latitude = handleFindCrossing(airports.A, airports.B)
-  pointA.latitude = latitude
-  pointB.latitude = latitude
-
-  if (direction === '-->') {
-    pointA.longitude = 180
-    pointB.longitude = -180
-  } else if (direction === '<--') {
-    pointA.longitude = -180
-    pointB.longitude = 180
+  if (1 > Math.abs(pointA.longitude) && Math.abs(pointA.longitude) > 0) {
+    console.log('cross 적오선---', pointA, pointB, direction)
+    pointA.longitude = -0
+    pointB.longitude = 0
+    pointA.latitude = 51.2975
+    pointB.latitude = 51.2975
+  } else {
+    const latitude = handleFindCrossing(airports.A, airports.B)
+    pointA.latitude = latitude // (pointA.latitude + pointB.latitude) / 2
+    pointB.latitude = latitude
+    if (direction === '-->') {
+      pointA.longitude = 180
+      pointB.longitude = -180
+    } else if (direction === '<--') {
+      pointA.longitude = -180
+      pointB.longitude = 180
+    }
   }
+  console.log('-----A, B', pointA, pointB)
 }
 
 const handleFindCrossing = (A: any, B: any): number => {
@@ -372,9 +394,8 @@ const handleFindCrossing = (A: any, B: any): number => {
   const end = turf.point([B.longitude, B.latitude])
   const greatCircleLine = turf.greatCircle(start, end, { npoints: 100 })
   if (greatCircleLine.geometry.type === 'MultiLineString') {
-    return greatCircleLine.geometry.coordinates[0][
-      greatCircleLine.geometry.coordinates[0].length - 1
-    ][1]
+    const lastIndex: number = greatCircleLine.geometry.coordinates[0].length - 1
+    return greatCircleLine.geometry.coordinates[0][lastIndex][1]
   }
   return (A.latitude + B.latitude) / 2
 }

@@ -55,7 +55,7 @@ const Home = () => {
       },
     })
   }
-
+  console.log(flightList)
   return (
     <HomeLayoutSytle>
       <HomeHeaderText>
@@ -81,7 +81,6 @@ const Home = () => {
         </div>
       </RouteComboxBoxContainer>
 
-      {/* <Suspense fallback={<div>로딩중...</div>}> */}
       {isLoading
         ? STINGS.LoadingText
         : flightList.length > 0 && (
@@ -89,9 +88,27 @@ const Home = () => {
               {flightList.map(
                 (flight: Flight & FlightForDisplay, index: number) => (
                   <li key={flight.icao24 + flight.firstSeen}>
-                    {`항공편: ${flight.callsign} | 출발: [공항이름]{' '}
-                  ${flight.estDepartureAirport} | 도착: [공항이름]{' '}
-                  ${flight.estArrivalAirport} | `}
+                    {`Callsign: ${flight.callsign} | 출발 -> 도착: ${flight.estDepartureAirport} -> ${flight.estArrivalAirport} | ${new Date(
+                      flight.firstSeen * 1000
+                    ).toLocaleString('ko-KR', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                    })}~${new Date(flight.lastSeen * 1000).toLocaleString(
+                      'ko-KR',
+                      {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      }
+                    )}) | `}
+
                     <SkyButton onClick={() => handleFlight(index)}>
                       Flight
                     </SkyButton>
@@ -100,7 +117,6 @@ const Home = () => {
               )}
             </FlightListContainer>
           )}
-      {/* </Suspense> */}
       <AppVersion />
     </HomeLayoutSytle>
   )

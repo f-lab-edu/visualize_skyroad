@@ -115,15 +115,16 @@ export const getAllActiveFlights = async (): Promise<Aircraft[]> => {
 //     console.log(url)
 //     const response = await fetch(url)
 //     const data = await response.json()
-
 //     return data
 // }
+
 export const getDepartureAirport = async (
   airportICAO: string
 ): Promise<any> => {
+  const DAYS = 5
   const TIMESTAMP_END = Math.floor(Date.now() / 1000)
   const TIMESTAMP_BEGIN = Math.floor(
-    (Date.now() - 6 * 24 * 60 * 60 * 1000) / 1000
+    (Date.now() - DAYS * 24 * 60 * 60 * 1000) / 1000
   )
 
   if (TIMESTAMP_BEGIN >= TIMESTAMP_END) {
@@ -141,12 +142,14 @@ export const getDepartureAirport = async (
     }
 
     const data = await response.json()
+    console.log(data)
     return data
   } catch (error) {
     console.error('Error 도착공항열람실패:', error)
     throw error
   }
 }
+
 // export const getArrivalAirport = async (airportICAO: string): Promise<any> => {
 //     const TIMESTAMP_BEGIN = 1729589334
 //     const TIMESTAMP_END = 1730194134
