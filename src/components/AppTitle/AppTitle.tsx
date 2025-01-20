@@ -1,13 +1,13 @@
 import { styled } from '@stitches/react'
 import React from 'react'
 
-import { STRINGS } from '../../constants/strings'
+import { STR_HOME } from '../../constants/strings'
 
 export const AppTitle = () => (
   <HomeHeaderText>
-    <div className="title">{STRINGS.HOME.Header}</div>
-    <p>{STRINGS.HOME.Greeting}</p>
-    <p>{STRINGS.HOME.Description}</p>
+    <div className="title">{STR_HOME.Header}</div>
+    <p>{STR_HOME.Greeting}</p>
+    <p>{STR_HOME.Description}</p>
   </HomeHeaderText>
 )
 

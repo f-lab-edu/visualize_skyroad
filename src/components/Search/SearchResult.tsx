@@ -2,7 +2,7 @@ import { styled } from '@stitches/react'
 import React from 'react'
 
 import { FlightList } from '../../api/flight'
-import { STRINGS } from '../../constants/strings'
+import { STR_HOME } from '../../constants/strings'
 import { FlightListItem } from './FlightListItem'
 
 interface SearchResultsProps {
@@ -16,7 +16,7 @@ export const SearchResults = ({
   isLoading,
   onFlightSelect,
 }: SearchResultsProps) => {
-  if (isLoading) return <div>{STRINGS.HOME.LoadingText}</div>
+  if (isLoading) return <div>{STR_HOME.LoadingText}</div>
 
   if (!flightList?.length) return null
 

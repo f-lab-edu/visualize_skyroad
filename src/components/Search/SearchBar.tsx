@@ -4,7 +4,7 @@ import React from 'react'
 import { Airport, useAirports } from '../../api/airports'
 import AirportComboBox from '../../components/AirportComboBox/AirportComboBox'
 import SkyButton from '../../components/Button/VSKyButton'
-import { STRINGS } from '../../constants/strings'
+import { STR_HOME } from '../../constants/strings'
 
 interface SearchBarProps {
   arrivalAirport: Airport | null
@@ -38,7 +38,7 @@ export const SearchBar = ({
         />
       </div>
       <div>
-        <SkyButton onClick={onSearch}>{STRINGS.HOME.buttonText}</SkyButton>
+        <SkyButton onClick={onSearch}>{STR_HOME.buttonText}</SkyButton>
       </div>
     </RouteComboBoxContainer>
   )

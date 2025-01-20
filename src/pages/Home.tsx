@@ -1,6 +1,7 @@
 import { styled } from '@stitches/react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import React, { Suspense, useState } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
 import { useNavigate } from 'react-router-dom'
 
 import { Airport } from '../api/airports'
@@ -8,31 +9,37 @@ import { FlightList } from '../api/flight'
 import backgroundImage from '../assets/sky1.jpg'
 import { AppTitle } from '../components/AppTitle/AppTitle'
 import AppVersion from '../components/AppVersion'
+import ErrorFallback from '../components/ErrorCompoent/ErrorComponent'
 import { SearchBar } from '../components/Search/SearchBar'
 import { SearchResults } from '../components/Search/SearchResult'
-import { STRINGS } from '../constants/strings'
+import { STR_HOME } from '../constants/strings'
 import { requestFlightList } from '../data/dataProcessingLayer'
 
 const Home = () => {
   const navigate = useNavigate()
   const [departureAirport, setDepartureAirport] = useState<Airport | null>(null)
   const [arrivalAirport, setArrivalAirport] = useState<Airport | null>(null)
+  const [searchTrigger, setSearchTrigger] = useState<number>(0)
 
-  const {
-    data: flightList,
-    isLoading,
-    refetch,
-  } = useSuspenseQuery<FlightList>({
-    queryKey: ['flightList', departureAirport, arrivalAirport],
-    queryFn: () => requestFlightList({ departureAirport, arrivalAirport }),
+  const { data: flightList, isLoading } = useSuspenseQuery<FlightList>({
+    queryKey: [
+      'flightList',
+      /*departureAirport, arrivalAirport,*/ searchTrigger,
+    ],
+    queryFn: () => {
+      if (!departureAirport || !arrivalAirport) {
+        return Promise.resolve([] as FlightList)
+      }
+      return requestFlightList({ departureAirport, arrivalAirport })
+    },
   })
 
-  const handleSearch = async () => {
+  const handleSearch = () => {
     if (!(departureAirport && arrivalAirport)) {
-      alert(STRINGS.HOME.WarningChooseBoth)
+      alert(STR_HOME.WarningChooseBoth)
       return
     }
-    refetch()
+    setSearchTrigger((prev) => prev + 1)
   }
 
   const handleFlightSelect = (index: number) => {
@@ -46,24 +53,29 @@ const Home = () => {
   }
 
   return (
-    <HomeLayout>
-      <AppTitle />
-      <SearchBar
-        arrivalAirport={arrivalAirport}
-        departureAirport={departureAirport}
-        onArrivalSelect={setArrivalAirport}
-        onDepartureSelect={setDepartureAirport}
-        onSearch={handleSearch}
-      />
-      <Suspense fallback={<div>{STRINGS.HOME.LoadingText}</div>}>
-        <SearchResults
-          flightList={flightList}
-          isLoading={isLoading}
-          onFlightSelect={handleFlightSelect}
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <HomeLayout>
+        <AppTitle />
+
+        <SearchBar
+          arrivalAirport={arrivalAirport}
+          departureAirport={departureAirport}
+          onArrivalSelect={setArrivalAirport}
+          onDepartureSelect={setDepartureAirport}
+          onSearch={handleSearch}
         />
-      </Suspense>
-      <AppVersion />
-    </HomeLayout>
+
+        <Suspense fallback={<div>{STR_HOME.LoadingText}</div>}>
+          <SearchResults
+            flightList={flightList}
+            isLoading={isLoading}
+            onFlightSelect={handleFlightSelect}
+          />
+        </Suspense>
+
+        <AppVersion />
+      </HomeLayout>
+    </ErrorBoundary>
   )
 }
 export default Home
