@@ -17,6 +17,7 @@
     "@types/glob": "^8.1.0",
     "d3": "^7.9.0",
     "idb": "^8.0.0",
+    "lucide-react": "^0.471.0",
     "mapbox-gl": "^2.15.0",
     "maplibre-gl": "^2.4.0",
     "minimatch": "^10.0.1",

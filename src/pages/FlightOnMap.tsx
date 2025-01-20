@@ -72,12 +72,6 @@ const FlightOnMap: React.FC = ({}) => {
     setIsLoading(false)
   }, [route, line])
 
-  // useEffect(() => {
-  //   if (mapRef.current) {
-  //     const map = mapRef.current?.getMap() as MapInstance
-  //     setMap(map)
-  //   }
-  // }, [mapRef.current])
   useEffect(() => {
     if (mapRef.current) {
       const mapInstance = mapRef.current.getMap()
@@ -271,9 +265,17 @@ const FlightOnMap: React.FC = ({}) => {
     map?.getLayer('dateLine') && map.removeLayer('dateLine')
     map?.getSource('dateLine') && map.removeSource('dateLine')
   }
-
+  const [frame, setFrame] = useState<number>(0)
+  const ani = () =>
+    setTimeout(() => {
+      console.log(frame)
+      setFrame(frame + 1)
+    }, 500)
+  useEffect(() => {
+    ani()
+  }, [frame === 0])
   currentFrame > 0 && console.log(currentFrame, bearing)
-
+  console.log('HOWMANYTIMES?:', frame, route?.path, route?.path[frame])
   return (
     <Container>
       {isLoading && !mergedLine && (
@@ -346,6 +348,24 @@ const FlightOnMap: React.FC = ({}) => {
               />
             </Marker>
           ))}
+
+          {route?.path && route.path && route.path.length < frame && (
+            <Marker
+              latitude={route.path[frame][1]}
+              longitude={route.path[frame][2]}
+            >
+              <img
+                alt="Airplane"
+                src="/airbus.svg"
+                style={{
+                  width: `${5 * getMarkerSize(zoomLevel)}px`,
+                  height: `${5 * getMarkerSize(zoomLevel)}px`,
+                  // transform: `rotate(${bearing}deg)`,
+                  filter: `drop-shadow(2px 25px 1px rgba(0,0,0,.4))`,
+                }}
+              />
+            </Marker>
+          )}
 
           {mergedLine &&
             mergedLine?.features[0]?.geometry?.coordinates.length >=
