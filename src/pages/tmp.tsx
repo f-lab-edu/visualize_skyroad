@@ -258,7 +258,7 @@ const FlightMap: React.FC<{ flightData: FlightPathData }> = ({
           latitude: flightData.path[0].latitude,
           zoom: 6,
         }}
-        mapLib={maplibregl}
+        mapLib={maplibregl as any}
         mapStyle={`https://api.maptiler.com/maps/basic-v2/style.json?key=${import.meta.env.VITE_MAPTILER_KEY}`}
         ref={mapRef}
         style={{ width: '100%', height: '100%' }}
