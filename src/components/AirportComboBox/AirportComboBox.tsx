@@ -4,7 +4,12 @@ import FlagIcon from 'react-flagkit'
 
 import { AirportList } from '../../api/airports'
 
-const AirportComboBox = ({ airports, onSelectAirport, blacklist }: any) => {
+const AirportComboBox = ({
+  airports,
+  onSelectAirport,
+  blacklist,
+  searchAirports,
+}: any) => {
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [filteredAirports, setFilteredAirports] = useState<AirportList>([])
 
@@ -19,17 +24,18 @@ const AirportComboBox = ({ airports, onSelectAirport, blacklist }: any) => {
       return
     }
 
-    const filtered = airports.filter(
-      (airport: any) =>
-        airport.city
-          .replaceAll(' ', '')
-          .toLowerCase()
-          .indexOf(searchTerm.toLocaleLowerCase()) > -1 ||
-        airport.country
-          .replaceAll(' ', '')
-          .toLowerCase()
-          .indexOf(searchTerm.toLocaleLowerCase()) > -1
-    )
+    // const filtered = airports.filter(
+    //   (airport: any) =>
+    //     airport.city
+    //       .replaceAll(' ', '')
+    //       .toLowerCase()
+    //       .indexOf(searchTerm.toLocaleLowerCase()) > -1 ||
+    //     airport.country
+    //       .replaceAll(' ', '')
+    //       .toLowerCase()
+    //       .indexOf(searchTerm.toLocaleLowerCase()) > -1
+    // )
+    const filtered = searchAirports(searchTerm)
     setFilteredAirports(filtered)
   }, [searchTerm])
 
@@ -38,6 +44,17 @@ const AirportComboBox = ({ airports, onSelectAirport, blacklist }: any) => {
     setSearchTerm(airport.name)
     setFilteredAirports([])
   }
+
+  const AirportElementItem = ({ key, airport }: { key: any; airport: any }) => (
+    <Option key={key} onClick={() => handleOptionClick(airport)}>
+      {airport.flag === '-' ? (
+        '🌏'
+      ) : (
+        <FlagIcon alt={airport.country} country={airport.flag} />
+      )}
+      &nbsp;<p>{airport.city}</p>&nbsp;{airport.name}
+    </Option>
+  )
 
   return (
     <ComboBoxContainer>
@@ -52,17 +69,7 @@ const AirportComboBox = ({ airports, onSelectAirport, blacklist }: any) => {
           {filteredAirports
             .filter((airport: any) => airport.id !== blacklist?.id)
             .map((airport: any) => (
-              <Option
-                key={airport.id}
-                onClick={() => handleOptionClick(airport)}
-              >
-                {airport.flag === '-' ? (
-                  '🌏'
-                ) : (
-                  <FlagIcon alt={airport.country} country={airport.flag} />
-                )}
-                &nbsp;<p>{airport.city}</p>&nbsp;{airport.name}
-              </Option>
+              <AirportElementItem airport={airport} key={airport.id} />
             ))}
         </Dropdown>
       )}
