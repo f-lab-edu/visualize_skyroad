@@ -1,6 +1,6 @@
 import { styled } from '@stitches/react'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import React, { Suspense, useState } from 'react'
+import React, { Suspense, useEffect, useState } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { useNavigate } from 'react-router-dom'
 
@@ -21,9 +21,15 @@ const Home = () => {
   const [arrivalAirport, setArrivalAirport] = useState<Airport | null>(null)
   const [searchTrigger, setSearchTrigger] = useState<number>(0)
 
+  useEffect(() => {
+    // setSearchTrigger(0)
+  }, [departureAirport, arrivalAirport])
+
   const { data: flightList, isLoading } = useSuspenseQuery<FlightList>({
     queryKey: [
       'flightList',
+      departureAirport?.id,
+      arrivalAirport?.id,
       /*departureAirport, arrivalAirport,*/ searchTrigger,
     ],
     queryFn: () => {
