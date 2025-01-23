@@ -1,5 +1,5 @@
 import { styled } from '@stitches/react'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import FlagIcon from 'react-flagkit'
 
 import { AirportList } from '../../api/airports'
@@ -12,6 +12,7 @@ const AirportComboBox = ({
 }: any) => {
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [filteredAirports, setFilteredAirports] = useState<AirportList>([])
+  const isSelecting = useRef(false)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
@@ -19,34 +20,29 @@ const AirportComboBox = ({
   }
 
   useEffect(() => {
+    if (isSelecting.current) {
+      isSelecting.current = false
+      return
+    }
+
     if (searchTerm === '' || searchTerm.length < 2) {
       setFilteredAirports([])
       return
     }
 
-    // const filtered = airports.filter(
-    //   (airport: any) =>
-    //     airport.city
-    //       .replaceAll(' ', '')
-    //       .toLowerCase()
-    //       .indexOf(searchTerm.toLocaleLowerCase()) > -1 ||
-    //     airport.country
-    //       .replaceAll(' ', '')
-    //       .toLowerCase()
-    //       .indexOf(searchTerm.toLocaleLowerCase()) > -1
-    // )
     const filtered = searchAirports(searchTerm)
     setFilteredAirports(filtered)
   }, [searchTerm])
 
   const handleOptionClick = (airport: any) => {
+    isSelecting.current = true
     onSelectAirport(airport)
-    setSearchTerm(airport.name)
+    setSearchTerm(`${airport.city} ${airport.name}`)
     setFilteredAirports([])
   }
 
-  const AirportElementItem = ({ key, airport }: { key: any; airport: any }) => (
-    <Option key={key} onClick={() => handleOptionClick(airport)}>
+  const AirportElementItem = ({ airport }: { airport: any }) => (
+    <Option onClick={() => handleOptionClick(airport)}>
       {airport.flag === '-' ? (
         '🌏'
       ) : (
@@ -69,7 +65,9 @@ const AirportComboBox = ({
           {filteredAirports
             .filter((airport: any) => airport.id !== blacklist?.id)
             .map((airport: any) => (
-              <AirportElementItem airport={airport} key={airport.id} />
+              <div key={airport.id}>
+                <AirportElementItem airport={airport} />
+              </div>
             ))}
         </Dropdown>
       )}
