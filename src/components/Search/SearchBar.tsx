@@ -21,20 +21,22 @@ export const SearchBar = ({
   onArrivalSelect,
   onSearch,
 }: SearchBarProps) => {
-  const { airports } = useAirports()
+  const { airports, searchAirports } = useAirports()
 
   return (
     <RouteComboBoxContainer>
       <div>
         <AirportComboBox
           airports={airports}
-          blacklist={arrivalAirport}
+          // blacklist={arrivalAirport}
           onSelectAirport={onDepartureSelect}
+          searchAirports={searchAirports}
         />
         <AirportComboBox
           airports={airports}
-          blacklist={departureAirport}
+          // blacklist={departureAirport}
           onSelectAirport={onArrivalSelect}
+          searchAirports={searchAirports}
         />
       </div>
       <div>
