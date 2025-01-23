@@ -28,8 +28,8 @@ const Home = () => {
   const { data: flightList, isLoading } = useSuspenseQuery<FlightList>({
     queryKey: [
       'flightList',
-      departureAirport?.id,
-      arrivalAirport?.id,
+      // departureAirport?.id,
+      // arrivalAirport?.id,
       /*departureAirport, arrivalAirport,*/ searchTrigger,
     ],
     queryFn: () => {
