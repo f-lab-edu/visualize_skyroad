@@ -6,17 +6,16 @@ import useBearingWithMovingAverage from './useBearingWithMovingAverage'
 
 const BEARING_LIST_LENGTH = 5
 
+interface propsUesMapAnimationController {
+  line: FeatureCollection[] | null
+  map: MapInstance | null
+  zoomLevel: number
+}
 const useMapAnimationController = ({
   map,
   line,
   zoomLevel,
-  duration,
-}: {
-  map: MapInstance | null
-  line: FeatureCollection[] | null
-  zoomLevel: number
-  duration: number
-}) => {
+}: propsUesMapAnimationController) => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
   const [isPaused, setIsPaused] = useState<boolean>(false)
   const [mergedLine, setMergedLine] = useState<FeatureCollection | null>(null)
