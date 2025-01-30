@@ -10,6 +10,7 @@ import backgroundImage from '../assets/sky1.jpg'
 import { AppTitle } from '../components/AppTitle/AppTitle'
 import AppVersion from '../components/AppVersion'
 import ErrorFallback from '../components/ErrorCompoent/ErrorComponent'
+import Loading from '../components/Loading/Loading'
 import { SearchBar } from '../components/Search/SearchBar'
 import { SearchResults } from '../components/Search/SearchResult'
 import { STR_HOME } from '../constants/strings'
@@ -63,6 +64,7 @@ const Home = () => {
       <HomeLayout>
         <AppTitle />
 
+        {/* <Suspense fallback={<Loading type="default" />}> */}
         <SearchBar
           arrivalAirport={arrivalAirport}
           departureAirport={departureAirport}
@@ -70,8 +72,9 @@ const Home = () => {
           onDepartureSelect={setDepartureAirport}
           onSearch={handleSearch}
         />
+        {/* </Suspense> */}
 
-        <Suspense fallback={<div>{STR_HOME.LoadingText}</div>}>
+        <Suspense fallback={<Loading type="flight" />}>
           <SearchResults
             flightList={flightList}
             isLoading={isLoading}
