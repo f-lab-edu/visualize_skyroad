@@ -7,7 +7,9 @@
     "build": "tsc -b && vite build",
     "clean": "find src -name '*.js' -type f -delete",
     "dev": "vite",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint . --ext .ts,.tsx --cache --cache-location .eslintcache",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix --cache --cache-location .eslintcache"
   },
   "dependencies": {
     "@stitches/react": "^1.2.8",

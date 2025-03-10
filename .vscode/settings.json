@@ -11,11 +11,20 @@
     "javascript",
     "javascriptreact",
     "typescript",
-    "typescriptreact",
-    "json"
+    "typescriptreact"
   ],
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
+  "eslint.run": "onSave",
+  "eslint.debug": false,
+  "eslint.quiet": true,
+  "eslint.packageManager": "yarn",
+  "eslint.codeActionsOnSave.mode": "problems",
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ]
 }
