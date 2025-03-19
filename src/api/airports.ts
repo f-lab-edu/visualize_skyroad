@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 
 import { countryNameToCode } from '../countryNameToCode'
 import { AirportFetchError } from '../types/error'
-import { CountryAlias } from '../types/airport'
+import { CityKeyword, CountryAlias } from '../types/airport'
 
 export type AirportList = Awaited<ReturnType<typeof fetchAirports>>
 export type Airport = AirportList[number]
@@ -242,7 +242,7 @@ const parseCSV = (data: string) => {
 const fetchAirports = async () => {
   try {
     const response = await fetch('/airports.dat')
-    
+
     if (!response.ok) {
       throw new AirportFetchError(
         '공항정보를 가져오지 못하였습니다.',
@@ -293,7 +293,7 @@ export const useAirports = () => {
 
   const searchAirports = (query: string) => {
     if (!query) return airports
-    
+
     // 한 번의 검색으로 처리
     const results = fuse.search(query)
     return results

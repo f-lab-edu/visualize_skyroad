@@ -25,16 +25,41 @@ const useMapAnimationController = ({
   const { bearing, addBearing, calculateBearing } =
     useBearingWithMovingAverage(BEARING_LIST_LENGTH)
 
+  const calculateSpeed = (coordinates: number[][]): number => {
+    if (!coordinates || coordinates.length < 2) return 1
+    let totalDistance = 0
+    for (let i = 0; i < coordinates.length - 1; i++) {
+      const [lon1, lat1] = coordinates[i]
+      const [lon2, lat2] = coordinates[i + 1]
+      const R = 6371 // 지구 반경 (km)
+      const dLat = ((lat2 - lat1) * Math.PI) / 180
+      const dLon = ((lon2 - lon1) * Math.PI) / 180
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2)
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+      totalDistance += R * c
+    }
+    const baseDistance = 900
+    const speed = Math.max(0.5, Math.min(2, baseDistance / totalDistance))
+
+    return speed
+  }
+
   const handleUpdate = (deltaTime: number) => {
     setCurrentFrame((prevFrame) => {
-      const nextFrame = Math.floor(prevFrame + deltaTime * 1)
+      if (!mergedLine?.features[0]?.geometry.coordinates) return prevFrame
 
-      if (mergedLine?.features[0]?.geometry.coordinates[nextFrame]) {
-        const currentPosition =
-          mergedLine.features[0].geometry.coordinates[nextFrame]
-        const nextPosition =
-          mergedLine.features[0].geometry.coordinates[nextFrame + 1] ||
-          currentPosition
+      const coordinates = mergedLine.features[0].geometry.coordinates
+      const speed = calculateSpeed(coordinates)
+      const nextFrame = Math.floor(prevFrame + deltaTime * speed)
+
+      if (coordinates[nextFrame]) {
+        const currentPosition = coordinates[nextFrame]
+        const nextPosition = coordinates[nextFrame + 1] || currentPosition
 
         const calculatedBearing = calculateBearing(
           currentPosition[1],
@@ -143,7 +168,6 @@ const useMapAnimationController = ({
     }
 
     previousTimeRef.current = null
-    // handleStop()
   }
 
   useEffect(() => {
@@ -157,8 +181,6 @@ const useMapAnimationController = ({
       }
     }
   }, [isPlaying, isPaused])
-
-  // console.log(map, line, zoomLevel, duration)
 
   return {
     bearing,
