@@ -9,7 +9,6 @@ import LoadingScreen from './components/Loading/Loading'
 
 const Home = lazy(() => import('./pages/Home'))
 const FlightOnMap = lazy(() => import('./pages/FlightOnMap'))
-const TestMap = lazy(() => import('./pages/TestPage'))
 
 const queryClient = new QueryClient()
 
@@ -22,7 +21,6 @@ function App() {
             <Routes>
               <Route element={<Home />} path="/" />
               <Route element={<FlightOnMap />} path="flight" />
-              <Route element={<TestMap />} path="/test" />
             </Routes>
           </Suspense>
         </ErrorBoundary>

@@ -62,7 +62,6 @@ const FlightMap: React.FC = ({}) => {
     isPaused,
     currentFrame,
   } = useMapAnimationController({
-    duration: 1000,
     line,
     map,
     zoomLevel,

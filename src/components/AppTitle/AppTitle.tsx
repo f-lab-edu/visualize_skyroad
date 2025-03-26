@@ -1,15 +1,22 @@
-import { styled } from '@stitches/react'
+import { keyframes, styled } from '@stitches/react'
 import React from 'react'
 
 import { STR_HOME } from '../../constants/strings'
 
 export const AppTitle = () => (
   <HomeHeaderText>
-    <div className="title">{STR_HOME.Header}</div>
+    <div className="title">
+      <span style={{ position: 'relative' }}>{STR_HOME.Header}</span>
+    </div>
     <p>{STR_HOME.Greeting}</p>
     <p>{STR_HOME.Description}</p>
   </HomeHeaderText>
 )
+
+const waveAnimation = keyframes({
+  '0%': { backgroundPosition: '0 0' },
+  '100%': { backgroundPosition: '200% 0' },
+})
 
 const HomeHeaderText = styled('header', {
   color: 'WhiteSmoke',
@@ -28,24 +35,31 @@ const HomeHeaderText = styled('header', {
     fontSize: '4rem',
   },
 
-  div: {
+  '.title': {
     position: 'relative',
-    color: 'SmokeWhite',
+    color: 'whitesmoke',
     textDecoration: 'none',
+    display: 'inline-block',
 
-    '::before': {
-      content: "''",
+    '&::before': {
+      content: '""',
       position: 'absolute',
-      left: 0,
-      bottom: '-4px', // 텍스트 하단에서 조금 더 여유를 둠
-      width: 0,
-      height: '2px',
-      backgroundColor: '#4A90E2',
-      transition: 'width 0.3s ease',
+      left: '0',
+      bottom: '10%',
+      width: '100%',
+      height: '35px',
+      backgroundColor: 'rgba(135, 206, 235, 0.4)',
+      zIndex: '0',
+      transition: 'all 0.3s ease',
     },
 
     '&:hover::before': {
-      width: '100%',
+      height: '45px',
+      backgroundColor: 'rgba(135, 206, 235, 0.6)',
+      backgroundImage:
+        'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent)',
+      backgroundSize: '200% 100%',
+      animation: `${waveAnimation} 2s infinite linear`,
     },
   },
 

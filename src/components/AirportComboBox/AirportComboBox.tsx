@@ -78,41 +78,51 @@ const AirportComboBox = ({
 export default AirportComboBox
 
 const ComboBoxContainer = styled('div', {
+  position: 'relative',
   display: 'flex',
   flexDirection: 'column',
   minWidth: '250px',
   padding: '8px',
   border: '1px solid #CCC',
   borderRadius: '8px',
-  backgroundColor: '#EFEFEF', //'$background',
+  backgroundColor: '#EFEFEF',
 })
 const Input = styled('input', {
   padding: '8px',
   borderRadius: '4px',
   border: '1px solid #CCC',
   marginBottom: '8px',
-  // position: 'absolute',
+  width: '100%',
+  boxSizing: 'border-box',
 })
 const Dropdown = styled('ul', {
+  position: 'absolute',
+  top: '100%',
+  left: '0',
+  right: '0',
+  zIndex: 1000,
   listStyle: 'none',
   padding: '0',
   margin: '0',
   border: '1px solid #CCC',
   borderRadius: '4px',
   backgroundColor: '#FFF',
-  maxHeight: '150px',
-  maxWidth: '350px',
+  maxHeight: '200px',
   overflowY: 'auto',
+  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
 })
 const Option = styled('li', {
   display: 'flex',
   justifyContent: 'flex-start',
   alignItems: 'center',
   textAlign: 'left',
-  width: 'max-content',
   padding: '8px',
-  overflow: 'hidden',
   cursor: 'pointer',
+  width: '100%',
+  boxSizing: 'border-box',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
 
   '&:hover': {
     backgroundColor: '#DDD',

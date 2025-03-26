@@ -41,8 +41,6 @@ const FlightOnMap: React.FC = ({}) => {
   const handleToggleLockOn = () => {
     setLockon(!lockOn)
   }
-
-  // 1. 라인 획득
   const { line, route, totalFrames } = useLine({
     arrival,
     departure,
@@ -50,8 +48,6 @@ const FlightOnMap: React.FC = ({}) => {
     map,
   })
   const { altitude } = useAltitude({ route })
-
-  // 2. 라인을 애니메이션으로 그리기
   const {
     bearing,
     mergedLine,
@@ -62,7 +58,6 @@ const FlightOnMap: React.FC = ({}) => {
     isPaused,
     currentFrame,
   } = useMapAnimationController({
-    duration: 1000,
     line,
     map,
     zoomLevel,
@@ -159,7 +154,6 @@ const FlightOnMap: React.FC = ({}) => {
           mergedLine?.features[0].geometry.coordinates[0] || [0, 0]
 
         mapInstance.flyTo({
-          // mapInstance.easeTo({
           center: [longitude, latitude],
           duration: 200,
         })
@@ -281,7 +275,7 @@ const FlightOnMap: React.FC = ({}) => {
       {isLoading && !mergedLine && (
         <LoadingOverlay>
           <div className="modal">
-            <p className="loadingText">경로데이터를 가져오 있습니다...</p>
+            <p className="loadingText">경로데이터를 가져오고 있습니다...</p>
           </div>
         </LoadingOverlay>
       )}
@@ -290,22 +284,22 @@ const FlightOnMap: React.FC = ({}) => {
         <AnimationControlWrapper>
           <div>
             <button onClick={handleShowIDLToggle}>
-              날짜변경선&nbsp;{showIDL ? 'OFF' : 'ON'}
+              날짜변경선&nbsp;{showIDL ? '표시' : '숨김'}
             </button>
           </div>
           <VSkyButton onClick={handleToggleLockOn} toggled={lockOn}>
-            📌 {lockOn ? 'Locked On' : 'Locked Off'}{' '}
+            📌 {lockOn ? '잠금' : '잠금해제'}
           </VSkyButton>
 
           <button disabled={isPlaying} onClick={play}>
-            Play
+            재생
           </button>
 
           <button disabled={isPaused || !isPlaying} onClick={pause}>
-            Pause
+            일시정지
           </button>
 
-          <button onClick={stop}>Stop</button>
+          <button onClick={stop}>정지</button>
 
           <select disabled onChange={handleChangeAniSpeed}>
             <option value={10}>x10</option>
@@ -360,7 +354,6 @@ const FlightOnMap: React.FC = ({}) => {
                 style={{
                   width: `${5 * getMarkerSize(zoomLevel)}px`,
                   height: `${5 * getMarkerSize(zoomLevel)}px`,
-                  // transform: `rotate(${bearing}deg)`,
                   filter: `drop-shadow(2px 25px 1px rgba(0,0,0,.4))`,
                 }}
               />
