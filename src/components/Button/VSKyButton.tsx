@@ -22,11 +22,16 @@ type ButtonProps = {
   children: React.ReactNode
   onClick?: () => void
   toggled?: boolean
+  disabled?: boolean
 }
 
-function VSkyButton({ children, onClick, toggled }: ButtonProps) {
+function VSkyButton({ children, onClick, toggled, disabled }: ButtonProps) {
   return (
-    <Button className={toggled ? 'toggled' : ''} onClick={onClick}>
+    <Button
+      className={toggled ? 'toggled' : ''}
+      onClick={onClick}
+      disabled={disabled}
+    >
       {children}
     </Button>
   )

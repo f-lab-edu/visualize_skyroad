@@ -9,7 +9,10 @@
     "dev": "vite",
     "preview": "vite preview",
     "lint": "eslint . --ext .ts,.tsx --cache --cache-location .eslintcache",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix --cache --cache-location .eslintcache"
+    "lint:fix": "eslint . --ext .ts,.tsx --fix --cache --cache-location .eslintcache",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@stitches/react": "^1.2.8",
@@ -34,6 +37,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/d3": "^7.4.3",
     "@types/jest": "^29.5.13",
     "@types/node": "^22.5.4",
@@ -43,6 +50,7 @@
     "@typescript-eslint/parser": "^8.18.2",
     "@typescript-eslint/types": "^8.5.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "@vitest/ui": "3.1.1",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-config-tonyfromundefined": "^0.14.0",
@@ -53,9 +61,12 @@
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.11",
     "globals": "^15.9.0",
+    "jsdom": "^26.0.0",
+    "msw": "^2.7.3",
     "prettier": "^3.3.3",
     "typescript": "^5.6.2",
-    "vite": "^5.4.6"
+    "vite": "^5.4.6",
+    "vitest": "^3.1.1"
   },
   "packageManager": "yarn@4.5.3"
 }

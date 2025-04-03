@@ -43,7 +43,7 @@ const useMapAnimationController = ({
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
       totalDistance += R * c
     }
-    const baseDistance = 900
+    const baseDistance = 100 // km
     const speed = Math.max(0.5, Math.min(2, baseDistance / totalDistance))
 
     return speed

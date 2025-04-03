@@ -259,17 +259,7 @@ const FlightOnMap: React.FC = ({}) => {
     map?.getLayer('dateLine') && map.removeLayer('dateLine')
     map?.getSource('dateLine') && map.removeSource('dateLine')
   }
-  const [frame, setFrame] = useState<number>(0)
-  const ani = () =>
-    setTimeout(() => {
-      console.log(frame)
-      setFrame(frame + 1)
-    }, 500)
-  useEffect(() => {
-    ani()
-  }, [frame === 0])
   currentFrame > 0 && console.log(currentFrame, bearing)
-  console.log('HOWMANYTIMES?:', frame, route?.path, route?.path[frame])
   return (
     <Container>
       {isLoading && !mergedLine && (
@@ -283,25 +273,35 @@ const FlightOnMap: React.FC = ({}) => {
       <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
         <AnimationControlWrapper>
           <div>
-            <button onClick={handleShowIDLToggle}>
+            <button disabled={isLoading} onClick={handleShowIDLToggle}>
               날짜변경선&nbsp;{showIDL ? '표시' : '숨김'}
             </button>
           </div>
-          <VSkyButton onClick={handleToggleLockOn} toggled={lockOn}>
+
+          <VSkyButton
+            onClick={handleToggleLockOn}
+            toggled={lockOn}
+            disabled={isLoading}
+          >
             📌 {lockOn ? '잠금' : '잠금해제'}
           </VSkyButton>
 
-          <button disabled={isPlaying} onClick={play}>
+          <button disabled={isLoading || isPlaying} onClick={play}>
             재생
           </button>
 
-          <button disabled={isPaused || !isPlaying} onClick={pause}>
+          <button
+            disabled={isLoading || isPaused || !isPlaying}
+            onClick={pause}
+          >
             일시정지
           </button>
 
-          <button onClick={stop}>정지</button>
+          <button disabled={isLoading} onClick={stop}>
+            정지
+          </button>
 
-          <select disabled onChange={handleChangeAniSpeed}>
+          <select disabled={isLoading} onChange={handleChangeAniSpeed}>
             <option value={10}>x10</option>
             <option value={50}>x50</option>
             <option value={1}>x1</option>
@@ -342,23 +342,6 @@ const FlightOnMap: React.FC = ({}) => {
               />
             </Marker>
           ))}
-
-          {route?.path && route.path && route.path.length < frame && (
-            <Marker
-              latitude={route.path[frame][1]}
-              longitude={route.path[frame][2]}
-            >
-              <img
-                alt="Airplane"
-                src="/airbus.svg"
-                style={{
-                  width: `${5 * getMarkerSize(zoomLevel)}px`,
-                  height: `${5 * getMarkerSize(zoomLevel)}px`,
-                  filter: `drop-shadow(2px 25px 1px rgba(0,0,0,.4))`,
-                }}
-              />
-            </Marker>
-          )}
 
           {mergedLine &&
             mergedLine?.features[0]?.geometry?.coordinates.length >=
