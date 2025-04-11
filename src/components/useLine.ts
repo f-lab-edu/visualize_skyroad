@@ -56,7 +56,7 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
       setTotalFrames(
         line.length > 1
           ? line[0].features[0].geometry.coordinates.length +
-              line[1].features[0].geometry.coordinates.length
+          line[1].features[0].geometry.coordinates.length
           : line[0].features[0].geometry.coordinates.length
       )
     }
@@ -332,51 +332,39 @@ const drawStraightLine = async (
   drawLineOnRouteLayer(map, line, option)
 }
 
-const isPathCrossingIDL = (
-  A: FlightPathElement,
-  B: FlightPathElement
-): RouteDirection => {
+// 적도선 통과 여부만 판별하는 별도 함수
+const isPathCrossingPrimeMeridian = (A: FlightPathElement, B: FlightPathElement): boolean => {
+  return (1 > Math.abs(A.longitude) && Math.abs(A.longitude) > 0) ||
+    (1 > Math.abs(B.longitude) && Math.abs(B.longitude) > 0)
+}
+
+// 날짜변경선 통과만 판별하는 함수
+const isPathCrossingIDL = (A: FlightPathElement, B: FlightPathElement): RouteDirection => {
   const Ax = A.longitude
   const Bx = B.longitude
-  // -0>= W >=-180, 0 <= E <= 180
-  // case1 A:W B:W A < B then -->
-  // case2 A:W B:W A > B then  <--
-  // case3 A:W B:E  then -->
-  // case4 A:E B:W  then -->
-  // case5 A:E B:E A < B  then -->
-  // case6 A:E B:E A > B  then <--
-  // case7 A:E B:W  then -->
-  // case8 A:W B:E <--
-  if (-0 >= Ax && Ax >= -180 && 0 <= Bx && Bx <= 180) {
-    if (1 > Math.abs(Ax) && Math.abs(Ax) > 0) {
-      return '-->'
-    }
-    return '<--'
-  }
-  if (-0 >= Bx && Bx >= -180 && 0 <= Ax && Ax <= 180) {
-    if (1 > Math.abs(Ax) && Math.abs(Ax) > 0) {
-      return '<--'
-    }
-    return '-->'
-  }
+
+  if (-0 >= Ax && Ax >= -180 && 0 <= Bx && Bx <= 180) return '<--'
+  if (-0 >= Bx && Bx >= -180 && 0 <= Ax && Ax <= 180) return '-->'
   return false
 }
 
+// 교차점 조정도 분리
 const adjustCrossingPoints = (
   pointA: FlightPathElement,
   pointB: FlightPathElement,
   direction: East2West | West2East,
   airports: { A: any; B: any }
 ) => {
-  if (1 > Math.abs(pointA.longitude) && Math.abs(pointA.longitude) > 0) {
-    console.log('cross 적오선---', pointA, pointB, direction)
+  if (isPathCrossingPrimeMeridian(pointA, pointB)) {
+    // 적도선 처리
     pointA.longitude = -0
     pointB.longitude = 0
     pointA.latitude = 51.2975
     pointB.latitude = 51.2975
   } else {
+    // 날짜변경선 처리
     const latitude = handleFindCrossing(airports.A, airports.B)
-    pointA.latitude = latitude // (pointA.latitude + pointB.latitude) / 2
+    pointA.latitude = latitude
     pointB.latitude = latitude
     if (direction === '-->') {
       pointA.longitude = 180
@@ -386,7 +374,6 @@ const adjustCrossingPoints = (
       pointB.longitude = 180
     }
   }
-  console.log('-----A, B', pointA, pointB)
 }
 
 const handleFindCrossing = (A: any, B: any): number => {

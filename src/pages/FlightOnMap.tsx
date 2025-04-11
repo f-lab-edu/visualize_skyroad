@@ -259,7 +259,30 @@ const FlightOnMap: React.FC = ({}) => {
     map?.getLayer('dateLine') && map.removeLayer('dateLine')
     map?.getSource('dateLine') && map.removeSource('dateLine')
   }
-  currentFrame > 0 && console.log(currentFrame, bearing)
+
+  // const isPathCrossingPrimeMeridian = (
+  //   A: FlightPathElement,
+  //   B: FlightPathElement
+  // ): RouteDirection => {
+  //   if (A.longitude < 0 && B.longitude > 0) return '-->'
+  //   if (A.longitude > 0 && B.longitude < 0) return '<--'
+  //   return false
+  // }
+
+  // const adjustPrimeMeridianPath = (
+  //   pointA: FlightPathElement,
+  //   pointB: FlightPathElement,
+  //   direction: RouteDirection
+  // ) => {
+  //   if (!direction) return [pointA, pointB]
+
+  //   const latitude = handleFindCrossing(pointA, pointB)
+  //   return [
+  //     { ...pointA, longitude: direction === '-->' ? 0 : 0, latitude },
+  //     { ...pointB, longitude: direction === '-->' ? 0 : 0, latitude },
+  //   ]
+  // }
+
   return (
     <Container>
       {isLoading && !mergedLine && (
