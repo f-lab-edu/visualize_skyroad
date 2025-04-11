@@ -444,13 +444,6 @@ const FlightOnMap: React.FC = ({}) => {
                   alt={departure.country}
                   style={{ width: '14px', height: '10px', display: 'block' }}
                 />
-                {departure.mainCarrier && (
-                  <img
-                    src={`https://flagcdn.com/${departure.airlineFlag.toLowerCase()}.svg`}
-                    alt={departure.mainCarrier}
-                    style={{ width: '14px', height: '10px', display: 'block' }}
-                  />
-                )}
               </div>
             </div>
           </Marker>
@@ -493,13 +486,6 @@ const FlightOnMap: React.FC = ({}) => {
                   alt={arrival.country}
                   style={{ width: '14px', height: '10px', display: 'block' }}
                 />
-                {arrival.mainCarrier && (
-                  <img
-                    src={`https://flagcdn.com/${arrival.airlineFlag.toLowerCase()}.svg`}
-                    alt={arrival.mainCarrier}
-                    style={{ width: '14px', height: '10px', display: 'block' }}
-                  />
-                )}
               </div>
             </div>
           </Marker>
@@ -535,59 +521,160 @@ const GraphWrapper = styled('div', {
   left: '0',
   width: '100%',
   transition: 'transform 0.3s ease-in-out',
+  zIndex: 1000,
+  padding: '20px',
+  boxSizing: 'border-box',
+
+  '@media (max-width: 768px)': {
+    padding: '10px',
+  },
 })
 
 const AnimationControlWrapper = styled('div', {
-  backgroundColor: 'skyblue',
-  padding: '5px',
-  position: 'relative',
+  position: 'absolute',
+  top: '20px',
+  left: '50%',
+  transform: 'translateX(-50%)',
   display: 'flex',
-  justifyItems: 'center',
-  justifyContent: 'center',
-  height: '30px',
+  gap: '4px',
+  alignItems: 'center',
+  backgroundColor: 'rgba(255, 255, 255, 0.85)',
+  padding: '6px 8px',
+  borderRadius: '25px',
+  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
+  zIndex: 1000,
+  backdropFilter: 'blur(8px)',
+  transition: 'all 0.3s ease',
+
+  '@media (max-width: 768px)': {
+    top: '10px',
+    padding: '4px 6px',
+    gap: '4px',
+    flexWrap: 'wrap',
+    width: '90%',
+    justifyContent: 'center',
+  },
 
   button: {
     border: 'none',
     color: 'white',
-    padding: '0 20px',
-    borderRadius: '15px',
-    margin: '0 5px',
-    background: '#005A9C',
-    fontSize: '0.95rem',
+    padding: '6px 12px',
+    borderRadius: '20px',
+    background: '#4A90E2',
+    fontSize: '0.9rem',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    minWidth: '80px',
+    height: '32px',
+    justifyContent: 'center',
+    fontWeight: '500',
+
+    '&:hover': {
+      background: '#357ABD',
+    },
+
     '&:disabled': {
       background: '#b0b0b0',
       color: '#e0e0e0',
       opacity: 0.6,
       cursor: 'not-allowed',
     },
-  },
 
-  select: {
-    border: '1px solid gray',
-    borderRadius: '5px',
-    padding: '5px',
-    fontSize: '16px',
-    backgroundColor: 'white',
-    color: 'black',
-    margin: '0 5px',
-    outline: 'none',
-    ':focus': {
-      borderColor: 'blue',
-      boxShadow: '0 0 5px rgba(0, 0, 255, 0.5)',
+    '@media (max-width: 768px)': {
+      minWidth: '32px',
+      width: '32px',
+      height: '32px',
+      padding: '6px',
+      fontSize: '0',
+      gap: '0',
+
+      '&::before': {
+        content: '',
+        display: 'block',
+        width: '18px',
+        height: '18px',
+        backgroundSize: 'contain',
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center',
+      },
+
+      '&:nth-child(1)::before': {
+        backgroundImage: 'url("/icons/date-line.svg")',
+      },
+      '&:nth-child(2)::before': {
+        backgroundImage: 'url("/icons/lock.svg")',
+      },
+      '&:nth-child(3)::before': {
+        backgroundImage: 'url("/icons/play.svg")',
+      },
+      '&:nth-child(4)::before': {
+        backgroundImage: 'url("/icons/pause.svg")',
+      },
+      '&:nth-child(5)::before': {
+        backgroundImage: 'url("/icons/stop.svg")',
+      },
+      '&:nth-child(6)::before': {
+        backgroundImage: 'url("/icons/speed.svg")',
+      },
     },
   },
 
-  p: {
-    color: 'SlateGray',
-    fontSize: '.8rem',
-    margin: 'auto',
+  select: {
+    border: '1px solid #e0e0e0',
+    borderRadius: '20px',
+    padding: '4px 8px',
+    fontSize: '0.9rem',
+    backgroundColor: 'white',
+    color: '#333',
+    outline: 'none',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    minWidth: '70px',
+    height: '32px',
+
+    '@media (max-width: 768px)': {
+      minWidth: '60px',
+      padding: '4px',
+      fontSize: '0.8rem',
+    },
+
+    '&:focus': {
+      borderColor: '#4A90E2',
+      boxShadow: '0 0 0 2px rgba(74, 144, 226, 0.2)',
+    },
+
+    '&:disabled': {
+      backgroundColor: '#f5f5f5',
+      cursor: 'not-allowed',
+    },
   },
 
   '#frame-indicator': {
-    width: 'max-content',
     display: 'flex',
-    justifyItems: 'center',
+    alignItems: 'center',
+    gap: '4px',
+    color: '#333',
+    fontSize: '0.85rem',
+    fontWeight: '500',
+    backgroundColor: '#E8E8E8',
+    padding: '4px 8px',
+    borderRadius: '20px',
+    minWidth: '80px',
+    height: '24px',
     justifyContent: 'center',
+
+    '@media (max-width: 768px)': {
+      fontSize: '0.8rem',
+      gap: '2px',
+      minWidth: '60px',
+    },
+
+    span: {
+      color: '#4A90E2',
+    },
   },
 })
 
@@ -600,18 +687,13 @@ const Container = styled('div', {
   height: '100vh',
   margin: '0',
   fontFamily: 'Arial, sans-serif',
-  animation: 'rotateBackground 10s linear infinite', // 애니메이션 추가
-  '.LoadingText': {
-    fontSize: '2rem',
-    marginBottom: '20px',
-    color: 'White',
-    background: 'skyblue',
-    opacity: '0.85',
-    padding: '10px 25px',
-    borderRadius: '25px',
+  animation: 'rotateBackground 10s linear infinite',
+  position: 'relative',
+  overflow: 'hidden',
+
+  '@media (max-width: 768px)': {
+    flexDirection: 'column',
   },
-  backgroundBlendMode: 'overlay',
-  backgroundOpacity: '0.9',
 
   '@keyframes rotateBackground': {
     '0%': {
@@ -625,31 +707,60 @@ const Container = styled('div', {
 
 const ZoomIndicator = styled('div', {
   position: 'absolute',
+  top: '20px',
+  right: '20px',
+  background: 'rgba(255, 255, 255, 0.9)',
+  color: '#333',
+  padding: '8px 16px',
+  borderRadius: '12px',
+  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+  backdropFilter: 'blur(8px)',
+  zIndex: 1000,
+  fontSize: '0.9rem',
+  fontWeight: '500',
 
-  top: 5,
-  right: 10,
-  background: 'rgba(0, 0, 0, 0.5)',
-  color: 'white',
-  padding: '5px',
-  borderRadius: '5px',
+  '@media (max-width: 768px)': {
+    top: 'auto',
+    bottom: '20px',
+    right: '20px',
+    padding: '6px 12px',
+    fontSize: '0.8rem',
+  },
 })
 
-const StyleMap = { width: '100%', height: '100vh' }
+const StyleMap = {
+  width: '100%',
+  height: '100vh',
+  position: 'relative' as const,
+}
 
 const ToggleButton = styled('button', {
   position: 'fixed',
-  bottom: '8px',
+  bottom: '20px',
   left: '50%',
   transform: 'translateX(-50%)',
-  backgroundColor: '#4A90E2',
+  backgroundColor: '#005A9C',
   color: 'white',
   border: 'none',
-  borderRadius: '8px',
-  padding: '8px 16px',
+  borderRadius: '12px',
+  padding: '10px 20px',
   cursor: 'pointer',
-  zIndex: 1000,
-  ':hover': {
-    backgroundColor: '#357ABD',
+  zIndex: 1001,
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+  transition: 'all 0.3s ease',
+
+  '&:hover': {
+    transform: 'translateX(-50%) translateY(-2px)',
+    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.15)',
+  },
+
+  '@media (max-width: 768px)': {
+    bottom: '10px',
+    padding: '8px 16px',
+    fontSize: '0.9rem',
   },
 })
 
@@ -663,14 +774,24 @@ const LoadingOverlay = styled('div', {
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
-  zIndex: 1000,
+  zIndex: 2000,
+  backdropFilter: 'blur(8px)',
+
   '.modal': {
     background: 'white',
-    padding: '20px 40px',
-    borderRadius: '10px',
-    boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.3)',
+    padding: '24px 40px',
+    borderRadius: '16px',
+    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
     textAlign: 'center',
-    fontSize: '1.5rem',
+    fontSize: '1.2rem',
     color: '#333',
+    maxWidth: '90%',
+    width: '400px',
+
+    '@media (max-width: 768px)': {
+      padding: '16px 24px',
+      fontSize: '1rem',
+      width: '300px',
+    },
   },
 })

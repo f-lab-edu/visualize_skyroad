@@ -30,10 +30,20 @@ const getAltitudeFromRoute = async ({
 }: {
   route: any
 }): Promise<AltitudeGraphData[]> => {
-  const rawData = route.path.map((path: any) => ({
-    time: path[0], // UNIX timestamp
-    altitude: path[3], // Altitude value
-  }))
+  if (!route?.path || !Array.isArray(route.path)) {
+    return []
+  }
+
+  const rawData = route.path
+    .filter((path: any) => Array.isArray(path) && path.length >= 4)
+    .map((path: any) => ({
+      time: path[0] || 0, // UNIX timestamp
+      altitude: path[3] || 0, // Altitude value
+    }))
+
+  if (rawData.length === 0) {
+    return []
+  }
 
   const sortedData = rawData.sort((a: any, b: any) => a.time - b.time)
 

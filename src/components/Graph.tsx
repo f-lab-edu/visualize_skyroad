@@ -56,7 +56,7 @@ const Graph: React.FC<GraphProps> = ({
     // 현재 시간에 따른 테마 색상 결정
     const currentTime =
       timeData[Math.floor((currentFrame / totalFrames) * timeData.length)]
-    const currentHour = currentTime.getHours()
+    const currentHour = currentTime?.getHours() || 12 // 기본값 12시로 설정
 
     const themeColor = '#FF9800'
     const backgroundColor = '#f8f9fa'

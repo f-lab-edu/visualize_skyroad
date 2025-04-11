@@ -21,6 +21,7 @@
     "@turf/turf": "^6.5.0",
     "@types/glob": "^8.1.0",
     "d3": "^7.9.0",
+    "framer-motion": "^12.6.5",
     "fuse.js": "^7.0.0",
     "idb": "^8.0.0",
     "lucide-react": "^0.471.0",
