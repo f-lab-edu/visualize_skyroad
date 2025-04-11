@@ -72,6 +72,38 @@ const cityKeywords: Record<string, CityKeyword> = {
     related: ['YYC'],
     aliases: ['앨버타']
   },
+  '홍콩': {
+    related: ['홍콩국제공항', 'HKG'],
+    aliases: ['홍콩특별행정구']
+  },
+  '싱가포르': {
+    related: ['창이', 'SIN'],
+    aliases: ['싱가포르공화국']
+  },
+  '방콕': {
+    related: ['수완나품', 'BKK'],
+    aliases: ['방콕국제공항']
+  },
+  '마닐라': {
+    related: ['니노이 아키노', 'MNL'],
+    aliases: ['필리핀']
+  },
+  '하노이': {
+    related: ['노이바이', 'HAN'],
+    aliases: ['베트남']
+  },
+  '호치민': {
+    related: ['떤선녓', 'SGN'],
+    aliases: ['사이공']
+  },
+  '타이페이': {
+    related: ['타오위안', 'TPE'],
+    aliases: ['대만']
+  },
+  '마카오': {
+    related: ['마카오국제공항', 'MFM'],
+    aliases: ['마카오특별행정구']
+  },
 }
 
 // 2. 일관된 타입 정의
@@ -309,6 +341,74 @@ const majorAirportKoreanNames: Record<string, AirportKoreanName> = {
     korCity: '이스탄불',
     korCountry: '터키',
     searchKeywords: ['이스탄불', '터키'],
+  },
+
+  // 아시아 주요 공항
+  HKG: {
+    korName: '홍콩국제공항',
+    korCity: '홍콩',
+    korCountry: '홍콩',
+    searchKeywords: ['홍콩특별행정구', 'HKG'],
+  },
+  SIN: {
+    korName: '창이 국제공항',
+    korCity: '싱가포르',
+    korCountry: '싱가포르',
+    searchKeywords: ['창이', 'SIN'],
+  },
+  BKK: {
+    korName: '수완나품 국제공항',
+    korCity: '방콕',
+    korCountry: '태국',
+    searchKeywords: ['수완나품', 'BKK'],
+  },
+  MNL: {
+    korName: '니노이 아키노 국제공항',
+    korCity: '마닐라',
+    korCountry: '필리핀',
+    searchKeywords: ['니노이 아키노', 'MNL'],
+  },
+  HAN: {
+    korName: '노이바이 국제공항',
+    korCity: '하노이',
+    korCountry: '베트남',
+    searchKeywords: ['노이바이', 'HAN'],
+  },
+  SGN: {
+    korName: '떤선녓 국제공항',
+    korCity: '호치민',
+    korCountry: '베트남',
+    searchKeywords: ['떤선녓', 'SGN', '사이공'],
+  },
+  TPE: {
+    korName: '타오위안 국제공항',
+    korCity: '타이페이',
+    korCountry: '대만',
+    searchKeywords: ['타오위안', 'TPE'],
+  },
+  MFM: {
+    korName: '마카오국제공항',
+    korCity: '마카오',
+    korCountry: '마카오',
+    searchKeywords: ['마카오특별행정구', 'MFM'],
+  },
+  EZE: {
+    korName: '미니스트로 피스타리니 국제공항',
+    korCity: '부에노스아이레스',
+    korCountry: '아르헨티나',
+    searchKeywords: ['미니스트로 피스타리니', 'EZE'],
+  },
+  JNB: {
+    korName: 'OR 탐보 국제공항',
+    korCity: '요하네스버그',
+    korCountry: '남아프리카공화국',
+    searchKeywords: ['OR 탐보', 'JNB'],
+  },
+  CPT: {
+    korName: '케이프타운 국제공항',
+    korCity: '케이프타운',
+    korCountry: '남아프리카공화국',
+    searchKeywords: ['케이프타운', 'CPT'],
   },
 }
 
@@ -605,11 +705,14 @@ export const useAirports = () => {
         { name: 'korCountry', weight: 1.5 },
         { name: 'searchKeywords', weight: 1.8 },
         { name: 'iata', weight: 1 },
+        { name: 'city', weight: 1.5 },
+        { name: 'country', weight: 1.2 },
       ],
       threshold: 0.4,
       includeScore: true,
       ignoreLocation: true,
       useExtendedSearch: true,
+      minMatchCharLength: 2,
     }
     return new Fuse(airports, options)
   }, [airports])
@@ -617,7 +720,18 @@ export const useAirports = () => {
   const searchAirports = (query: string) => {
     if (!query) return airports
 
-    const results = fuse.search(query)
+    // 검색어 정규화
+    const normalizedQuery = query.toLowerCase().trim()
+
+    // IATA 코드 검색 (3글자 정확히 일치)
+    if (normalizedQuery.length === 3 && /^[A-Za-z]{3}$/.test(normalizedQuery)) {
+      const exactMatch = airports.find(airport =>
+        airport.iata.toLowerCase() === normalizedQuery
+      )
+      if (exactMatch) return [exactMatch]
+    }
+
+    const results = fuse.search(normalizedQuery)
     return results
       .filter(result => result.score && result.score < 0.7)
       .map(result => result.item)
