@@ -1,0 +1,78 @@
+name: Deploy to S3
+
+on:
+  push:
+    branches:
+      - rollback # 또는 master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build
+        run: yarn build
+        env:
+          VITE_MAPTILER_KEY: ${{ secrets.VITE_MAPTILER_KEY }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: Deploy to S3
+        run: |
+          # HTML 파일: 캐시 없음 (항상 최신)
+          aws s3 sync dist s3://v-sky-app \
+            --delete \
+            --cache-control "no-cache,no-store,must-revalidate" \
+            --exclude "*" \
+            --include "*.html"
+
+          # JS, CSS 파일: 1시간 캐시
+          aws s3 sync dist s3://v-sky-app \
+            --delete \
+            --cache-control "public,max-age=3600" \
+            --exclude "*" \
+            --include "*.js" \
+            --include "*.css"
+
+          # 이미지, 아이콘: 1주일 캐시
+          aws s3 sync dist s3://v-sky-app \
+            --delete \
+            --cache-control "public,max-age=604800" \
+            --exclude "*" \
+            --include "*.png" \
+            --include "*.jpg" \
+            --include "*.jpeg" \
+            --include "*.gif" \
+            --include "*.ico" \
+            --include "*.svg"
+
+          # 나머지 파일들
+          aws s3 sync dist s3://v-sky-app \
+            --delete \
+            --cache-control "public,max-age=3600" \
+            --exclude "*.html" \
+            --exclude "*.js" \
+            --exclude "*.css" \
+            --exclude "*.png" \
+            --exclude "*.jpg" \
+            --exclude "*.jpeg" \
+            --exclude "*.gif" \
+            --exclude "*.ico" \
+            --exclude "*.svg"
