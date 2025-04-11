@@ -22,16 +22,56 @@ interface useLineProps {
 }
 
 const INTERPOLE_THRESHOLD = 100
+const MERIDIAN_THRESHOLD = 1.0;
+type CrossingType = {
+  direction: RouteDirection
+  type: 'IDL' | 'MERIDIAN'  // IDL: 날짜변경선, MERIDIAN: 본초자오선
+}
+
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 2000; // 2초
 
 export function useLine({ map, flight, arrival, departure }: useLineProps) {
   const [line, setLine] = useState<FeatureCollection[] | null>(null)
   const [route, setRoute] = useState<any>(null)
   const [totalFrames, setTotalFrames] = useState<number>(0)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [error, setError] = useState<Error | null>(null)
 
   const getRoute = async () => {
-    const flightRoute = await requestFlightTrack(flight)
-    setRoute(flightRoute)
-    console.log('getRoute', flightRoute)
+    setIsLoading(true)
+    setError(null)
+
+    let retryCount = 0
+
+    const fetchWithRetry = async (): Promise<any> => {
+      try {
+        const flightRoute = await requestFlightTrack(flight)
+        return flightRoute
+      } catch (error: any) {
+        if (error.status === 429 && retryCount < MAX_RETRIES) {
+          retryCount++
+          const delay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount - 1)
+          console.log(`429 에러 발생, ${retryCount}번째 재시도... ${delay}ms 후 재시도`)
+
+          await new Promise(resolve => setTimeout(resolve, delay))
+          return fetchWithRetry()
+        }
+        throw error
+      }
+    }
+
+    try {
+      const flightRoute = await fetchWithRetry()
+      setRoute(flightRoute)
+      setIsLoading(false)
+      console.log('getRoute 성공:', flightRoute)
+    } catch (error: any) {
+      console.error('getRoute 실패:', error)
+      setError(error)
+      setIsLoading(false)
+      setRoute(null)
+    }
   }
 
   useEffect(() => {
@@ -66,6 +106,8 @@ export function useLine({ map, flight, arrival, departure }: useLineProps) {
     line,
     route,
     totalFrames,
+    isLoading,
+    error
   }
 }
 
@@ -118,45 +160,41 @@ const getLineFromRoute = ({
     ]
     path.push(arrivalAirport)
 
-    // const avgTime =
-    //   path
-    //     .slice(1)
-    //     .reduce(
-    //       (sum: number, item: FlightPathElement, index: number) =>
-    //         sum + (item.time - path[index].time),
-    //       0
-    //     ) /
-    //   (path.length - 1)
-
     const splitLines: FlightPathElement[][] = []
     let line: FlightPathElement[] = []
 
     for (let i = 0; i < path.length - 1; ++i) {
       line.push(path[i])
 
-      const crossed = isPathCrossingIDL(path[i], path[i + 1])
-      crossed && console.log(crossed)
-      if (crossed === '-->' || crossed === '<--') {
-        const pointA: FlightPathElement = { ...path[i] }
-        const pointB: FlightPathElement = path[i + 1]
+      const crossing = isPathCrossing(path[i], path[i + 1])
+      if (crossing) {
+        console.log('경로 교차 발생:', {
+          type: crossing.type,
+          direction: crossing.direction,
+          pointA: path[i].longitude,
+          pointB: path[i + 1].longitude
+        })
 
-        adjustCrossingPoints(pointA, pointB, crossed, {
+        const pointA: FlightPathElement = { ...path[i] }
+        const pointB: FlightPathElement = { ...path[i + 1] }
+
+        adjustCrossingPoints(pointA, pointB, crossing, {
           A: departure,
           B: arrival,
         })
 
         line.push(pointA)
-        splitLines.push(line)
-        line = [pointB] // * important!!!
+        splitLines.push([...line])
+        line = [{ ...pointB }]
       }
     }
 
-    splitLines.push(line)
-    splitLines[splitLines.length - 1].push(path[path.length - 1])
+    if (line.length > 0) {
+      line.push(path[path.length - 1])
+      splitLines.push(line)
+    }
 
     const lines: FeatureCollection[] = []
-
-    console.log(lines)
 
     Promise.all(
       splitLines.map((line) =>
@@ -210,18 +248,35 @@ const interpolateGreatCirclePath = (
       const { lat: lat1, lon: lon1 } = coordinates[i]
       const { lat: lat2, lon: lon2 } = coordinates[i + 1]
 
-      const from = [lon1, lat1]
-      const to = [lon2, lat2]
-      const greatCircle = turf.greatCircle(turf.point(from), turf.point(to), {
-        offset: 100,
-        npoints: 200,
-      })
+      if ((lon1 * lon2) <= 0 && Math.abs(lon1 - lon2) < 180) {
+        const ratio = Math.abs(lon1) / Math.abs(lon1 - lon2)
+        const intersectLat = lat1 + (lat2 - lat1) * ratio
 
-      interpolatedCoords.push(...greatCircle.geometry.coordinates)
+        const path1 = turf.greatCircle(
+          turf.point([lon1, lat1]),
+          turf.point([0, intersectLat]),
+          { npoints: 300 }
+        )
+
+        const path2 = turf.greatCircle(
+          turf.point([0, intersectLat]),
+          turf.point([lon2, lat2]),
+          { npoints: 300 }
+        )
+
+        interpolatedCoords.push(
+          ...path1.geometry.coordinates,
+          ...path2.geometry.coordinates
+        )
+      } else {
+        const greatCircle = turf.greatCircle(
+          turf.point([lon1, lat1]),
+          turf.point([lon2, lat2]),
+          { npoints: 200 }
+        )
+        interpolatedCoords.push(...greatCircle.geometry.coordinates)
+      }
     }
-
-    const { lat: finalLat, lon: finalLon } = coordinates[coordinates.length - 1]
-    interpolatedCoords.push([finalLon, finalLat])
 
     resolve(interpolatedCoords)
   })
@@ -288,7 +343,6 @@ const drawLineOnRouteLayer = (
   option = { name: 'route', color: 'blue', isDash: false }
 ) => {
   const { name = 'route', color = 'blue', isDash = false } = option
-  // console.log('***RouteOnMap***', routeOnMap)
 
   if (map.getSource(name)) {
     map.getSource(name).setData(routeOnMap)
@@ -332,48 +386,68 @@ const drawStraightLine = async (
   drawLineOnRouteLayer(map, line, option)
 }
 
-// 적도선 통과 여부만 판별하는 별도 함수
-const isPathCrossingPrimeMeridian = (A: FlightPathElement, B: FlightPathElement): boolean => {
-  return (1 > Math.abs(A.longitude) && Math.abs(A.longitude) > 0) ||
-    (1 > Math.abs(B.longitude) && Math.abs(B.longitude) > 0)
-}
-
-// 날짜변경선 통과만 판별하는 함수
-const isPathCrossingIDL = (A: FlightPathElement, B: FlightPathElement): RouteDirection => {
+const isPathCrossing = (A: FlightPathElement, B: FlightPathElement): CrossingType | null => {
   const Ax = A.longitude
   const Bx = B.longitude
 
-  if (-0 >= Ax && Ax >= -180 && 0 <= Bx && Bx <= 180) return '<--'
-  if (-0 >= Bx && Bx >= -180 && 0 <= Ax && Ax <= 180) return '-->'
-  return false
+  if (Math.abs(Ax - Bx) > 180) {
+    if (Ax > 0 && Bx < 0) return { direction: '-->', type: 'IDL' }
+    if (Ax < 0 && Bx > 0) return { direction: '<--', type: 'IDL' }
+  }
+
+  if ((Ax * Bx) <= 0) {
+    if (Math.abs(Ax - Bx) < 0.0001) return null;
+
+    if (Ax >= 0 && Bx < 0) {
+      return { direction: '-->', type: 'MERIDIAN' }
+    }
+    if (Ax < 0 && Bx >= 0) {
+      return { direction: '<--', type: 'MERIDIAN' }
+    }
+  }
+
+  return null
 }
 
-// 교차점 조정도 분리
 const adjustCrossingPoints = (
   pointA: FlightPathElement,
   pointB: FlightPathElement,
-  direction: East2West | West2East,
+  crossing: CrossingType,
   airports: { A: any; B: any }
 ) => {
-  if (isPathCrossingPrimeMeridian(pointA, pointB)) {
-    // 적도선 처리
-    pointA.longitude = -0
-    pointB.longitude = 0
-    pointA.latitude = 51.2975
-    pointB.latitude = 51.2975
+  if (crossing.type === 'MERIDIAN') {
+    const ratio = Math.abs(pointA.longitude) / Math.abs(pointA.longitude - pointB.longitude)
+    const intersectLat = pointA.latitude + (pointB.latitude - pointA.latitude) * ratio
+
+    const OFFSET = 0.0001
+    if (crossing.direction === '-->') {
+      pointA.longitude = OFFSET
+      pointB.longitude = -OFFSET
+    } else {
+      pointA.longitude = -OFFSET
+      pointB.longitude = OFFSET
+    }
+    pointA.latitude = intersectLat
+    pointB.latitude = intersectLat
   } else {
-    // 날짜변경선 처리
     const latitude = handleFindCrossing(airports.A, airports.B)
     pointA.latitude = latitude
     pointB.latitude = latitude
-    if (direction === '-->') {
+    if (crossing.direction === '-->') {
       pointA.longitude = 180
       pointB.longitude = -180
-    } else if (direction === '<--') {
+    } else {
       pointA.longitude = -180
       pointB.longitude = 180
     }
   }
+
+  console.log('보정된 좌표:', {
+    type: crossing.type,
+    direction: crossing.direction,
+    pointA: { lat: pointA.latitude, lon: pointA.longitude },
+    pointB: { lat: pointB.latitude, lon: pointB.longitude }
+  })
 }
 
 const handleFindCrossing = (A: any, B: any): number => {

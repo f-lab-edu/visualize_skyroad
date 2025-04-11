@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 
 import { countryNameToCode } from '../countryNameToCode'
 import { AirportFetchError } from '../types/error'
-import { CityKeyword, CountryAlias } from '../types/airport'
+import { CityKeyword, CountryAlias, AirlineInfo } from '../types/airport'
 
 export type AirportList = Awaited<ReturnType<typeof fetchAirports>>
 export type Airport = AirportList[number]
@@ -56,6 +56,22 @@ const cityKeywords: Record<string, CityKeyword> = {
     related: ['샤를 드골'],
     aliases: []
   },
+  '토론토': {
+    related: ['피어슨'],
+    aliases: ['온타리오']
+  },
+  '밴쿠버': {
+    related: ['YVR'],
+    aliases: ['브리티시컬럼비아']
+  },
+  '몬트리올': {
+    related: ['트뤼도'],
+    aliases: ['퀘벡']
+  },
+  '캘거리': {
+    related: ['YYC'],
+    aliases: ['앨버타']
+  },
 }
 
 // 2. 일관된 타입 정의
@@ -84,13 +100,19 @@ const majorAirportKoreanNames: Record<string, AirportKoreanName> = {
     korName: '나리타국제공항',
     korCity: '도쿄',
     korCountry: '일본',
-    searchKeywords: ['하네다'],
+    searchKeywords: ['하네다', '도쿄'],
   },
   HND: {
     korName: '하네다국제공항',
     korCity: '도쿄',
     korCountry: '일본',
-    searchKeywords: ['나리타'],
+    searchKeywords: ['나리타', '도쿄'],
+  },
+  KIX: {
+    korName: '간사이국제공항',
+    korCity: '오사카',
+    korCountry: '일본',
+    searchKeywords: ['오사카', '교토', '간사이'],
   },
 
   // 주요 중국 공항
@@ -106,44 +128,187 @@ const majorAirportKoreanNames: Record<string, AirportKoreanName> = {
     korCountry: '중국',
     searchKeywords: ['상하이', '상해', '푸동'],
   },
-
-  SIN: {
-    korName: '창이 국제공항',
-    korCity: '싱가포르',
-    korCountry: '싱가포르',
-    searchKeywords: [],
-  },
-  BKK: {
-    korName: '수완나품 국제공항',
-    korCity: '방콕',
-    korCountry: '태국',
-    searchKeywords: [],
+  CAN: {
+    korName: '광저우 바이윈 국제공항',
+    korCity: '광저우',
+    korCountry: '중국',
+    searchKeywords: ['광저우', '광동'],
   },
 
+  // 인도 공항
+  DEL: {
+    korName: '인디라 간디 국제공항',
+    korCity: '델리',
+    korCountry: '인도',
+    searchKeywords: ['뉴델리', '델리'],
+  },
+  BOM: {
+    korName: '차트라파티 시바지 국제공항',
+    korCity: '뭄바이',
+    korCountry: '인도',
+    searchKeywords: ['봄베이', '뭄바이'],
+  },
+
+  // 인도네시아 공항
+  CGK: {
+    korName: '수카르노하타 국제공항',
+    korCity: '자카르타',
+    korCountry: '인도네시아',
+    searchKeywords: ['자카르타', '수도'],
+  },
+
+  // 호주 공항
+  SYD: {
+    korName: '시드니 킹스포드 스미스 공항',
+    korCity: '시드니',
+    korCountry: '호주',
+    searchKeywords: ['시드니', 'NSW'],
+  },
+  MEL: {
+    korName: '멜버른 공항',
+    korCity: '멜버른',
+    korCountry: '호주',
+    searchKeywords: ['멜버른', '빅토리아'],
+  },
+
+  // 미국 공항
   LAX: {
     korName: '로스앤젤레스 국제공항',
     korCity: '로스앤젤레스',
     korCountry: '미국',
-    searchKeywords: [],
+    searchKeywords: ['LA', '엘에이'],
   },
   JFK: {
     korName: '존 F. 케네디 국제공항',
     korCity: '뉴욕',
     korCountry: '미국',
-    searchKeywords: [],
+    searchKeywords: ['뉴욕', 'NYC'],
+  },
+  ORD: {
+    korName: '오헤어 국제공항',
+    korCity: '시카고',
+    korCountry: '미국',
+    searchKeywords: ['시카고', '일리노이'],
   },
 
+  // 영국 공항
   LHR: {
     korName: '히드로 국제공항',
     korCity: '런던',
     korCountry: '영국',
-    searchKeywords: [],
+    searchKeywords: ['런던', '히드로'],
   },
+  LGW: {
+    korName: '개트윅 공항',
+    korCity: '런던',
+    korCountry: '영국',
+    searchKeywords: ['런던', '개트윅'],
+  },
+
+  // 프랑스 공항
   CDG: {
     korName: '샤를 드골 국제공항',
     korCity: '파리',
     korCountry: '프랑스',
-    searchKeywords: [],
+    searchKeywords: ['파리', '드골'],
+  },
+  ORY: {
+    korName: '오를리 공항',
+    korCity: '파리',
+    korCountry: '프랑스',
+    searchKeywords: ['파리', '오를리'],
+  },
+
+  // 독일 공항
+  FRA: {
+    korName: '프랑크푸르트 국제공항',
+    korCity: '프랑크푸르트',
+    korCountry: '독일',
+    searchKeywords: ['프랑크푸르트', '헤센'],
+  },
+  MUC: {
+    korName: '뮌헨 공항',
+    korCity: '뮌헨',
+    korCountry: '독일',
+    searchKeywords: ['뮌헨', '바이에른'],
+  },
+
+  // 이탈리아 공항
+  FCO: {
+    korName: '레오나르도 다 빈치 국제공항',
+    korCity: '로마',
+    korCountry: '이탈리아',
+    searchKeywords: ['로마', '피우미치노'],
+  },
+  MXP: {
+    korName: '밀라노 말펜사 공항',
+    korCity: '밀라노',
+    korCountry: '이탈리아',
+    searchKeywords: ['밀라노', '말펜사'],
+  },
+
+  // 캐나다 공항
+  YYZ: {
+    korName: '토론토 피어슨 국제공항',
+    korCity: '토론토',
+    korCountry: '캐나다',
+    searchKeywords: ['피어슨', '온타리오'],
+  },
+  YVR: {
+    korName: '밴쿠버 국제공항',
+    korCity: '밴쿠버',
+    korCountry: '캐나다',
+    searchKeywords: ['브리티시컬럼비아'],
+  },
+  YUL: {
+    korName: '몬트리올 트뤼도 국제공항',
+    korCity: '몬트리올',
+    korCountry: '캐나다',
+    searchKeywords: ['퀘벡', '트뤼도'],
+  },
+
+  // 브라질 공항
+  GRU: {
+    korName: '과룰류스 국제공항',
+    korCity: '상파울루',
+    korCountry: '브라질',
+    searchKeywords: ['상파울루', '과룰류스'],
+  },
+  GIG: {
+    korName: '갈레앙 국제공항',
+    korCity: '리우데자네이루',
+    korCountry: '브라질',
+    searchKeywords: ['리우', '리우데자네이루'],
+  },
+
+  // 멕시코 공항
+  MEX: {
+    korName: '베니토 후아레스 국제공항',
+    korCity: '멕시코시티',
+    korCountry: '멕시코',
+    searchKeywords: ['멕시코시티', '수도'],
+  },
+
+  // 사우디아라비아 공항
+  JED: {
+    korName: '킹 압둘아지즈 국제공항',
+    korCity: '제다',
+    korCountry: '사우디아라비아',
+    searchKeywords: ['제다', '메카'],
+  },
+  RUH: {
+    korName: '킹 칼리드 국제공항',
+    korCity: '리야드',
+    korCountry: '사우디아라비아',
+    searchKeywords: ['리야드', '수도'],
+  },
+
+  // 터키 공항
+  IST: {
+    korName: '이스탄불 공항',
+    korCity: '이스탄불',
+    korCountry: '터키',
+    searchKeywords: ['이스탄불', '터키'],
   },
 }
 
@@ -153,13 +318,25 @@ const countryKoreanNames: Record<string, CountryAlias> = {
     name: '대한민국',
     aliases: ['한국', '코리아'],
   },
-  Japan: {
+  'Japan': {
     name: '일본',
-    aliases: ['닛폰'],
+    aliases: ['닛폰', '일본국'],
   },
-  China: {
+  'China': {
     name: '중국',
-    aliases: ['중화인민공화국'],
+    aliases: ['중화인민공화국', '중화'],
+  },
+  'India': {
+    name: '인도',
+    aliases: ['인디아', '힌두스탄'],
+  },
+  'Indonesia': {
+    name: '인도네시아',
+    aliases: ['인도네시아 공화국'],
+  },
+  'Australia': {
+    name: '호주',
+    aliases: ['오스트레일리아', '호주연방'],
   },
   'United States': {
     name: '미국',
@@ -167,24 +344,152 @@ const countryKoreanNames: Record<string, CountryAlias> = {
   },
   'United Kingdom': {
     name: '영국',
-    aliases: ['영국', '대영국'],
+    aliases: ['영국', '대영국', '그레이트브리튼'],
   },
-  France: {
+  'France': {
     name: '프랑스',
-    aliases: [],
+    aliases: ['프랑스 공화국', '불란서'],
   },
-  Germany: {
+  'Germany': {
     name: '독일',
-    aliases: ['도이칠란드'],
+    aliases: ['도이칠란드', '독일연방공화국'],
   },
-  Thailand: {
-    name: '태국',
-    aliases: ['타이'],
+  'Italy': {
+    name: '이탈리아',
+    aliases: ['이태리', '이탈리아 공화국'],
   },
-  Singapore: {
-    name: '싱가포르',
-    aliases: [],
+  'Canada': {
+    name: '캐나다',
+    aliases: ['캐나다', 'Canada', 'CA'],
   },
+  'Brazil': {
+    name: '브라질',
+    aliases: ['브라질 연방공화국'],
+  },
+  'Mexico': {
+    name: '멕시코',
+    aliases: ['멕시코 합중국'],
+  },
+  'Saudi Arabia': {
+    name: '사우디아라비아',
+    aliases: ['사우디', 'KSA'],
+  },
+  'Turkey': {
+    name: '터키',
+    aliases: ['튀르키예'],
+  },
+  'Argentina': {
+    name: '아르헨티나',
+    aliases: ['아르헨티나 공화국'],
+  },
+  'South Africa': {
+    name: '남아프리카공화국',
+    aliases: ['남아공'],
+  },
+}
+
+// 항공사 국적 정보 추가
+const airlineNationality: Record<string, AirlineInfo> = {
+  'KOR': {
+    mainCarrier: '대한항공',
+    carriers: ['대한항공', '아시아나항공', '제주항공', '진에어'],
+    flag: 'KR'
+  },
+  'JPN': {
+    mainCarrier: 'JAL',
+    carriers: ['JAL', 'ANA', 'Peach'],
+    flag: 'JP'
+  },
+  'CHN': {
+    mainCarrier: 'Air China',
+    carriers: ['Air China', 'China Eastern', 'China Southern'],
+    flag: 'CN'
+  },
+  'USA': {
+    mainCarrier: 'American Airlines',
+    carriers: ['American Airlines', 'United', 'Delta'],
+    flag: 'US'
+  },
+  'GBR': {
+    mainCarrier: 'British Airways',
+    carriers: ['British Airways', 'Virgin Atlantic'],
+    flag: 'GB'
+  },
+  'FRA': {
+    mainCarrier: 'Air France',
+    carriers: ['Air France'],
+    flag: 'FR'
+  },
+  'DEU': {
+    mainCarrier: 'Lufthansa',
+    carriers: ['Lufthansa', 'Eurowings'],
+    flag: 'DE'
+  },
+  'ITA': {
+    mainCarrier: 'ITA Airways',
+    carriers: ['ITA Airways'],
+    flag: 'IT'
+  },
+  'CAN': {
+    mainCarrier: 'Air Canada',
+    carriers: ['Air Canada', 'WestJet'],
+    flag: 'CA'
+  },
+  'AUS': {
+    mainCarrier: 'Qantas',
+    carriers: ['Qantas', 'Virgin Australia'],
+    flag: 'AU'
+  },
+  'BRA': {
+    mainCarrier: 'LATAM Brasil',
+    carriers: ['LATAM Brasil', 'GOL', 'Azul'],
+    flag: 'BR'
+  },
+  'MEX': {
+    mainCarrier: 'Aeroméxico',
+    carriers: ['Aeroméxico', 'Volaris'],
+    flag: 'MX'
+  },
+  'SAU': {
+    mainCarrier: 'Saudia',
+    carriers: ['Saudia'],
+    flag: 'SA'
+  },
+  'TUR': {
+    mainCarrier: 'Turkish Airlines',
+    carriers: ['Turkish Airlines'],
+    flag: 'TR'
+  },
+  'IND': {
+    mainCarrier: 'Air India',
+    carriers: ['Air India', 'IndiGo'],
+    flag: 'IN'
+  },
+  'IDN': {
+    mainCarrier: 'Garuda Indonesia',
+    carriers: ['Garuda Indonesia'],
+    flag: 'ID'
+  }
+}
+
+// 국가 코드 매핑
+const countryToISOCode: Record<string, string> = {
+  'South Korea': 'KOR',
+  'Japan': 'JPN',
+  'China': 'CHN',
+  'United States': 'USA',
+  'United Kingdom': 'GBR',
+  'France': 'FRA',
+  'Germany': 'DEU',
+  'Italy': 'ITA',
+  'Canada': 'CAN',
+  'Australia': 'AUS',
+  'Brazil': 'BRA',
+  'Mexico': 'MEX',
+  'Saudi Arabia': 'SAU',
+  'Turkey': 'TUR',
+  'India': 'IND',
+  'Indonesia': 'IDN'
 }
 
 const parseCSV = (data: string) => {
@@ -197,6 +502,8 @@ const parseCSV = (data: string) => {
       const country = parts[3].replace(/"/g, '')
       const koreanData = majorAirportKoreanNames[iata]
       const countryKorean = countryKoreanNames[country]
+      const isoCode = countryToISOCode[country]
+      const airlineData = isoCode ? airlineNationality[isoCode] : undefined
 
       // 검색 키워드 확장
       const searchTerms = [
@@ -204,8 +511,17 @@ const parseCSV = (data: string) => {
         koreanData?.korCity || '',
         koreanData?.korCountry || countryKorean?.name || '',
         iata,
-        ...(koreanData?.searchKeywords || []), // 추가 검색 키워드 포함
+        ...(koreanData?.searchKeywords || []),
       ]
+
+      // cityKeywords 활용
+      if (koreanData?.korCity) {
+        const cityKeyword = cityKeywords[koreanData.korCity]
+        if (cityKeyword) {
+          searchTerms.push(...cityKeyword.related)
+          searchTerms.push(...cityKeyword.aliases)
+        }
+      }
 
       if (countryKorean?.aliases) {
         searchTerms.push(...countryKorean.aliases)
@@ -231,7 +547,12 @@ const parseCSV = (data: string) => {
         korName: koreanData?.korName || '',
         korCity: koreanData?.korCity || '',
         korCountry: koreanData?.korCountry || countryKorean?.name || '',
-        searchKeywords: searchTerms.filter(Boolean).join(' '),
+        searchKeywords: searchTerms.filter(Boolean),
+
+        // 항공사 정보 추가
+        mainCarrier: airlineData?.mainCarrier || '',
+        carriers: airlineData?.carriers || [],
+        airlineFlag: airlineData?.flag || ''
       }
     })
     .filter(
@@ -280,13 +601,15 @@ export const useAirports = () => {
     const options = {
       keys: [
         { name: 'korCity', weight: 2 },
-        { name: 'korName', weight: 1.5 },
-        { name: 'searchKeywords', weight: 1.5 },
+        { name: 'korName', weight: 2 },
+        { name: 'korCountry', weight: 1.5 },
+        { name: 'searchKeywords', weight: 1.8 },
         { name: 'iata', weight: 1 },
       ],
-      threshold: 0.3,
+      threshold: 0.4,
       includeScore: true,
       ignoreLocation: true,
+      useExtendedSearch: true,
     }
     return new Fuse(airports, options)
   }, [airports])
@@ -294,10 +617,9 @@ export const useAirports = () => {
   const searchAirports = (query: string) => {
     if (!query) return airports
 
-    // 한 번의 검색으로 처리
     const results = fuse.search(query)
     return results
-      .filter(result => result.score && result.score < 0.6)
+      .filter(result => result.score && result.score < 0.7)
       .map(result => result.item)
   }
 

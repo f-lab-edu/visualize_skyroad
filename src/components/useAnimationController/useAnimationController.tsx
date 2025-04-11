@@ -20,6 +20,7 @@ const useMapAnimationController = ({
   const [isPaused, setIsPaused] = useState<boolean>(false)
   const [mergedLine, setMergedLine] = useState<FeatureCollection | null>(null)
   const [currentFrame, setCurrentFrame] = useState<number>(0)
+  const [speedMultiplier, setSpeedMultiplier] = useState<number>(1)
   const requestRef = useRef<null | number>(null)
   const previousTimeRef = useRef<null | number>(null)
   const { bearing, addBearing, calculateBearing } =
@@ -55,7 +56,10 @@ const useMapAnimationController = ({
 
       const coordinates = mergedLine.features[0].geometry.coordinates
       const speed = calculateSpeed(coordinates)
-      const nextFrame = Math.floor(prevFrame + deltaTime * speed)
+      const adjustedDeltaTime = deltaTime * 0.1
+      const nextFrame = Math.floor(
+        prevFrame + adjustedDeltaTime * speed * speedMultiplier
+      )
 
       if (coordinates[nextFrame]) {
         const currentPosition = coordinates[nextFrame]
@@ -148,7 +152,9 @@ const useMapAnimationController = ({
     if (!isPlaying) {
       setIsPlaying(true)
       setIsPaused(false)
-      handleStart()
+      if (!isPaused) {
+        handleStart()
+      }
     }
   }
 
@@ -156,6 +162,11 @@ const useMapAnimationController = ({
     if (isPlaying) {
       setIsPaused(true)
       setIsPlaying(false)
+      if (requestRef.current !== null) {
+        cancelAnimationFrame(requestRef.current)
+        requestRef.current = null
+      }
+      previousTimeRef.current = null
     }
   }
 
@@ -166,8 +177,20 @@ const useMapAnimationController = ({
       cancelAnimationFrame(requestRef.current)
       requestRef.current = null
     }
-
     previousTimeRef.current = null
+    handleStop()
+  }
+
+  const setSpeed = (speed: number) => {
+    setSpeedMultiplier(speed)
+    if (isPlaying && !isPaused) {
+      if (requestRef.current !== null) {
+        cancelAnimationFrame(requestRef.current)
+        requestRef.current = null
+      }
+      previousTimeRef.current = null
+      requestRef.current = requestAnimationFrame(animate)
+    }
   }
 
   useEffect(() => {
@@ -180,7 +203,7 @@ const useMapAnimationController = ({
         cancelAnimationFrame(requestRef.current)
       }
     }
-  }, [isPlaying, isPaused])
+  }, [isPlaying, isPaused, speedMultiplier])
 
   return {
     bearing,
@@ -191,6 +214,8 @@ const useMapAnimationController = ({
     isPlaying,
     isPaused,
     currentFrame,
+    setSpeed,
+    speedMultiplier,
   }
 }
 

@@ -12,12 +12,15 @@ export interface Airport {
   timezone: string
   dst: string
   tzDatabaseTimezone: string
-  type: 'airport'
-  source: 'OurAirports'
+  type: string
+  source: string
   korName: string
   korCity: string
   korCountry: string
-  searchKeywords: string
+  searchKeywords: string[]
+  mainCarrier: string
+  carriers: string[]
+  airlineFlag: string
 }
 
 export interface CityKeyword {
@@ -35,4 +38,10 @@ export interface AirportKoreanName {
 export interface CountryAlias {
   name: string
   aliases: string[]
+}
+
+export interface AirlineInfo {
+  mainCarrier: string
+  carriers: string[]
+  flag: string
 }

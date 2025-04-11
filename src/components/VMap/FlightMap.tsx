@@ -409,7 +409,12 @@ const FlightMap: React.FC = ({}) => {
           </ToggleButton>
         )}
         {showAltitudeGraph && (
-          <Graph altitude={altitude} onCloseBtnClicked={handleToggleGraph} />
+          <Graph
+            altitude={altitude}
+            onCloseBtnClicked={handleToggleGraph}
+            currentFrame={currentFrame}
+            totalFrames={totalFrames}
+          />
         )}
       </GraphWrapper>
     </Container>

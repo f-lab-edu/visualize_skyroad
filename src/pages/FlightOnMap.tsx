@@ -57,6 +57,8 @@ const FlightOnMap: React.FC = ({}) => {
     isPlaying,
     isPaused,
     currentFrame,
+    setSpeed,
+    speedMultiplier,
   } = useMapAnimationController({
     line,
     map,
@@ -168,7 +170,8 @@ const FlightOnMap: React.FC = ({}) => {
   }
 
   const handleChangeAniSpeed = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    alert(`[TODO]${e.target.value}배속으로 변경되었습니다.`)
+    const speed = parseFloat(e.target.value)
+    setSpeed(speed)
   }
 
   const handleToggleGraph = () => {
@@ -260,29 +263,6 @@ const FlightOnMap: React.FC = ({}) => {
     map?.getSource('dateLine') && map.removeSource('dateLine')
   }
 
-  // const isPathCrossingPrimeMeridian = (
-  //   A: FlightPathElement,
-  //   B: FlightPathElement
-  // ): RouteDirection => {
-  //   if (A.longitude < 0 && B.longitude > 0) return '-->'
-  //   if (A.longitude > 0 && B.longitude < 0) return '<--'
-  //   return false
-  // }
-
-  // const adjustPrimeMeridianPath = (
-  //   pointA: FlightPathElement,
-  //   pointB: FlightPathElement,
-  //   direction: RouteDirection
-  // ) => {
-  //   if (!direction) return [pointA, pointB]
-
-  //   const latitude = handleFindCrossing(pointA, pointB)
-  //   return [
-  //     { ...pointA, longitude: direction === '-->' ? 0 : 0, latitude },
-  //     { ...pointB, longitude: direction === '-->' ? 0 : 0, latitude },
-  //   ]
-  // }
-
   return (
     <Container>
       {isLoading && !mergedLine && (
@@ -295,11 +275,9 @@ const FlightOnMap: React.FC = ({}) => {
 
       <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
         <AnimationControlWrapper>
-          <div>
-            <button disabled={isLoading} onClick={handleShowIDLToggle}>
-              날짜변경선&nbsp;{showIDL ? '표시' : '숨김'}
-            </button>
-          </div>
+          <button disabled={isLoading} onClick={handleShowIDLToggle}>
+            날짜변경선&nbsp;{showIDL ? '표시' : '숨김'}
+          </button>
 
           <VSkyButton
             onClick={handleToggleLockOn}
@@ -310,29 +288,63 @@ const FlightOnMap: React.FC = ({}) => {
           </VSkyButton>
 
           <button disabled={isLoading || isPlaying} onClick={play}>
-            재생
+            {isPaused ? '계속 재생' : '재생'}
           </button>
 
           <button
-            disabled={isLoading || isPaused || !isPlaying}
+            disabled={isLoading || !isPlaying}
             onClick={pause}
+            style={{
+              backgroundColor: isPaused ? '#e67e22' : '#005A9C',
+            }}
           >
             일시정지
           </button>
 
-          <button disabled={isLoading} onClick={stop}>
-            정지
+          <button
+            disabled={isLoading || (!isPlaying && currentFrame === 0)}
+            onClick={stop}
+            style={{
+              backgroundColor: '#c0392b',
+            }}
+          >
+            처음으로
           </button>
 
-          <select disabled={isLoading} onChange={handleChangeAniSpeed}>
-            <option value={10}>x10</option>
-            <option value={50}>x50</option>
-            <option value={1}>x1</option>
+          <select
+            disabled={isLoading}
+            onChange={handleChangeAniSpeed}
+            value={speedMultiplier}
+            style={{
+              backgroundColor: isLoading ? '#b0b0b0' : 'white',
+              color: isLoading
+                ? '#e0e0e0'
+                : speedMultiplier > 1
+                  ? '#e67e22'
+                  : 'black',
+              fontWeight: speedMultiplier !== 1 ? 'bold' : 'normal',
+              border: `1px solid ${speedMultiplier > 1 ? '#e67e22' : 'gray'}`,
+            }}
+          >
+            <option value="0.5">x0.5 </option>
+            <option value="1">x1.0 </option>
+            <option value="2">x2.0 </option>
+            <option value="5">x5.0 </option>
+            <option value="10">x10.0 </option>
           </select>
 
           <div id="frame-indicator">
             <p>
-              ({currentFrame}/{totalFrames})
+              {currentFrame}/{totalFrames}
+              <span
+                style={{
+                  marginLeft: '8px',
+                  color: speedMultiplier > 1 ? '#e67e22' : 'SlateGray',
+                  fontWeight: speedMultiplier !== 1 ? 'bold' : 'normal',
+                }}
+              >
+                {speedMultiplier}x
+              </span>
             </p>
           </div>
         </AnimationControlWrapper>
@@ -395,27 +407,101 @@ const FlightOnMap: React.FC = ({}) => {
             )}
 
           <Marker latitude={departure.latitude} longitude={departure.longitude}>
-            <img
-              alt="airport"
-              src="/airport-1.png"
+            <div
               style={{
-                /*backgroundColor: 'blue', borderRadius: '50%',*/ width: `${2 * getMarkerSize(zoomLevel)}px`,
-                height: `${2 * getMarkerSize(zoomLevel)}px`,
-                zIndex: 1,
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '2px',
               }}
-            />
+            >
+              <img
+                alt="airport"
+                src="/airport-1.png"
+                style={{
+                  width: `${2 * getMarkerSize(zoomLevel)}px`,
+                  height: `${2 * getMarkerSize(zoomLevel)}px`,
+                  zIndex: 1,
+                }}
+              />
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '2px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  padding: '1px 3px',
+                  borderRadius: '3px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
+                  height: '14px',
+                  zIndex: 2,
+                  transform: `scale(${Math.max(1, zoomLevel / 5)})`,
+                  transformOrigin: 'left center',
+                }}
+              >
+                <img
+                  src={`https://flagcdn.com/${departure.flag.toLowerCase()}.svg`}
+                  alt={departure.country}
+                  style={{ width: '14px', height: '10px', display: 'block' }}
+                />
+                {departure.mainCarrier && (
+                  <img
+                    src={`https://flagcdn.com/${departure.airlineFlag.toLowerCase()}.svg`}
+                    alt={departure.mainCarrier}
+                    style={{ width: '14px', height: '10px', display: 'block' }}
+                  />
+                )}
+              </div>
+            </div>
           </Marker>
 
           <Marker latitude={arrival.latitude} longitude={arrival.longitude}>
-            <img
-              alt="airport"
-              src="/airport-1.png"
+            <div
               style={{
-                /*backgroundColor: 'blue', borderRadius: '50%',*/ width: `${2 * getMarkerSize(zoomLevel)}px`,
-                height: `${2 * getMarkerSize(zoomLevel)}px`,
-                zIndex: 1,
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '2px',
               }}
-            />
+            >
+              <img
+                alt="airport"
+                src="/airport-1.png"
+                style={{
+                  width: `${2 * getMarkerSize(zoomLevel)}px`,
+                  height: `${2 * getMarkerSize(zoomLevel)}px`,
+                  zIndex: 1,
+                }}
+              />
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '2px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  padding: '1px 3px',
+                  borderRadius: '3px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
+                  height: '14px',
+                  zIndex: 2,
+                  transform: `scale(${Math.max(1, zoomLevel / 5)})`,
+                  transformOrigin: 'left center',
+                }}
+              >
+                <img
+                  src={`https://flagcdn.com/${arrival.flag.toLowerCase()}.svg`}
+                  alt={arrival.country}
+                  style={{ width: '14px', height: '10px', display: 'block' }}
+                />
+                {arrival.mainCarrier && (
+                  <img
+                    src={`https://flagcdn.com/${arrival.airlineFlag.toLowerCase()}.svg`}
+                    alt={arrival.mainCarrier}
+                    style={{ width: '14px', height: '10px', display: 'block' }}
+                  />
+                )}
+              </div>
+            </div>
           </Marker>
         </Map>
 
@@ -429,7 +515,12 @@ const FlightOnMap: React.FC = ({}) => {
           </ToggleButton>
         )}
         {showAltitudeGraph && (
-          <Graph altitude={altitude} onCloseBtnClicked={handleToggleGraph} />
+          <Graph
+            altitude={altitude}
+            onCloseBtnClicked={handleToggleGraph}
+            currentFrame={currentFrame}
+            totalFrames={totalFrames}
+          />
         )}
       </GraphWrapper>
     </Container>
